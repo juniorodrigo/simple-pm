@@ -5,18 +5,12 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bell, Plus, Search } from "lucide-react";
+import { Bell, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import CreateProjectForm from "@/components/create-project-form";
-import CreateActivityForm from "@/components/create-activity-form";
 
 export default function Header() {
 	const [isSearchOpen, setIsSearchOpen] = useState(false);
 	const pathname = usePathname();
-
-	// Determine if we're in a project context
-	const isProjectContext = pathname.startsWith("/projects/") || pathname === "/kanban" || pathname === "/gantt";
 
 	return (
 		<header className="border-b bg-background p-4 flex items-center justify-between">

@@ -1,3 +1,6 @@
+import { BaseActivity } from "./activity.type";
+import { BaseUser } from "./user.type";
+
 export type BaseProject = {
 	id?: string;
 	name: string;
@@ -13,4 +16,7 @@ export type BaseProject = {
 	activitiesCount?: number;
 };
 
-export type ExtendedProject = BaseProject & {};
+export type ExtendedProject = BaseProject & {
+	activities?: BaseActivity[];
+	team: BaseUser[];
+};

@@ -20,20 +20,21 @@ model MainSettings {
 }
 
 model User {
-  id            String          @id @default(cuid())
-  username      String          @unique
-  email         String          @unique
-  password      String
-  name          String
-  lastname      String
-  role          Role            @default(editor)
-  createdAt     DateTime?       @default(now()) @db.Timestamp(6)
-  updatedAt     DateTime?       @default(now()) @db.Timestamp(6)
-  isActive      Boolean?        @default(true)
-  deletedAt     DateTime?       @db.Timestamp(6)
-  UserAction    UserAction[]
-  Project       Project[]
-  ProjectMember ProjectMember[]
+  id              String            @id @default(cuid())
+  username        String            @unique
+  email           String            @unique
+  password        String
+  name            String
+  lastname        String
+  role            Role              @default(editor)
+  createdAt       DateTime?         @default(now()) @db.Timestamp(6)
+  updatedAt       DateTime?         @default(now()) @db.Timestamp(6)
+  isActive        Boolean?          @default(true)
+  deletedAt       DateTime?         @db.Timestamp(6)
+  UserAction      UserAction[]
+  Project         Project[]
+  ProjectMember   ProjectMember[]
+  ProjectActivity ProjectActivity[]
 }
 
 model UserAction {
@@ -58,50 +59,56 @@ model ProjectCategory {
 }
 
 model Project {
-  id            Int             @id @default(autoincrement())
-  name          String
-  description   String
-  startDate     DateTime?       @db.Timestamp(6)
-  endDate       DateTime?       @db.Timestamp(6)
-  status        ProjectStatus   @default(active)
-  createdAt     DateTime?       @default(now()) @db.Timestamp(6)
-  completedAt   DateTime?       @db.Timestamp(6)
-  updatedAt     DateTime?       @default(now()) @db.Timestamp(6)
-  deletedAt     DateTime?       @db.Timestamp(6)
-  managerUserId String
-  categoryId    String
-  category      ProjectCategory @relation(fields: [categoryId], references: [id])
-  manager       User            @relation(fields: [managerUserId], references: [id])
-  ProjectMember ProjectMember[]
+  id              Int               @id @default(autoincrement())
+  name            String
+  description     String
+  startDate       DateTime?         @db.Timestamp(6)
+  endDate         DateTime?         @db.Timestamp(6)
+  status          ProjectStatus     @default(active)
+  createdAt       DateTime?         @default(now()) @db.Timestamp(6)
+  completedAt     DateTime?         @db.Timestamp(6)
+  updatedAt       DateTime?         @default(now()) @db.Timestamp(6)
+  deletedAt       DateTime?         @db.Timestamp(6)
+  managerUserId   String
+  categoryId      String
+  category        ProjectCategory   @relation(fields: [categoryId], references: [id])
+  manager         User              @relation(fields: [managerUserId], references: [id])
+  ProjectMember   ProjectMember[]
+  ProjectActivity ProjectActivity[]
 }
 
 model ProjectMember {
-  id        Int       @id @default(autoincrement())
+  id        String      @id @default(cuid())
   userId    String
+  role      ProjectRole @default(member)
   projectId Int
-  createdAt DateTime? @default(now()) @db.Timestamp(6)
-  updatedAt DateTime? @default(now()) @db.Timestamp(6)
-  deletedAt DateTime? @db.Timestamp(6)
+  createdAt DateTime?   @default(now()) @db.Timestamp(6)
+  updatedAt DateTime?   @default(now()) @db.Timestamp(6)
+  deletedAt DateTime?   @db.Timestamp(6)
 
   user    User    @relation(fields: [userId], references: [id])
   project Project @relation(fields: [projectId], references: [id])
 }
 
 model ProjectActivity {
-  id          String           @id @default(cuid())
-  name        String
-  description String
-  stageId     String
-  projectId   Int
-  status      ActivityStatus   @default(pending)
-  priority    ActivityPriority @default(medium)
-  assignedTo  Int
-  startDate   DateTime?        @db.Timestamp(6)
-  endDate     DateTime?        @db.Timestamp(6)
+  id            String           @id @default(cuid())
+  title         String
+  description   String
+  stageId       String
+  projectId     Int
+  status        ActivityStatus   @default(pending)
+  priority      ActivityPriority @default(medium)
+  managerUserId String
+  startDate     DateTime?        @db.Timestamp(6)
+  endDate       DateTime?        @db.Timestamp(6)
 
   createdAt DateTime? @default(now()) @db.Timestamp(6)
   updatedAt DateTime? @default(now()) @db.Timestamp(6)
   deletedAt DateTime? @db.Timestamp(6)
+
+  stage       ProjectStage @relation(fields: [stageId], references: [id])
+  project     Project      @relation(fields: [projectId], references: [id])
+  managerUser User         @relation(fields: [managerUserId], references: [id])
 }
 
 model ProjectStage {
@@ -111,7 +118,13 @@ model ProjectStage {
   color         String
   ordinalNumber Int
 
-  status ActivityStatus @default(pending)
+  status          ActivityStatus    @default(pending)
+  ProjectActivity ProjectActivity[]
+}
+
+enum ProjectRole {
+  manager
+  member
 }
 
 // Enums

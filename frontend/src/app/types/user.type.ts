@@ -1,6 +1,13 @@
 import { z } from "zod";
 import { Role } from "./enums";
 
+export type BaseUser = {
+	id?: string;
+	name: string;
+	lastname: string;
+	projectRole?: string;
+};
+
 export const UserSchema = z.object({
 	id: z.string().cuid(),
 	username: z.string(),
