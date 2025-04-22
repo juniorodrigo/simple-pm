@@ -1,9 +1,9 @@
 import express from 'express';
-import { Controller } from './controller.js';
+import { Controller } from './service';
 
 const router = express.Router();
 
-router.get('/', Controller.getProjects);
+router.get('/', Controller.getAllProjects);
 router.post('/', Controller.createProject);
 router.put('/:id', Controller.updateProject);
 router.delete('/:id', Controller.deleteProject);

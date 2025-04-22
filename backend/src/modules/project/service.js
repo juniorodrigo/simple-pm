@@ -1,0 +1,195 @@
+import prisma from '../../services/prisma.service.js';
+
+// Función auxiliar para añadir métricas adicionales a un proyecto
+const enhanceProject = async (project) => {
+	// Obtener el conteo de actividades
+	const activitiesCount = await prisma.projectActivity.count({
+		where: { projectId: project.id },
+	});
+
+	// Calcular el porcentaje de progreso
+	const completedActivities = await prisma.projectActivity.count({
+		where: {
+			projectId: project.id,
+			status: 'completed',
+		},
+	});
+
+	const progressPercentage = activitiesCount > 0 ? Math.round((completedActivities / activitiesCount) * 100) : 0;
+
+	// Extraer información de categoría
+	const categoryColor = project.category?.color || '';
+	const categoryName = project.category?.name || '';
+
+	// Combinar todos los datos
+	return {
+		...project,
+		activitiesCount,
+		progressPercentage,
+		categoryColor,
+		categoryName,
+	};
+};
+
+const getProjects = async () => {
+	const projects = await prisma.project.findMany({
+		include: {
+			category: true,
+			manager: {
+				select: {
+					id: true,
+					name: true,
+					lastname: true,
+					username: true,
+					email: true,
+					role: true,
+					isActive: true,
+				},
+			},
+			ProjectMember: {
+				include: {
+					user: {
+						select: {
+							id: true,
+							name: true,
+							lastname: true,
+							username: true,
+							email: true,
+							role: true,
+							isActive: true,
+						},
+					},
+				},
+			},
+		},
+	});
+
+	// Enriquecer cada proyecto con métricas adicionales
+	const enhancedProjects = await Promise.all(projects.map((project) => enhanceProject(project)));
+
+	return { success: true, data: enhancedProjects };
+};
+
+const createProject = async (projectData) => {
+	const { name, description, startDate, endDate, status, managerUserId, categoryId } = projectData;
+
+	const project = await prisma.project.create({
+		data: {
+			name,
+			description,
+			startDate: startDate ? new Date(startDate) : null,
+			endDate: endDate ? new Date(endDate) : null,
+			status,
+			managerUserId,
+			categoryId,
+		},
+		include: {
+			category: true,
+			manager: {
+				select: {
+					id: true,
+					name: true,
+					lastname: true,
+					username: true,
+					email: true,
+					role: true,
+					isActive: true,
+				},
+			},
+		},
+	});
+
+	// Enriquecer el proyecto con métricas adicionales
+	const enhancedProject = await enhanceProject(project);
+
+	return { success: true, data: enhancedProject };
+};
+
+const updateProject = async (projectId, projectData) => {
+	const { name, description, startDate, endDate, status, managerUserId, categoryId } = projectData;
+
+	// Verificar si el proyecto existe
+	const existingProject = await prisma.project.findUnique({
+		where: { id: parseInt(projectId) },
+	});
+
+	if (!existingProject) throw new Error('El proyecto no existe');
+
+	// Verificar si existe la categoría
+	if (categoryId) {
+		const existingCategory = await prisma.projectCategory.findUnique({
+			where: { id: categoryId },
+		});
+
+		if (!existingCategory) throw new Error('La categoría seleccionada no existe');
+	}
+
+	// Verificar si existe el usuario manager
+	if (managerUserId) {
+		const existingManager = await prisma.user.findUnique({
+			where: { id: managerUserId },
+		});
+
+		if (!existingManager) throw new Error('El usuario manager no existe');
+	}
+
+	const updatedProject = await prisma.project.update({
+		where: { id: parseInt(projectId) },
+		data: {
+			name,
+			description,
+			startDate: startDate ? new Date(startDate) : undefined,
+			endDate: endDate ? new Date(endDate) : undefined,
+			status,
+			managerUserId,
+			categoryId,
+		},
+		include: {
+			category: true,
+			manager: {
+				select: {
+					id: true,
+					name: true,
+					lastname: true,
+					username: true,
+					email: true,
+					role: true,
+					isActive: true,
+				},
+			},
+		},
+	});
+
+	// Enriquecer el proyecto actualizado con métricas adicionales
+	const enhancedProject = await enhanceProject(updatedProject);
+
+	return { success: true, data: enhancedProject };
+};
+
+const deleteProject = async (projectId) => {
+	// Verificar si el proyecto existe
+	const existingProject = await prisma.project.findUnique({
+		where: { id: parseInt(projectId) },
+	});
+
+	if (!existingProject) throw new Error('El proyecto no existe');
+
+	// Primero eliminar los miembros del proyecto para evitar restricciones de clave externa
+	await prisma.projectMember.deleteMany({
+		where: { projectId: parseInt(projectId) },
+	});
+
+	// Ahora eliminar el proyecto
+	await prisma.project.delete({
+		where: { id: parseInt(projectId) },
+	});
+
+	return { success: true };
+};
+
+export const Service = {
+	getProjects,
+	createProject,
+	updateProject,
+	deleteProject,
+};

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -13,21 +13,45 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { CalendarIcon, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { UsersService } from "@/services/users.service";
+import { TagsService } from "@/services/tags.service";
+import { ProjectsService } from "@/services/project.service";
+import { User } from "@/app/types/user.type";
+import { Tag } from "@/app/types/tag.type";
+import { BaseProject } from "@/app/types/project.type";
 
 const formSchema = z.object({
 	name: z.string().min(2, {
 		message: "Project name must be at least 2 characters.",
 	}),
 	description: z.string().optional(),
-	startDate: z.date(),
-	endDate: z.date(),
-	manager: z.string().optional(),
+	startDate: z.date().optional(),
+	endDate: z.date().optional(),
+	managerUserId: z.string().optional(),
+	categoryId: z.string().optional(),
 });
 
 export default function CreateProjectForm() {
-	const [selectedTags, setSelectedTags] = useState<string[]>([]);
+	const [users, setUsers] = useState<User[]>([]);
+	const [availableTags, setAvailableTags] = useState<Tag[]>([]);
+
+	useEffect(() => {
+		const loadData = async () => {
+			const usersResponse = await UsersService.getUsers();
+			const tagsResponse = await TagsService.getTags();
+
+			if (usersResponse.success && usersResponse.data) {
+				setUsers(usersResponse.data);
+			}
+
+			if (tagsResponse.success && tagsResponse.data) {
+				setAvailableTags(tagsResponse.data);
+			}
+		};
+
+		loadData();
+	}, []);
 
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
@@ -36,36 +60,33 @@ export default function CreateProjectForm() {
 			description: "",
 			startDate: new Date(),
 			endDate: new Date(),
-			manager: "",
+			managerUserId: "",
+			categoryId: "",
 		},
 	});
 
-	const onSubmit = (values: z.infer<typeof formSchema>) => {
-		console.log({ ...values, tags: selectedTags });
-		// Here you would save the project to your backend
-	};
+	const onSubmit = async (values: z.infer<typeof formSchema>) => {
+		const projectData = {
+			...values,
+			startDate: values.startDate || null,
+			endDate: values.endDate || null,
+		};
 
-	const availableTags = [
-		{ id: "1", name: "Infrastructure", color: "blue" },
-		{ id: "2", name: "Development", color: "green" },
-		{ id: "3", name: "Maintenance", color: "yellow" },
-		{ id: "4", name: "Critical", color: "red" },
-		{ id: "5", name: "Low Priority", color: "gray" },
-	];
+		const response = await ProjectsService.createProject(projectData as BaseProject);
 
-	const addTag = (tagId: string) => {
-		if (!selectedTags.includes(tagId)) {
-			setSelectedTags([...selectedTags, tagId]);
+		if (response.success) {
+			// Reset form and close dialog
+			form.reset();
+			// Aquí podrías añadir una notificación de éxito
+			window.location.reload(); // Recargar para ver el nuevo proyecto
+		} else {
+			// Aquí podrías añadir una notificación de error
+			console.error("Error creating project");
 		}
-	};
-
-	const removeTag = (tagId: string) => {
-		setSelectedTags(selectedTags.filter((id) => id !== tagId));
 	};
 
 	return (
 		<div className="space-y-4 p-4">
-			<h2 className="text-2xl font-bold">Create New Project</h2>
 			<Form {...form}>
 				<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 					<FormField
@@ -148,7 +169,7 @@ export default function CreateProjectForm() {
 
 					<FormField
 						control={form.control}
-						name="manager"
+						name="managerUserId"
 						render={({ field }) => (
 							<FormItem>
 								<FormLabel>Project Manager</FormLabel>
@@ -159,9 +180,11 @@ export default function CreateProjectForm() {
 										</SelectTrigger>
 									</FormControl>
 									<SelectContent>
-										<SelectItem value="user1">John Doe</SelectItem>
-										<SelectItem value="user2">Jane Smith</SelectItem>
-										<SelectItem value="user3">Robert Johnson</SelectItem>
+										{users.map((user) => (
+											<SelectItem key={user.id} value={user.id}>
+												{`${user.name} ${user.lastname}`}
+											</SelectItem>
+										))}
 									</SelectContent>
 								</Select>
 								<FormMessage />
@@ -169,35 +192,30 @@ export default function CreateProjectForm() {
 						)}
 					/>
 
-					<div className="space-y-2">
-						<FormLabel>Tags</FormLabel>
-						<div className="flex flex-wrap gap-2 mb-2">
-							{selectedTags.map((tagId) => {
-								const tag = availableTags.find((t) => t.id === tagId);
-								if (!tag) return null;
-								return (
-									<Badge key={tag.id} variant="outline" className={`bg-${tag.color}-100 text-${tag.color}-800 border-${tag.color}-200`}>
-										{tag.name}
-										<Button variant="ghost" size="sm" className="h-4 w-4 p-0 ml-1" onClick={() => removeTag(tag.id)}>
-											<X className="h-3 w-3" />
-										</Button>
-									</Badge>
-								);
-							})}
-						</div>
-						<Select onValueChange={(value) => addTag(value)}>
-							<SelectTrigger>
-								<SelectValue placeholder="Add tag" />
-							</SelectTrigger>
-							<SelectContent>
-								{availableTags.map((tag) => (
-									<SelectItem key={tag.id} value={tag.id} disabled={selectedTags.includes(tag.id)}>
-										{tag.name}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
+					<FormField
+						control={form.control}
+						name="categoryId"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Categoría</FormLabel>
+								<Select onValueChange={field.onChange} defaultValue={field.value}>
+									<FormControl>
+										<SelectTrigger>
+											<SelectValue placeholder="Seleccionar categoría" />
+										</SelectTrigger>
+									</FormControl>
+									<SelectContent>
+										{availableTags.map((tag) => (
+											<SelectItem key={tag.id} value={tag.id}>
+												{tag.name}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
 
 					<div className="flex justify-end space-x-2 pt-4">
 						<Button type="button" variant="outline">

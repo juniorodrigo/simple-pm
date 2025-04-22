@@ -68,10 +68,10 @@ model Project {
   completedAt   DateTime?       @db.Timestamp(6)
   updatedAt     DateTime?       @default(now()) @db.Timestamp(6)
   deletedAt     DateTime?       @db.Timestamp(6)
-  manageruserId String
+  managerUserId String
   categoryId    String
   category      ProjectCategory @relation(fields: [categoryId], references: [id])
-  manager       User            @relation(fields: [manageruserId], references: [id])
+  manager       User            @relation(fields: [managerUserId], references: [id])
   ProjectMember ProjectMember[]
 }
 
