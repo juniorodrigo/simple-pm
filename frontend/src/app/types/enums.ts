@@ -28,15 +28,10 @@ export enum Colors {
 	RED = "red",
 	GREEN = "green",
 	BLUE = "blue",
-	YELLOW = "yellow",
-	PURPLE = "purple",
-	ORANGE = "orange",
-	PINK = "pink",
-	BROWN = "brown",
+	AMBER = "amber",
+	VIOLET = "violet",
+	ROSE = "rose",
 	GRAY = "gray",
-	WHITE = "white",
-	CYAN = "cyan",
-	CORAL = "coral",
 }
 
 export enum ProjectStatus {

@@ -9,6 +9,14 @@ const getTags = async () => {
 const createTag = async (tag) => {
 	const { name, color } = tag;
 
+	const existingTag = await prisma.projectCategory.findFirst({
+		where: {
+			name,
+		},
+	});
+
+	if (existingTag) throw new Error('Ya existe un tag con ese nombre');
+
 	const newTag = await prisma.projectCategory.create({
 		data: {
 			name,

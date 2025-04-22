@@ -1,6 +1,4 @@
 import { Service } from './service.js';
-import bcrypt from 'bcrypt';
-
 const saltRounds = 10;
 
 //TODO: No se debe devolver la contraseña en los users o creación o updates
@@ -26,7 +24,7 @@ const createTag = async (req, res) => {
 		if (success) res.success(data, 'Tag creado correctamente');
 	} catch (error) {
 		console.log(error);
-		res.error(`Error al crear el tag: ${error.message}`);
+		res.error(`${error.message}`);
 	}
 };
 
