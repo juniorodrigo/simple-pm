@@ -16,6 +16,8 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import type { Stage } from "@/components/settings/stages-settings";
 
 const formSchema = z.object({
 	title: z.string().min(2, {
@@ -27,10 +29,29 @@ const formSchema = z.object({
 	startDate: z.date(),
 	dueDate: z.date(),
 	priority: z.string(),
+	stageId: z.string(),
 });
 
-export default function CreateActivityForm() {
+type CreateActivityModalProps = {
+	projectId?: string;
+	stages?: Stage[];
+	onClose: () => void;
+	onSuccess: (activity: any) => void;
+};
+
+export default function CreateActivityModal({ projectId, stages: providedStages, onClose, onSuccess }: CreateActivityModalProps) {
+	const { toast } = useToast();
 	const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+	// Use provided stages or fallback to default stages
+	const stages = providedStages || [
+		{ id: "1", name: "Planning", description: "Initial planning", color: "blue", order: 1 },
+		{ id: "2", name: "Architecture", description: "System architecture", color: "purple", order: 2 },
+		{ id: "3", name: "Backend", description: "Backend development", color: "green", order: 3 },
+		{ id: "4", name: "Frontend", description: "Frontend development", color: "pink", order: 4 },
+		{ id: "5", name: "Testing", description: "QA and testing", color: "yellow", order: 5 },
+		{ id: "6", name: "Deployment", description: "Deployment", color: "red", order: 6 },
+	];
 
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
@@ -42,12 +63,30 @@ export default function CreateActivityForm() {
 			startDate: new Date(),
 			dueDate: new Date(),
 			priority: "medium",
+			stageId: stages[0]?.id || "",
 		},
 	});
 
 	const onSubmit = (values: z.infer<typeof formSchema>) => {
-		console.log({ ...values, tags: selectedTags });
-		// Here you would save the activity to your backend
+		// Create a new activity with the form values
+		const newActivity = {
+			id: `a${Math.floor(Math.random() * 1000)}`,
+			...values,
+			tags: selectedTags,
+			projectId: projectId || "1",
+		};
+
+		// Call the onSuccess callback with the new activity
+		onSuccess(newActivity);
+
+		// Show a success toast
+		toast({
+			title: "Activity created",
+			description: "The activity has been created successfully.",
+		});
+
+		// Close the modal
+		onClose();
 	};
 
 	const availableTags = [
@@ -66,6 +105,27 @@ export default function CreateActivityForm() {
 
 	const removeTag = (tagId: string) => {
 		setSelectedTags(selectedTags.filter((id) => id !== tagId));
+	};
+
+	const getStageColorClass = (color: string) => {
+		switch (color) {
+			case "red":
+				return "bg-red-100 text-red-800 border-red-200";
+			case "green":
+				return "bg-green-100 text-green-800 border-green-200";
+			case "blue":
+				return "bg-blue-100 text-blue-800 border-blue-200";
+			case "yellow":
+				return "bg-yellow-100 text-yellow-800 border-yellow-200";
+			case "purple":
+				return "bg-purple-100 text-purple-800 border-purple-200";
+			case "pink":
+				return "bg-pink-100 text-pink-800 border-pink-200";
+			case "gray":
+				return "bg-gray-100 text-gray-800 border-gray-200";
+			default:
+				return "bg-gray-100 text-gray-800 border-gray-200";
+		}
 	};
 
 	return (
@@ -96,6 +156,35 @@ export default function CreateActivityForm() {
 								<FormControl>
 									<Textarea placeholder="Describe the activity" className="resize-none" {...field} />
 								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					<FormField
+						control={form.control}
+						name="stageId"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Stage</FormLabel>
+								<Select onValueChange={field.onChange} defaultValue={field.value}>
+									<FormControl>
+										<SelectTrigger>
+											<SelectValue placeholder="Select stage" />
+										</SelectTrigger>
+									</FormControl>
+									<SelectContent>
+										{stages.map((stage) => (
+											<SelectItem key={stage.id} value={stage.id}>
+												<div className="flex items-center">
+													<Badge variant="outline" className={getStageColorClass(stage.color)}>
+														{stage.name}
+													</Badge>
+												</div>
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
 								<FormMessage />
 							</FormItem>
 						)}
@@ -255,7 +344,7 @@ export default function CreateActivityForm() {
 					</div>
 
 					<div className="flex justify-end space-x-2 pt-4">
-						<Button type="button" variant="outline">
+						<Button type="button" variant="outline" onClick={onClose}>
 							Cancel
 						</Button>
 						<Button type="submit">Create Activity</Button>

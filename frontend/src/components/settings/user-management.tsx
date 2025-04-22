@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { User } from "@/app/types/user.type";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,66 +13,61 @@ import { Search, Edit, Check, UserPlus } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { UsersService } from "@/services/users.service";
+import { useToast } from "@/hooks/use-toast";
+import { Role } from "@/app/types/enums";
+import { RoleManagement } from "./role-management";
+import { UserFormModal } from "./modals/user-form-modal";
 
 // Define user type
-type User = {
+type DisplayUser = {
 	id: string;
 	name: string;
+	lastname: string;
+	username: string;
 	email: string;
-	role: "admin" | "editor" | "viewer";
+	role: Role;
 	status: "active" | "inactive";
-	lastActive?: string;
+	lastActive?: Date;
 };
 
 // Define role type with descriptions
-type Role = {
-	id: "admin" | "editor" | "viewer";
+type RoleDefinition = {
+	id: Role;
 	name: string;
 	description: string;
 	permissions: string[];
 };
 
 export default function UserManagement() {
-	// Mock data for users
-	const [users, setUsers] = useState<User[]>([
-		{
-			id: "1",
-			name: "John Doe",
-			email: "john.doe@example.com",
-			role: "admin",
-			status: "active",
-			lastActive: "2023-11-15T10:30:00",
-		},
-		{
-			id: "2",
-			name: "Jane Smith",
-			email: "jane.smith@example.com",
-			role: "editor",
-			status: "active",
-			lastActive: "2023-11-14T15:45:00",
-		},
-		{
-			id: "3",
-			name: "Robert Johnson",
-			email: "robert.johnson@example.com",
-			role: "viewer",
-			status: "active",
-			lastActive: "2023-11-10T09:15:00",
-		},
-		{
-			id: "4",
-			name: "Emily Davis",
-			email: "emily.davis@example.com",
-			role: "editor",
-			status: "inactive",
-			lastActive: "2023-10-25T11:20:00",
-		},
-	]);
+	const [users, setUsers] = useState<DisplayUser[]>([]);
+	const { toast } = useToast();
+	const [isLoading, setIsLoading] = useState(false);
+	const [userToDelete, setUserToDelete] = useState<DisplayUser | null>(null);
+
+	useEffect(() => {
+		const fetchUsers = async () => {
+			const response = await UsersService.getUsers();
+			const mappedUsers: DisplayUser[] = response.data.map((user: User) => ({
+				id: user.id,
+				name: user.name,
+				lastname: user.lastname,
+				username: user.username,
+				email: user.email,
+				role: user.role.toLowerCase() as Role,
+				status: user.isActive ? "active" : "inactive",
+				lastActive: user.lastActive || undefined,
+			}));
+			setUsers(mappedUsers);
+		};
+
+		fetchUsers();
+	}, []);
 
 	// Role definitions with permissions
-	const roles: Role[] = [
+	const roles: RoleDefinition[] = [
 		{
-			id: "admin",
+			id: Role.ADMIN,
 			name: "Administrador",
 			description: "Acceso completo a todas las funciones y configuraciones",
 			permissions: [
@@ -84,13 +80,13 @@ export default function UserManagement() {
 			],
 		},
 		{
-			id: "editor",
+			id: Role.EDITOR,
 			name: "Editor",
 			description: "Puede crear y editar proyectos y actividades",
 			permissions: ["Crear y gestionar proyectos", "Crear y gestionar actividades", "Ver todos los proyectos y actividades", "Gestionar etiquetas"],
 		},
 		{
-			id: "viewer",
+			id: Role.VIEWER,
 			name: "Visualizador",
 			description: "Acceso de solo lectura a proyectos y actividades",
 			permissions: ["Ver todos los proyectos y actividades"],
@@ -98,52 +94,156 @@ export default function UserManagement() {
 	];
 
 	const [searchQuery, setSearchQuery] = useState("");
-	const [editingUser, setEditingUser] = useState<User | null>(null);
-	const [newUser, setNewUser] = useState<Partial<User>>({
+	const [editingUser, setEditingUser] = useState<DisplayUser | null>(null);
+	const [newUser, setNewUser] = useState({
 		name: "",
+		lastname: "",
+		username: "",
 		email: "",
-		role: "viewer",
-		status: "active",
+		role: Role.EDITOR,
+		status: "active" as "active" | "inactive",
 	});
 	const [isAddingUser, setIsAddingUser] = useState(false);
 
 	// Filter users based on search query
 	const filteredUsers = users.filter((user) => user.name.toLowerCase().includes(searchQuery.toLowerCase()) || user.email.toLowerCase().includes(searchQuery.toLowerCase()));
 
+	const isValidEmail = (email: string) => {
+		return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+	};
+
 	// Handle adding a new user
-	const handleAddUser = () => {
-		if (!newUser.name || !newUser.email) return;
+	const handleAddUser = async () => {
+		if (!newUser.name || !newUser.email) {
+			toast({
+				variant: "destructive",
+				description: "Por favor complete todos los campos requeridos",
+			});
+			return;
+		}
 
-		const user: User = {
-			id: `${users.length + 1}`,
-			name: newUser.name,
-			email: newUser.email,
-			role: newUser.role as "admin" | "editor" | "viewer",
-			status: newUser.status as "active" | "inactive",
-			lastActive: new Date().toISOString(),
-		};
+		if (!isValidEmail(newUser.email)) {
+			toast({
+				variant: "destructive",
+				description: "Por favor ingrese un correo electrónico válido",
+			});
+			return;
+		}
 
-		setUsers([...users, user]);
-		setNewUser({
-			name: "",
-			email: "",
-			role: "viewer",
-			status: "active",
-		});
-		setIsAddingUser(false);
+		setIsLoading(true);
+
+		try {
+			const response = await UsersService.createUser(newUser.username, newUser.name, newUser.lastname, newUser.email, newUser.role, newUser.status === "active");
+
+			if (response.success) {
+				const createdUser: DisplayUser = {
+					id: response.data.id,
+					name: `${response.data.name}`,
+					lastname: response.data.lastname,
+					username: response.data.username,
+					email: response.data.email,
+					role: response.data.role.toLowerCase() as Role,
+					status: response.data.isActive ? "active" : "inactive",
+					lastActive: new Date(),
+				};
+
+				setUsers([...users, createdUser]);
+				setNewUser({
+					name: "",
+					email: "",
+					lastname: "",
+					username: "",
+					role: Role.VIEWER,
+					status: "active",
+				});
+				setIsAddingUser(false);
+				toast({ description: "Usuario creado correctamente" });
+			} else {
+				toast({
+					variant: "destructive",
+					title: "Error al crear usuario",
+					description: response.error,
+				});
+			}
+		} catch (error) {
+			toast({
+				variant: "destructive",
+				title: "Error",
+				description: "Ocurrió un error al crear el usuario",
+			});
+		} finally {
+			setIsLoading(false);
+		}
 	};
 
 	// Handle updating a user
-	const handleUpdateUser = () => {
+	const handleUpdateUser = async () => {
 		if (!editingUser) return;
 
-		setUsers(users.map((user) => (user.id === editingUser.id ? editingUser : user)));
-		setEditingUser(null);
+		setIsLoading(true);
+		try {
+			const userToUpdate = {
+				id: editingUser.id,
+				name: editingUser.name,
+				lastname: editingUser.lastname,
+				username: editingUser.username,
+				email: editingUser.email,
+				role: editingUser.role,
+				isActive: editingUser.status === "active",
+				createdAt: null,
+				updatedAt: null,
+				deletedAt: null,
+				lastActive: null,
+				ProjectMember: undefined,
+			};
+
+			const response = await UsersService.updateUser(editingUser.id, userToUpdate);
+
+			if (response.success) {
+				setUsers(
+					users.map((user) =>
+						user.id === editingUser.id
+							? {
+									...editingUser,
+									lastActive: new Date(),
+							  }
+							: user
+					)
+				);
+				setEditingUser(null); // Esto cerrará automáticamente el modal debido al onOpenChange
+				toast({ description: "Usuario actualizado correctamente" });
+			} else {
+				toast({
+					variant: "destructive",
+					title: "Error al actualizar usuario",
+					description: response.error || "No se pudo actualizar el usuario",
+				});
+			}
+		} catch (error) {
+			toast({
+				variant: "destructive",
+				title: "Error",
+				description: "Ocurrió un error al actualizar el usuario",
+			});
+		} finally {
+			setIsLoading(false);
+		}
 	};
 
 	// Handle deleting a user
-	const handleDeleteUser = (id: string) => {
-		setUsers(users.filter((user) => user.id !== id));
+	const handleDeleteUser = async (user: DisplayUser) => {
+		const response = await UsersService.deleteUser(user.id);
+		if (response.success) {
+			setUsers(users.filter((u) => u.id !== user.id));
+			toast({ description: "Usuario eliminado correctamente" });
+			setUserToDelete(null);
+		} else {
+			toast({
+				variant: "destructive",
+				title: "Error al eliminar usuario",
+				description: "No se pudo eliminar el usuario. Intente nuevamente.",
+			});
+		}
 	};
 
 	// Get role badge color
@@ -201,71 +301,7 @@ export default function UserManagement() {
 									Añadir Usuario
 								</Button>
 							</DialogTrigger>
-							<DialogContent>
-								<DialogHeader>
-									<DialogTitle>Añadir Nuevo Usuario</DialogTitle>
-									<DialogDescription>Añade un nuevo usuario al sistema y asígnale un rol</DialogDescription>
-								</DialogHeader>
-								<div className="space-y-4 py-4">
-									<div className="space-y-2">
-										<Label htmlFor="name">Nombre</Label>
-										<Input id="name" placeholder="Ingresa nombre de usuario" value={newUser.name} onChange={(e) => setNewUser({ ...newUser, name: e.target.value })} />
-									</div>
-									<div className="space-y-2">
-										<Label htmlFor="email">Correo electrónico</Label>
-										<Input id="email" type="email" placeholder="Ingresa correo electrónico" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} />
-									</div>
-									<div className="space-y-2">
-										<Label htmlFor="role">Rol</Label>
-										<Select
-											value={newUser.role}
-											onValueChange={(value) =>
-												setNewUser({
-													...newUser,
-													role: value as "admin" | "editor" | "viewer",
-												})
-											}
-										>
-											<SelectTrigger id="role">
-												<SelectValue placeholder="Seleccionar rol" />
-											</SelectTrigger>
-											<SelectContent>
-												{roles.map((role) => (
-													<SelectItem key={role.id} value={role.id}>
-														{role.name}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</div>
-									<div className="space-y-2">
-										<Label htmlFor="status">Estado</Label>
-										<Select
-											value={newUser.status}
-											onValueChange={(value) =>
-												setNewUser({
-													...newUser,
-													status: value as "active" | "inactive",
-												})
-											}
-										>
-											<SelectTrigger id="status">
-												<SelectValue placeholder="Seleccionar estado" />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectItem value="active">Activo</SelectItem>
-												<SelectItem value="inactive">Inactivo</SelectItem>
-											</SelectContent>
-										</Select>
-									</div>
-								</div>
-								<DialogFooter>
-									<Button variant="outline" onClick={() => setIsAddingUser(false)}>
-										Cancelar
-									</Button>
-									<Button onClick={handleAddUser}>Añadir Usuario</Button>
-								</DialogFooter>
-							</DialogContent>
+							<UserFormModal open={isAddingUser} onOpenChange={setIsAddingUser} roles={roles} user={newUser} onUserChange={setNewUser} onSubmit={handleAddUser} isLoading={isLoading} mode="create" />
 						</Dialog>
 					</div>
 
@@ -290,7 +326,7 @@ export default function UserManagement() {
 													<AvatarFallback>{getInitials(user.name)}</AvatarFallback>
 												</Avatar>
 												<div>
-													<div className="font-medium">{user.name}</div>
+													<div className="font-medium">{user.name + " " + user.lastname}</div>
 													<div className="text-sm text-muted-foreground">{user.email}</div>
 												</div>
 											</div>
@@ -318,99 +354,34 @@ export default function UserManagement() {
 														<DropdownMenuLabel>Acciones</DropdownMenuLabel>
 														<DropdownMenuSeparator />
 														<DialogTrigger asChild>
-															<DropdownMenuItem onClick={() => setEditingUser({ ...user })}>Editar Usuario</DropdownMenuItem>
+															<DropdownMenuItem
+																onClick={() => {
+																	setEditingUser({
+																		...user,
+																		name: user.name,
+																		lastname: user.lastname,
+																		username: user.username,
+																	});
+																}}
+															>
+																Editar Usuario
+															</DropdownMenuItem>
 														</DialogTrigger>
-														<DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDeleteUser(user.id)}>
+														<DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setUserToDelete(user)}>
 															Eliminar Usuario
 														</DropdownMenuItem>
 													</DropdownMenuContent>
 												</DropdownMenu>
-												<DialogContent>
-													<DialogHeader>
-														<DialogTitle>Editar Usuario</DialogTitle>
-														<DialogDescription>Actualizar información y rol del usuario</DialogDescription>
-													</DialogHeader>
-													{editingUser && (
-														<div className="space-y-4 py-4">
-															<div className="space-y-2">
-																<Label htmlFor="edit-name">Nombre</Label>
-																<Input
-																	id="edit-name"
-																	value={editingUser.name}
-																	onChange={(e) =>
-																		setEditingUser({
-																			...editingUser,
-																			name: e.target.value,
-																		})
-																	}
-																/>
-															</div>
-															<div className="space-y-2">
-																<Label htmlFor="edit-email">Correo electrónico</Label>
-																<Input
-																	id="edit-email"
-																	type="email"
-																	value={editingUser.email}
-																	onChange={(e) =>
-																		setEditingUser({
-																			...editingUser,
-																			email: e.target.value,
-																		})
-																	}
-																/>
-															</div>
-															<div className="space-y-2">
-																<Label htmlFor="edit-role">Rol</Label>
-																<Select
-																	value={editingUser.role}
-																	onValueChange={(value) =>
-																		setEditingUser({
-																			...editingUser,
-																			role: value as "admin" | "editor" | "viewer",
-																		})
-																	}
-																>
-																	<SelectTrigger id="edit-role">
-																		<SelectValue placeholder="Seleccionar rol" />
-																	</SelectTrigger>
-																	<SelectContent>
-																		{roles.map((role) => (
-																			<SelectItem key={role.id} value={role.id}>
-																				{role.name}
-																			</SelectItem>
-																		))}
-																	</SelectContent>
-																</Select>
-															</div>
-															<div className="space-y-2">
-																<Label htmlFor="edit-status">Estado</Label>
-																<Select
-																	value={editingUser.status}
-																	onValueChange={(value) =>
-																		setEditingUser({
-																			...editingUser,
-																			status: value as "active" | "inactive",
-																		})
-																	}
-																>
-																	<SelectTrigger id="edit-status">
-																		<SelectValue placeholder="Seleccionar estado" />
-																	</SelectTrigger>
-																	<SelectContent>
-																		<SelectItem value="active">Activo</SelectItem>
-																		<SelectItem value="inactive">Inactivo</SelectItem>
-																	</SelectContent>
-																</Select>
-															</div>
-														</div>
-													)}
-													<DialogFooter>
-														<Button variant="outline" onClick={() => setEditingUser(null)}>
-															Cancelar
-														</Button>
-														<Button onClick={handleUpdateUser}>Guardar Cambios</Button>
-													</DialogFooter>
-												</DialogContent>
+												<UserFormModal
+													open={!!editingUser}
+													onOpenChange={(open) => !open && setEditingUser(null)}
+													roles={roles}
+													user={editingUser || newUser}
+													onUserChange={setEditingUser}
+													onSubmit={handleUpdateUser}
+													isLoading={isLoading}
+													mode="edit"
+												/>
 											</Dialog>
 										</TableCell>
 									</TableRow>
@@ -428,40 +399,34 @@ export default function UserManagement() {
 				</CardContent>
 			</Card>
 
-			<Card>
-				<CardHeader>
-					<CardTitle>Gestión de Roles</CardTitle>
-					<CardDescription>Ver y entender los diferentes roles y sus permisos</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<div className="space-y-6">
-						{roles.map((role) => (
-							<div key={role.id} className="border rounded-lg p-4">
-								<div className="flex items-center justify-between mb-2">
-									<div className="flex items-center gap-2">
-										<Badge variant="outline" className={getRoleBadgeColor(role.id)}>
-											{role.name}
-										</Badge>
-										<span className="text-sm text-muted-foreground">{role.description}</span>
-									</div>
-									<Badge variant="outline">{users.filter((user) => user.role === role.id).length} usuarios</Badge>
-								</div>
-								<div className="mt-4">
-									<h4 className="text-sm font-medium mb-2">Permisos:</h4>
-									<ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
-										{role.permissions.map((permission, index) => (
-											<li key={index} className="flex items-center text-sm">
-												<Check className="h-4 w-4 mr-2 text-green-500" />
-												{permission}
-											</li>
-										))}
-									</ul>
-								</div>
-							</div>
-						))}
-					</div>
-				</CardContent>
-			</Card>
+			<RoleManagement
+				roles={roles}
+				userCounts={Object.values(Role).reduce(
+					(acc, role) => ({
+						...acc,
+						[role]: users.filter((user) => user.role === role).length,
+					}),
+					{} as Record<Role, number>
+				)}
+				getRoleBadgeColor={getRoleBadgeColor}
+			/>
+
+			<Dialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Confirmar eliminación</DialogTitle>
+						<DialogDescription>¿Está seguro que desea eliminar al usuario {userToDelete?.name}? Esta acción no se puede deshacer.</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button variant="outline" onClick={() => setUserToDelete(null)}>
+							Cancelar
+						</Button>
+						<Button variant="destructive" onClick={() => userToDelete && handleDeleteUser(userToDelete)}>
+							Eliminar
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }

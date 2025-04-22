@@ -37,8 +37,8 @@ export default function Sidebar() {
 			current: pathname === "/kanban",
 		},
 		{
-			name: "Gantt",
-			href: "/gantt",
+			name: "Línea de Tiempo",
+			href: "/timeline",
 			icon: GanttChartSquare,
 			current: pathname === "/gantt",
 		},

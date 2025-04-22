@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import router from './router.js';
+import responseMiddleware from './middlewares/response.js';
 
 const app = express();
 
@@ -11,6 +13,7 @@ app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(responseMiddleware);
 
 // Rutas
 app.get('/', (req, res) => {
@@ -25,5 +28,7 @@ app.use((err, req, res, next) => {
 		message: 'Ha ocurrido un error en el servidor',
 	});
 });
+
+app.use(router);
 
 export default app;

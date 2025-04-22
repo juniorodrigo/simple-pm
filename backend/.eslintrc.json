@@ -10,7 +10,7 @@
 	},
 	"rules": {
 		"no-console": "off",
-		"prettier/prettier": "error",
+		"prettier/prettier": "off",
 		"no-unused-vars": "off"
 	}
 }

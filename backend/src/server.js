@@ -1,5 +1,5 @@
-import app from "./app.js";
-import config from "./config/index.js";
+import app from './app.js';
+import config from './config/index.js';
 
 const server = app.listen(config.port, () => {
 	console.log(`Servidor corriendo en el puerto ${config.port}`);
@@ -7,10 +7,10 @@ const server = app.listen(config.port, () => {
 });
 
 // Manejo de señales para cerrar limpiamente
-process.on("SIGINT", () => {
-    console.log("Cerrando servidor...");
+process.on('SIGINT', () => {
+	console.log('Cerrando servidor...');
 	server.close(() => {
-		console.log("Servidor cerrado");
+		console.log('Servidor cerrado');
 		process.exit(0);
 	});
 });

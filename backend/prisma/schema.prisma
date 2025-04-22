@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -21,16 +20,16 @@ model MainSettings {
 }
 
 model User {
-  id            Int             @id @default(autoincrement())
+  id            String          @id @default(cuid())
   username      String          @unique
   email         String          @unique
   password      String
   name          String
-  lastName      String
-  role          Role            @default(user)
+  lastname      String
+  role          Role            @default(editor)
   createdAt     DateTime?       @default(now()) @db.Timestamp(6)
   updatedAt     DateTime?       @default(now()) @db.Timestamp(6)
-  isActive      Boolean         @default(true)
+  isActive      Boolean?        @default(true)
   deletedAt     DateTime?       @db.Timestamp(6)
   UserAction    UserAction[]
   Project       Project[]
@@ -39,7 +38,7 @@ model User {
 
 model UserAction {
   id        Int            @id @default(autoincrement())
-  userId    Int
+  userId    String
   createdAt DateTime?      @default(now()) @db.Timestamp(6)
   updatedAt DateTime?      @default(now()) @db.Timestamp(6)
   deletedAt DateTime?      @db.Timestamp(6)
@@ -69,7 +68,7 @@ model Project {
   completedAt   DateTime?       @db.Timestamp(6)
   updatedAt     DateTime?       @default(now()) @db.Timestamp(6)
   deletedAt     DateTime?       @db.Timestamp(6)
-  manageruserId Int
+  manageruserId String
   categoryId    String
   category      ProjectCategory @relation(fields: [categoryId], references: [id])
   manager       User            @relation(fields: [manageruserId], references: [id])
@@ -78,7 +77,7 @@ model Project {
 
 model ProjectMember {
   id        Int       @id @default(autoincrement())
-  userId    Int
+  userId    String
   projectId Int
   createdAt DateTime? @default(now()) @db.Timestamp(6)
   updatedAt DateTime? @default(now()) @db.Timestamp(6)
@@ -89,22 +88,37 @@ model ProjectMember {
 }
 
 model ProjectActivity {
-  id String @id @default(cuid())
+  id          String           @id @default(cuid())
+  name        String
+  description String
+  stageId     String
+  projectId   Int
+  status      ActivityStatus   @default(pending)
+  priority    ActivityPriority @default(medium)
+  assignedTo  Int
+  startDate   DateTime?        @db.Timestamp(6)
+  endDate     DateTime?        @db.Timestamp(6)
+
+  createdAt DateTime? @default(now()) @db.Timestamp(6)
+  updatedAt DateTime? @default(now()) @db.Timestamp(6)
+  deletedAt DateTime? @db.Timestamp(6)
 }
 
 model ProjectStage {
-  id          String         @id @default(cuid())
-  name        String
-  description String
-  startDate   DateTime?      @db.Timestamp(6)
-  endDate     DateTime?      @db.Timestamp(6)
-  status      ActivityStatus @default(pending)
+  id            String @id @default(cuid())
+  name          String
+  description   String
+  color         String
+  ordinalNumber Int
+
+  status ActivityStatus @default(pending)
 }
 
 // Enums
 enum ActivityStatus {
   pending
   in_progress
+  review
   completed
   cancelled
 }
@@ -116,7 +130,7 @@ enum ActivityPriority {
 }
 
 enum Role {
-  user
+  editor
   admin
   viewer
 }

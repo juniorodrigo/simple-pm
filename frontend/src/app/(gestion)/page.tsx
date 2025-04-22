@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { ArrowRight, Clock, FolderKanban, GanttChartSquare, KanbanSquare, Tag } from "lucide-react";
+import { ArrowRight, Clock, FolderKanban, GanttChartSquare, ListPlus } from "lucide-react";
 
 export default function Dashboard() {
 	// Mock data for dashboard
@@ -99,21 +99,21 @@ export default function Dashboard() {
 					</CardHeader>
 					<CardContent className="space-y-2">
 						<Button asChild variant="outline" className="w-full justify-start">
-							<Link href="/kanban">
-								<KanbanSquare className="mr-2 h-4 w-4" />
-								Kanban Board
+							<Link href="/projects">
+								<FolderKanban className="mr-2 h-4 w-4" />
+								Projects
 							</Link>
 						</Button>
 						<Button asChild variant="outline" className="w-full justify-start">
 							<Link href="/gantt">
 								<GanttChartSquare className="mr-2 h-4 w-4" />
-								Gantt Chart
+								Timeline Overview
 							</Link>
 						</Button>
 						<Button asChild variant="outline" className="w-full justify-start">
-							<Link href="/tags">
-								<Tag className="mr-2 h-4 w-4" />
-								Manage Tags
+							<Link href="/settings?tab=stages">
+								<ListPlus className="mr-2 h-4 w-4" />
+								Manage Stages
 							</Link>
 						</Button>
 					</CardContent>

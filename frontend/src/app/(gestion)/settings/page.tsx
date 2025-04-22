@@ -31,7 +31,6 @@ export default function SettingsPage() {
 					<TabsTrigger value="general">General</TabsTrigger>
 					<TabsTrigger value="users">Users & Roles</TabsTrigger>
 					<TabsTrigger value="tags">Tags</TabsTrigger>
-					{/* <TabsTrigger value="notifications">Notifications</TabsTrigger> */}
 				</TabsList>
 
 				<TabsContent value="general" className="space-y-4">
@@ -45,10 +44,6 @@ export default function SettingsPage() {
 				<TabsContent value="tags" className="space-y-4">
 					<TagsSettings />
 				</TabsContent>
-
-				{/* <TabsContent value="notifications" className="space-y-4">
-					<NotificationSettings />
-				</TabsContent> */}
 			</Tabs>
 		</div>
 	);
