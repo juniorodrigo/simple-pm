@@ -145,15 +145,10 @@ enum Colors {
   red
   green
   blue
-  yellow
-  purple
-  orange
-  pink
-  brown
+  amber
+  violet
+  rose
   gray
-  white
-  cyan
-  coral
 }
 
 enum ProjectStatus {

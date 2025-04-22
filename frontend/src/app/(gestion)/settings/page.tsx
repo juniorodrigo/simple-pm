@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UserManagement from "@/components/settings/user-management";
 import GeneralSettings from "@/components/settings/general-settings";
-// import NotificationSettings from "@/components/settings/notification-settings";
 import TagsSettings from "@/components/settings/tags-settings";
 
 export default function SettingsPage() {

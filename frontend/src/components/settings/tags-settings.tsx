@@ -30,9 +30,9 @@ export default function TagsSettings() {
 		{ name: "Rojo", value: "red" },
 		{ name: "Verde", value: "green" },
 		{ name: "Azul", value: "blue" },
-		{ name: "Amarillo", value: "yellow" },
-		{ name: "Púrpura", value: "purple" },
-		{ name: "Rosa", value: "pink" },
+		{ name: "Ámbar", value: "amber" },
+		{ name: "Violeta", value: "violet" },
+		{ name: "Rosa", value: "rose" },
 		{ name: "Gris", value: "gray" },
 	];
 
@@ -84,12 +84,12 @@ export default function TagsSettings() {
 				return "bg-green-100 text-green-800 border-green-200";
 			case "blue":
 				return "bg-blue-100 text-blue-800 border-blue-200";
-			case "yellow":
-				return "bg-yellow-100 text-yellow-800 border-yellow-200";
-			case "purple":
-				return "bg-purple-100 text-purple-800 border-purple-200";
-			case "pink":
-				return "bg-pink-100 text-pink-800 border-pink-200";
+			case "amber":
+				return "bg-amber-100 text-amber-800 border-amber-200";
+			case "violet":
+				return "bg-violet-100 text-violet-800 border-violet-200";
+			case "rose":
+				return "bg-rose-100 text-rose-800 border-rose-200";
 			case "gray":
 				return "bg-gray-100 text-gray-800 border-gray-200";
 			default:
@@ -120,7 +120,23 @@ export default function TagsSettings() {
 									{colors.map((color) => (
 										<SelectItem key={color.value} value={color.value}>
 											<div className="flex items-center">
-												<div className={`w-4 h-4 rounded-full mr-2 bg-${color.value}-500`} />
+												<div
+													className={`w-4 h-4 rounded-full mr-2 ${
+														color.value === "red"
+															? "bg-red-500"
+															: color.value === "green"
+															? "bg-green-500"
+															: color.value === "blue"
+															? "bg-blue-500"
+															: color.value === "amber"
+															? "bg-amber-500"
+															: color.value === "violet"
+															? "bg-violet-500"
+															: color.value === "rose"
+															? "bg-rose-500"
+															: "bg-gray-500"
+													}`}
+												/>
 												{color.name}
 											</div>
 										</SelectItem>
@@ -169,7 +185,23 @@ export default function TagsSettings() {
 												{colors.map((color) => (
 													<SelectItem key={color.value} value={color.value}>
 														<div className="flex items-center">
-															<div className={`w-4 h-4 rounded-full mr-2 bg-${color.value}-500`} />
+															<div
+																className={`w-4 h-4 rounded-full mr-2 ${
+																	color.value === "red"
+																		? "bg-red-500"
+																		: color.value === "green"
+																		? "bg-green-500"
+																		: color.value === "blue"
+																		? "bg-blue-500"
+																		: color.value === "amber"
+																		? "bg-amber-500"
+																		: color.value === "violet"
+																		? "bg-violet-500"
+																		: color.value === "rose"
+																		? "bg-rose-500"
+																		: "bg-gray-500"
+																}`}
+															/>
 															{color.name}
 														</div>
 													</SelectItem>
