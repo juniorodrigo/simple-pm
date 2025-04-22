@@ -1,0 +1,150 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Temporal
+model MainSettings {
+  id               Int    @id @default(autoincrement())
+  organizationName String @default("PowerSales")
+}
+
+model User {
+  id            Int             @id @default(autoincrement())
+  username      String          @unique
+  email         String          @unique
+  password      String
+  name          String
+  lastName      String
+  role          Role            @default(user)
+  createdAt     DateTime?       @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime?       @default(now()) @db.Timestamp(6)
+  isActive      Boolean         @default(true)
+  deletedAt     DateTime?       @db.Timestamp(6)
+  UserAction    UserAction[]
+  Project       Project[]
+  ProjectMember ProjectMember[]
+}
+
+model UserAction {
+  id        Int            @id @default(autoincrement())
+  userId    Int
+  createdAt DateTime?      @default(now()) @db.Timestamp(6)
+  updatedAt DateTime?      @default(now()) @db.Timestamp(6)
+  deletedAt DateTime?      @db.Timestamp(6)
+  type      UserActionTipe
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model ProjectCategory {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  createdAt DateTime? @default(now()) @db.Timestamp(6)
+  updatedAt DateTime? @default(now()) @db.Timestamp(6)
+  deletedAt DateTime? @db.Timestamp(6)
+  color     Colors    @default(blue)
+  Project   Project[]
+}
+
+model Project {
+  id            Int             @id @default(autoincrement())
+  name          String
+  description   String
+  startDate     DateTime?       @db.Timestamp(6)
+  endDate       DateTime?       @db.Timestamp(6)
+  status        ProjectStatus   @default(active)
+  createdAt     DateTime?       @default(now()) @db.Timestamp(6)
+  completedAt   DateTime?       @db.Timestamp(6)
+  updatedAt     DateTime?       @default(now()) @db.Timestamp(6)
+  deletedAt     DateTime?       @db.Timestamp(6)
+  manageruserId Int
+  categoryId    String
+  category      ProjectCategory @relation(fields: [categoryId], references: [id])
+  manager       User            @relation(fields: [manageruserId], references: [id])
+  ProjectMember ProjectMember[]
+}
+
+model ProjectMember {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  projectId Int
+  createdAt DateTime? @default(now()) @db.Timestamp(6)
+  updatedAt DateTime? @default(now()) @db.Timestamp(6)
+  deletedAt DateTime? @db.Timestamp(6)
+
+  user    User    @relation(fields: [userId], references: [id])
+  project Project @relation(fields: [projectId], references: [id])
+}
+
+model ProjectActivity {
+  id String @id @default(cuid())
+}
+
+model ProjectStage {
+  id          String         @id @default(cuid())
+  name        String
+  description String
+  startDate   DateTime?      @db.Timestamp(6)
+  endDate     DateTime?      @db.Timestamp(6)
+  status      ActivityStatus @default(pending)
+}
+
+// Enums
+enum ActivityStatus {
+  pending
+  in_progress
+  completed
+  cancelled
+}
+
+enum ActivityPriority {
+  low
+  medium
+  high
+}
+
+enum Role {
+  user
+  admin
+  viewer
+}
+
+enum UserActionTipe {
+  login
+  logout
+  create_project
+}
+
+enum Colors {
+  red
+  green
+  blue
+  yellow
+  purple
+  orange
+  pink
+  brown
+  gray
+  white
+  cyan
+  coral
+}
+
+enum ProjectStatus {
+  active
+  completed
+  on_hold
+  cancelled
+}
