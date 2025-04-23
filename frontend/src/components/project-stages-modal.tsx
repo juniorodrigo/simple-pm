@@ -6,54 +6,55 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import type { Stage } from "@/components/settings/stages-settings";
+import type { BaseStage } from "@/app/types/stage.type";
+import { Colors } from "@/app/types/enums";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Plus, Save, Trash, X } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 type ProjectStagesModalProps = {
-	projectId: string;
-	stages: Stage[];
+	projectId: number;
+	stages: BaseStage[];
 	onClose: () => void;
-	onSave: (stages: Stage[]) => void;
+	onSave: (stages: BaseStage[]) => void;
 };
 
 export default function ProjectStagesModal({ projectId, stages: initialStages, onClose, onSave }: ProjectStagesModalProps) {
 	const { toast } = useToast();
-	const [stages, setStages] = useState<Stage[]>(initialStages);
+	const [stages, setStages] = useState<BaseStage[]>(initialStages);
 	const [editingStage, setEditingStage] = useState<string | null>(null);
-	const [newStage, setNewStage] = useState({
+	const [newStage, setNewStage] = useState<Omit<BaseStage, "id">>({
 		name: "",
 		description: "",
-		color: "blue",
+		color: Colors.BLUE,
+		ordinalNumber: 0,
 	});
 
 	const colors = [
-		{ name: "Red", value: "red" },
-		{ name: "Green", value: "green" },
-		{ name: "Blue", value: "blue" },
-		{ name: "Yellow", value: "yellow" },
-		{ name: "Purple", value: "purple" },
-		{ name: "Pink", value: "pink" },
-		{ name: "Gray", value: "gray" },
+		{ name: "Red", value: Colors.RED },
+		{ name: "Green", value: Colors.GREEN },
+		{ name: "Blue", value: Colors.BLUE },
+		{ name: "Yellow", value: Colors.YELLOW },
+		{ name: "Purple", value: Colors.PURPLE },
+		{ name: "PINK", value: Colors.PINK },
+		{ name: "Gray", value: Colors.GRAY },
 	];
 
 	const handleAddStage = () => {
 		if (newStage.name.trim() === "") return;
 
-		const newStageObj: Stage = {
+		const newStageObj: BaseStage = {
+			...newStage,
 			id: `s${stages.length + 1}`,
-			name: newStage.name,
-			description: newStage.description,
-			color: newStage.color,
-			order: stages.length + 1,
+			ordinalNumber: stages.length + 1,
 		};
 
 		setStages([...stages, newStageObj]);
 		setNewStage({
 			name: "",
 			description: "",
-			color: "blue",
+			color: Colors.BLUE,
+			ordinalNumber: 0,
 		});
 
 		toast({
@@ -66,7 +67,7 @@ export default function ProjectStagesModal({ projectId, stages: initialStages, o
 		const stageToUpdate = stages.find((stage) => stage.id === id);
 		if (!stageToUpdate) return;
 
-		setStages(stages.map((stage) => (stage.id === id ? stageToUpdate : stage)));
+		setStages(stages.map((stage) => (stage.id === id ? { ...stageToUpdate, ordinalNumber: stage.ordinalNumber } : stage)));
 		setEditingStage(null);
 
 		toast({
@@ -123,7 +124,7 @@ export default function ProjectStagesModal({ projectId, stages: initialStages, o
 
 		// Update order values
 		newStages.forEach((stage, index) => {
-			stage.order = index + 1;
+			stage.ordinalNumber = index + 1;
 		});
 
 		setStages(newStages);
@@ -141,11 +142,6 @@ export default function ProjectStagesModal({ projectId, stages: initialStages, o
 
 	return (
 		<div className="space-y-6">
-			<div>
-				<h2 className="text-2xl font-bold">Manage Project Stages</h2>
-				<p className="text-muted-foreground">Create and organize stages for this project</p>
-			</div>
-
 			<div className="space-y-4">
 				<div className="space-y-2">
 					<Label htmlFor="stage-name">Stage Name</Label>
@@ -226,7 +222,7 @@ export default function ProjectStagesModal({ projectId, stages: initialStages, o
 								<>
 									<div className="flex items-center gap-4">
 										<div className="flex items-center">
-											<span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-secondary text-secondary-foreground font-medium text-sm mr-2">{stage.order}</span>
+											<span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-secondary text-secondary-foreground font-medium text-sm mr-2">{stage.ordinalNumber}</span>
 											<Badge variant="outline" className={getStageColorClass(stage.color)}>
 												{stage.name}
 											</Badge>
@@ -234,10 +230,10 @@ export default function ProjectStagesModal({ projectId, stages: initialStages, o
 										<span className="text-sm text-muted-foreground line-clamp-1">{stage.description}</span>
 									</div>
 									<div className="flex gap-1">
-										<Button size="sm" variant="ghost" onClick={() => moveStage(stage.id, "up")} disabled={stage.order === 1}>
+										<Button size="sm" variant="ghost" onClick={() => moveStage(stage.id, "up")} disabled={stage.ordinalNumber === 1}>
 											↑
 										</Button>
-										<Button size="sm" variant="ghost" onClick={() => moveStage(stage.id, "down")} disabled={stage.order === stages.length}>
+										<Button size="sm" variant="ghost" onClick={() => moveStage(stage.id, "down")} disabled={stage.ordinalNumber === stages.length}>
 											↓
 										</Button>
 										<Button size="sm" variant="ghost" onClick={() => setEditingStage(stage.id)}>
@@ -271,7 +267,7 @@ export default function ProjectStagesModal({ projectId, stages: initialStages, o
 				</div>
 			</div>
 
-			<div className="flex justify-end space-x-2 pt-4 border-t">
+			<div className="flex justify-end space-x-2 pt-2 ">
 				<Button variant="outline" onClick={onClose}>
 					Cancel
 				</Button>

@@ -1,22 +1,23 @@
 import { BaseActivity } from "./activity.type";
+import { BaseStage } from "./stage.type";
 import { BaseUser } from "./user.type";
 
 export type BaseProject = {
-	id?: string;
+	id: number;
 	name: string;
 	description?: string;
 	startDate: Date;
 	endDate: Date;
-	managerUserName?: string;
-	managerUserId?: string;
+	managerUserName: string; // Ahora requerido
+	managerUserId: string; // Ahora requerido
 	categoryName?: string;
 	categoryId?: string;
 	categoryColor?: string;
 	progressPercentage?: number;
 	activitiesCount?: number;
+	team: BaseUser[];
 };
 
 export type ExtendedProject = BaseProject & {
-	activities?: BaseActivity[];
-	team: BaseUser[];
+	stages?: BaseStage;
 };

@@ -91,24 +91,24 @@ model ProjectMember {
 }
 
 model ProjectActivity {
-  id            String           @id @default(cuid())
-  title         String
-  description   String
-  stageId       String
-  projectId     Int
-  status        ActivityStatus   @default(pending)
-  priority      ActivityPriority @default(medium)
-  managerUserId String
-  startDate     DateTime?        @db.Timestamp(6)
-  endDate       DateTime?        @db.Timestamp(6)
+  id               String           @id @default(cuid())
+  title            String
+  description      String
+  stageId          String
+  projectId        Int
+  status           ActivityStatus   @default(pending)
+  priority         ActivityPriority @default(medium)
+  assignedToUserId String
+  startDate        DateTime?        @db.Timestamp(6)
+  endDate          DateTime?        @db.Timestamp(6)
 
   createdAt DateTime? @default(now()) @db.Timestamp(6)
   updatedAt DateTime? @default(now()) @db.Timestamp(6)
   deletedAt DateTime? @db.Timestamp(6)
 
-  stage       ProjectStage @relation(fields: [stageId], references: [id])
-  project     Project      @relation(fields: [projectId], references: [id])
-  managerUser User         @relation(fields: [managerUserId], references: [id])
+  stage          ProjectStage @relation(fields: [stageId], references: [id])
+  project        Project      @relation(fields: [projectId], references: [id])
+  assignedToUser User         @relation(fields: [assignedToUserId], references: [id])
 }
 
 model ProjectStage {

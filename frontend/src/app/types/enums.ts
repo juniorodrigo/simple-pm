@@ -1,15 +1,15 @@
 export enum ActivityStatus {
-	PENDING = "pending",
-	IN_PROGRESS = "in_progress",
+	TODO = "todo",
+	IN_PROGRESS = "in-progress",
 	REVIEW = "review",
-	COMPLETED = "completed",
-	CANCELLED = "cancelled",
+	DONE = "done",
 }
 
 export enum ActivityPriority {
 	LOW = "low",
 	MEDIUM = "medium",
 	HIGH = "high",
+	CRITICAL = "critical",
 }
 
 export enum Role {
@@ -28,9 +28,9 @@ export enum Colors {
 	RED = "red",
 	GREEN = "green",
 	BLUE = "blue",
-	AMBER = "amber",
-	VIOLET = "violet",
-	ROSE = "rose",
+	YELLOW = "yellow",
+	PURPLE = "purple",
+	PINK = "pink",
 	GRAY = "gray",
 }
 

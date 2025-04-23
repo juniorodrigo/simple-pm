@@ -17,26 +17,33 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { Stage } from "@/components/settings/stages-settings";
+import type { BaseStage } from "@/app/types/stage.type";
+import { BaseActivity } from "@/app/types/activity.type";
+import { ActivityPriority, ActivityStatus } from "@/app/types/enums";
 
 const formSchema = z.object({
 	title: z.string().min(2, {
 		message: "Title must be at least 2 characters.",
 	}),
 	description: z.string().optional(),
-	status: z.string(),
-	assignee: z.string().optional(),
+	status: z.nativeEnum(ActivityStatus),
+	assignedToUser: z.object({
+		id: z.string(),
+		name: z.string(),
+		lastname: z.string(),
+		projectRole: z.string().optional(),
+	}),
 	startDate: z.date(),
-	dueDate: z.date(),
-	priority: z.string(),
+	endDate: z.date(),
+	priority: z.nativeEnum(ActivityPriority),
 	stageId: z.string(),
 });
 
 type CreateActivityModalProps = {
-	projectId?: string;
-	stages?: Stage[];
+	projectId?: number;
+	stages?: BaseStage[];
 	onClose: () => void;
-	onSuccess: (activity: any) => void;
+	onSuccess: (activity: BaseActivity) => void;
 };
 
 export default function CreateActivityModal({ projectId, stages: providedStages, onClose, onSuccess }: CreateActivityModalProps) {
@@ -58,34 +65,34 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 		defaultValues: {
 			title: "",
 			description: "",
-			status: "todo",
-			assignee: "",
+			status: ActivityStatus.TODO,
+			assignedToUser: {
+				id: "",
+				name: "",
+				lastname: "",
+				projectRole: "",
+			},
 			startDate: new Date(),
-			dueDate: new Date(),
-			priority: "medium",
+			endDate: new Date(),
+			priority: ActivityPriority.MEDIUM,
 			stageId: stages[0]?.id || "",
 		},
 	});
 
 	const onSubmit = (values: z.infer<typeof formSchema>) => {
-		// Create a new activity with the form values
-		const newActivity = {
+		const newActivity: BaseActivity = {
 			id: `a${Math.floor(Math.random() * 1000)}`,
 			...values,
-			tags: selectedTags,
-			projectId: projectId || "1",
+			projectId: projectId || 1,
 		};
 
-		// Call the onSuccess callback with the new activity
 		onSuccess(newActivity);
 
-		// Show a success toast
 		toast({
 			title: "Activity created",
 			description: "The activity has been created successfully.",
 		});
 
-		// Close the modal
 		onClose();
 	};
 
@@ -130,7 +137,6 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 
 	return (
 		<div className="space-y-4 p-4">
-			<h2 className="text-2xl font-bold">Create New Activity</h2>
 			<Form {...form}>
 				<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 					<FormField
@@ -174,15 +180,17 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 										</SelectTrigger>
 									</FormControl>
 									<SelectContent>
-										{stages.map((stage) => (
-											<SelectItem key={stage.id} value={stage.id}>
-												<div className="flex items-center">
-													<Badge variant="outline" className={getStageColorClass(stage.color)}>
-														{stage.name}
-													</Badge>
-												</div>
-											</SelectItem>
-										))}
+										{stages
+											.filter((stage) => stage.id)
+											.map((stage) => (
+												<SelectItem key={stage.id} value={stage.id!}>
+													<div className="flex items-center">
+														<Badge variant="outline" className={getStageColorClass(stage.color)}>
+															{stage.name}
+														</Badge>
+													</div>
+												</SelectItem>
+											))}
 									</SelectContent>
 								</Select>
 								<FormMessage />
@@ -204,10 +212,10 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 											</SelectTrigger>
 										</FormControl>
 										<SelectContent>
-											<SelectItem value="todo">To Do</SelectItem>
-											<SelectItem value="in-progress">In Progress</SelectItem>
-											<SelectItem value="review">Review</SelectItem>
-											<SelectItem value="done">Done</SelectItem>
+											<SelectItem value={ActivityStatus.TODO}>To Do</SelectItem>
+											<SelectItem value={ActivityStatus.IN_PROGRESS}>In Progress</SelectItem>
+											<SelectItem value={ActivityStatus.REVIEW}>Review</SelectItem>
+											<SelectItem value={ActivityStatus.DONE}>Done</SelectItem>
 										</SelectContent>
 									</Select>
 									<FormMessage />
@@ -228,10 +236,10 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 											</SelectTrigger>
 										</FormControl>
 										<SelectContent>
-											<SelectItem value="low">Low</SelectItem>
-											<SelectItem value="medium">Medium</SelectItem>
-											<SelectItem value="high">High</SelectItem>
-											<SelectItem value="critical">Critical</SelectItem>
+											<SelectItem value={ActivityPriority.LOW}>Low</SelectItem>
+											<SelectItem value={ActivityPriority.MEDIUM}>Medium</SelectItem>
+											<SelectItem value={ActivityPriority.HIGH}>High</SelectItem>
+											<SelectItem value={ActivityPriority.CRITICAL}>Critical</SelectItem>
 										</SelectContent>
 									</Select>
 									<FormMessage />
@@ -242,11 +250,22 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 
 					<FormField
 						control={form.control}
-						name="assignee"
+						name="assignedToUser"
 						render={({ field }) => (
 							<FormItem>
 								<FormLabel>Assignee</FormLabel>
-								<Select onValueChange={field.onChange} defaultValue={field.value}>
+								<Select
+									onValueChange={(value) => {
+										const selectedUser = {
+											id: value,
+											name: value === "user1" ? "John" : value === "user2" ? "Jane" : "Robert",
+											lastname: value === "user1" ? "Doe" : value === "user2" ? "Smith" : "Johnson",
+											projectRole: "Member",
+										};
+										field.onChange(selectedUser);
+									}}
+									value={field.value.id}
+								>
 									<FormControl>
 										<SelectTrigger>
 											<SelectValue placeholder="Assign to" />
@@ -290,7 +309,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 
 						<FormField
 							control={form.control}
-							name="dueDate"
+							name="endDate"
 							render={({ field }) => (
 								<FormItem className="flex flex-col">
 									<FormLabel>Due Date</FormLabel>

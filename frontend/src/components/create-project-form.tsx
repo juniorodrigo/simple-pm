@@ -20,6 +20,8 @@ import { ProjectsService } from "@/services/project.service";
 import { User } from "@/app/types/user.type";
 import { Tag } from "@/app/types/tag.type";
 import { BaseProject } from "@/app/types/project.type";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { useToast } from "@/components/ui/use-toast";
 
 const formSchema = z.object({
 	name: z.string().min(2, {
@@ -28,13 +30,18 @@ const formSchema = z.object({
 	description: z.string().optional(),
 	startDate: z.date().optional(),
 	endDate: z.date().optional(),
-	managerUserId: z.string().optional(),
+	teamMembers: z.array(z.string()).min(1, "Se requiere al menos un miembro en el equipo"),
+	managerUserId: z.string().refine((val) => val.length > 0, {
+		message: "Debes seleccionar un Project Manager del equipo",
+	}),
 	categoryId: z.string().optional(),
 });
 
 export default function CreateProjectForm() {
+	const { toast } = useToast();
 	const [users, setUsers] = useState<User[]>([]);
 	const [availableTags, setAvailableTags] = useState<Tag[]>([]);
+	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {
 		const loadData = async () => {
@@ -61,28 +68,46 @@ export default function CreateProjectForm() {
 			startDate: new Date(),
 			endDate: new Date(),
 			managerUserId: "",
+			teamMembers: [],
 			categoryId: "",
 		},
 	});
 
+	const watchTeamMembers = form.watch("teamMembers");
+	const availableManagers = users.filter((user) => watchTeamMembers.includes(user.id || ""));
+
 	const onSubmit = async (values: z.infer<typeof formSchema>) => {
-		const projectData = {
-			...values,
-			startDate: values.startDate || null,
-			endDate: values.endDate || null,
-		};
+		setLoading(true);
+		try {
+			const manager = users.find((u) => u.id === values.managerUserId);
+			const teamMembers = users.filter((u) => values.teamMembers.includes(u.id || ""));
 
-		const response = await ProjectsService.createProject(projectData as BaseProject);
+			const projectData = {
+				...values,
+				startDate: values.startDate || null,
+				endDate: values.endDate || null,
+				managerUserName: manager?.name,
+				team: teamMembers,
+			};
 
-		if (response.success) {
-			// Reset form and close dialog
-			form.reset();
-			// Aquí podrías añadir una notificación de éxito
-			window.location.reload(); // Recargar para ver el nuevo proyecto
-		} else {
-			// Aquí podrías añadir una notificación de error
+			const response = await ProjectsService.createProject(projectData as BaseProject);
+
+			if (response.success) {
+				toast({
+					title: "Proyecto creado con éxito",
+					variant: "default",
+				});
+				form.reset();
+				window.location.reload();
+			}
+		} catch (error) {
+			toast({
+				title: "Error al crear el proyecto",
+				variant: "destructive",
+			});
 			console.error("Error creating project");
 		}
+		setLoading(false);
 	};
 
 	return (
@@ -169,19 +194,46 @@ export default function CreateProjectForm() {
 
 					<FormField
 						control={form.control}
+						name="teamMembers"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Miembros del Equipo</FormLabel>
+								<MultiSelect
+									options={users.map((user) => ({
+										value: user.id || "",
+										label: `${user.name} ${user.lastname}`,
+									}))}
+									selected={field.value}
+									onChange={(value) => {
+										field.onChange(value);
+										// Reset manager if not in team anymore
+										const currentManager = form.getValues("managerUserId");
+										if (currentManager && !value.includes(currentManager)) {
+											form.setValue("managerUserId", "");
+										}
+									}}
+									placeholder="Primero selecciona los miembros del equipo"
+								/>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					<FormField
+						control={form.control}
 						name="managerUserId"
 						render={({ field }) => (
 							<FormItem>
 								<FormLabel>Project Manager</FormLabel>
-								<Select onValueChange={field.onChange} defaultValue={field.value}>
+								<Select onValueChange={field.onChange} value={field.value} disabled={watchTeamMembers.length === 0}>
 									<FormControl>
 										<SelectTrigger>
-											<SelectValue placeholder="Select project manager" />
+											<SelectValue placeholder={watchTeamMembers.length === 0 ? "Primero selecciona el equipo" : "Selecciona el Project Manager"} />
 										</SelectTrigger>
 									</FormControl>
 									<SelectContent>
-										{users.map((user) => (
-											<SelectItem key={user.id} value={user.id}>
+										{availableManagers.map((user) => (
+											<SelectItem key={user.id} value={user.id || ""}>
 												{`${user.name} ${user.lastname}`}
 											</SelectItem>
 										))}
@@ -221,7 +273,9 @@ export default function CreateProjectForm() {
 						<Button type="button" variant="outline">
 							Cancel
 						</Button>
-						<Button type="submit">Create Project</Button>
+						<Button type="submit" disabled={loading}>
+							{loading ? "Creando..." : "Crear Proyecto"}
+						</Button>
 					</div>
 				</form>
 			</Form>

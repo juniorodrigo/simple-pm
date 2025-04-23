@@ -71,7 +71,7 @@ const getProjects = async () => {
 };
 
 const createProject = async (projectData) => {
-	const { name, description, startDate, endDate, status, managerUserId, categoryId } = projectData;
+	const { name, description, startDate, endDate, status, managerUserId, categoryId, teamMembers } = projectData;
 
 	const project = await prisma.project.create({
 		data: {
@@ -98,6 +98,18 @@ const createProject = async (projectData) => {
 			},
 		},
 	});
+
+	const members = teamMembers.map((member) => {
+		const newMemberObject = { userId: member, projectId: project.id, role: 'member' };
+		if (member == managerUserId) newMemberObject.role = 'manager';
+		return newMemberObject;
+	});
+
+	const membersCreated = await prisma.projectMember.createMany({
+		data: members,
+	});
+
+	console.log('Miembros creados:', membersCreated);
 
 	// Enriquecer el proyecto con métricas adicionales
 	const enhancedProject = await enhanceProject(project);
