@@ -131,13 +131,13 @@ enum ActivityStatus {
   in_progress
   review
   completed
-  cancelled
 }
 
 enum ActivityPriority {
   low
   medium
   high
+  critical
 }
 
 enum Role {

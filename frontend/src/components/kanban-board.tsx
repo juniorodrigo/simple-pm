@@ -10,7 +10,8 @@ import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, KeyboardSensor, 
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { BaseActivity } from "@/app/types/activity.type";
 import { BaseStage } from "@/app/types/stage.type";
-import { ActivityPriority, ActivityStatus } from "@/app/types/enums";
+import { ActivityStatus } from "@/app/types/enums";
+import { getTagColorClass } from "@/lib/colors";
 
 type KanbanBoardProps = {
 	activities: BaseActivity[];
@@ -58,16 +59,42 @@ const getInitials = (name: string): string =>
 
 // Componente de contenido de tarjeta memoizado (separado de la lógica de arrastre)
 const ActivityCardContent = memo(({ activity, getPriorityColor, stages }: { activity: BaseActivity; getPriorityColor: (priority: string) => string; stages: BaseStage[] }) => {
-	// Precalcular valores para evitar cálculos en el render
 	const priorityClass = getPriorityColor(activity.priority);
 	const userInitials = getInitials(activity.assignedToUser.name + " " + activity.assignedToUser.lastname);
 	const dueDate = new Date(activity.endDate).toLocaleDateString();
 
 	// Encontrar el stage al que pertenece esta actividad
 	const activityStage = stages.find((s) => s.id === activity.stageId);
+
+	return (
+		<div className="space-y-2 h-full pl-3">
+			<div className="font-medium">{activity.title}</div>
+			<p className="text-sm text-muted-foreground line-clamp-2">{activity.description}</p>
+			<div className="flex items-center justify-between">
+				<div className="flex items-center gap-2">
+					<PriorityBadge priority={activity.priority} className={`rounded-md ${priorityClass}`} />
+					{activityStage && (
+						<Badge variant="outline" className={`text-xs rounded-full ${getTagColorClass(activityStage.color.toLowerCase())}`}>
+							{activityStage.name}
+						</Badge>
+					)}
+				</div>
+				<UserAvatar name={activity.assignedToUser.name + " " + activity.assignedToUser.lastname} initials={userInitials} />
+			</div>
+			<div className="flex items-center text-xs text-muted-foreground">
+				<CalendarClock className="mr-1 h-3 w-3" />
+				<span>Due: {dueDate}</span>
+			</div>
+		</div>
+	);
+});
+ActivityCardContent.displayName = "ActivityCardContent";
+
+// Componente de tarjeta de actividad optimizado
+const ActivityCard = memo(({ activity, getPriorityColor, stages }: { activity: BaseActivity; getPriorityColor: (priority: string) => string; stages: BaseStage[] }) => {
+	const activityStage = stages.find((s) => s.id === activity.stageId);
 	const stageColor = activityStage?.color || "";
 
-	// Convertir color de enum a valor CSS real
 	const getStageColorValue = (color: string) => {
 		switch (color.toLowerCase()) {
 			case "red":
@@ -92,33 +119,7 @@ const ActivityCardContent = memo(({ activity, getPriorityColor, stages }: { acti
 	const borderColor = activityStage ? getStageColorValue(activityStage.color) : undefined;
 
 	return (
-		<div className="space-y-2" style={{ borderLeft: borderColor ? `4px solid ${borderColor}` : undefined }}>
-			<div className="font-medium">{activity.title}</div>
-			<p className="text-sm text-muted-foreground line-clamp-2">{activity.description}</p>
-			<div className="flex items-center justify-between">
-				<div className="flex items-center gap-2">
-					<PriorityBadge priority={activity.priority} className={priorityClass} />
-					{activityStage && (
-						<Badge variant="outline" className={`text-xs bg-${stageColor.toLowerCase()}-100 text-${stageColor.toLowerCase()}-800 border-${stageColor.toLowerCase()}-200`}>
-							{activityStage.name}
-						</Badge>
-					)}
-				</div>
-				<UserAvatar name={activity.assignedToUser.name + " " + activity.assignedToUser.lastname} initials={userInitials} />
-			</div>
-			<div className="flex items-center text-xs text-muted-foreground">
-				<CalendarClock className="mr-1 h-3 w-3" />
-				<span>Due: {dueDate}</span>
-			</div>
-		</div>
-	);
-});
-ActivityCardContent.displayName = "ActivityCardContent";
-
-// Componente de tarjeta de actividad optimizado
-const ActivityCard = memo(({ activity, getPriorityColor, stages }: { activity: BaseActivity; getPriorityColor: (priority: string) => string; stages: BaseStage[] }) => {
-	return (
-		<Card className="mb-2 cursor-grab">
+		<Card className="mb-2 cursor-grab overflow-hidden" style={{ borderLeft: borderColor ? `4px solid ${borderColor}` : undefined }}>
 			<CardContent className="p-3">
 				<ActivityCardContent activity={activity} getPriorityColor={getPriorityColor} stages={stages} />
 			</CardContent>
@@ -281,16 +282,41 @@ const SortableItem = memo(({ activity, getPriorityColor, stages }: { activity: B
 		},
 	});
 
-	// Estilos para el arrastre
+	// Encontrar el stage y obtener el color
+	const activityStage = stages.find((s) => s.id === activity.stageId);
+	const getStageColorValue = (color: string) => {
+		switch (color.toLowerCase()) {
+			case "red":
+				return "#ef4444";
+			case "green":
+				return "#22c55e";
+			case "blue":
+				return "#3b82f6";
+			case "yellow":
+				return "#eab308";
+			case "purple":
+				return "#a855f7";
+			case "pink":
+				return "#ec4899";
+			case "gray":
+				return "#6b7280";
+			default:
+				return "#6b7280";
+		}
+	};
+
+	const borderColor = activityStage ? getStageColorValue(activityStage.color) : undefined;
+
 	const style = {
 		transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
 		transition,
 		opacity: isDragging ? 0.5 : 1,
 		zIndex: isDragging ? 1 : 0,
+		borderLeft: borderColor ? `4px solid ${borderColor}` : undefined,
 	};
 
 	return (
-		<Card ref={setNodeRef} style={style} className="mb-2 cursor-grab active:cursor-grabbing" {...attributes} {...listeners}>
+		<Card ref={setNodeRef} style={style} className="mb-2 cursor-grab active:cursor-grabbing overflow-hidden" {...attributes} {...listeners}>
 			<CardContent className="p-3">
 				<ActivityCardContent activity={activity} getPriorityColor={getPriorityColor} stages={stages} />
 			</CardContent>

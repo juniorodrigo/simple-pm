@@ -4,8 +4,9 @@ const getActivities = async (req, res) => {};
 
 const createActivity = async (req, res) => {
 	try {
-		const { title, description, status, priority, assignedToUserId, startDate, endDate } = req.body;
-		const requiredFields = { title, description, status, priority, assignedToUserId, startDate, endDate };
+		const { title, description, status, priority, assignedToUser, startDate, endDate } = req.body;
+
+		const requiredFields = { title, description, status, priority, assignedToUser, startDate, endDate };
 		const stageId = req.params.stageId;
 
 		if (Object.values(requiredFields).some((field) => !field)) {

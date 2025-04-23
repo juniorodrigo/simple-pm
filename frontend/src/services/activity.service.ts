@@ -29,9 +29,11 @@ const deleteActivity = async (activityId: string): Promise<ApiResponse> => {
 	}
 };
 
-const createActivity = async (projectId: string, activity: BaseActivity): Promise<ApiResponse> => {
+const createActivity = async (stageId: string, activity: BaseActivity): Promise<ApiResponse> => {
 	try {
-		const petition = await fetch(`/api/is/activities/${projectId}`, {
+		console.log("activity____________________", JSON.stringify(activity));
+
+		const petition = await fetch(`/api/is/activities/stage/${stageId}`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",

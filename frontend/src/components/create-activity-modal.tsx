@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -20,6 +20,9 @@ import { useToast } from "@/hooks/use-toast";
 import type { BaseStage } from "@/app/types/stage.type";
 import { BaseActivity } from "@/app/types/activity.type";
 import { ActivityPriority, ActivityStatus } from "@/app/types/enums";
+import { UsersService } from "@/services/users.service";
+import type { BaseUser } from "@/app/types/user.type";
+import { ActivitysService } from "@/services/activity.service";
 
 const formSchema = z.object({
 	title: z.string().min(2, {
@@ -40,7 +43,7 @@ const formSchema = z.object({
 });
 
 type CreateActivityModalProps = {
-	projectId?: number;
+	projectId: string;
 	stages?: BaseStage[];
 	onClose: () => void;
 	onSuccess: (activity: BaseActivity) => void;
@@ -48,7 +51,17 @@ type CreateActivityModalProps = {
 
 export default function CreateActivityModal({ projectId, stages: providedStages, onClose, onSuccess }: CreateActivityModalProps) {
 	const { toast } = useToast();
-	const [selectedTags, setSelectedTags] = useState<string[]>([]);
+	const [users, setUsers] = useState<BaseUser[]>([]);
+
+	useEffect(() => {
+		const loadUsers = async () => {
+			const response = await UsersService.getUsers();
+			if (response.success && response.data) {
+				setUsers(response.data);
+			}
+		};
+		loadUsers();
+	}, []);
 
 	// Use provided stages or fallback to default stages
 	const stages = providedStages || [
@@ -79,30 +92,28 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 		},
 	});
 
-	const onSubmit = (values: z.infer<typeof formSchema>) => {
+	const onSubmit = async (values: z.infer<typeof formSchema>) => {
 		const newActivity: BaseActivity = {
 			id: `a${Math.floor(Math.random() * 1000)}`,
 			...values,
 		};
 
-		onSuccess(newActivity);
+		const response = await ActivitysService.createActivity(values.stageId, newActivity);
 
-		toast({
-			title: "Activity created",
-			description: "The activity has been created successfully.",
-		});
-
-		onClose();
-	};
-
-	const addTag = (tagId: string) => {
-		if (!selectedTags.includes(tagId)) {
-			setSelectedTags([...selectedTags, tagId]);
+		if (response.success) {
+			onSuccess(newActivity);
+			toast({
+				title: "Activity created",
+				description: "The activity has been created successfully.",
+			});
+			onClose();
+		} else {
+			toast({
+				title: "Error",
+				description: "There was an error creating the activity.",
+				variant: "destructive",
+			});
 		}
-	};
-
-	const removeTag = (tagId: string) => {
-		setSelectedTags(selectedTags.filter((id) => id !== tagId));
 	};
 
 	const getStageColorClass = (color: string) => {
@@ -125,6 +136,19 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 				return "bg-gray-100 text-gray-800 border-gray-200";
 		}
 	};
+
+	const statusOptions = Object.entries(ActivityStatus).map(([key, value]) => ({
+		label: key
+			.split("_")
+			.map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+			.join(" "),
+		value: value,
+	}));
+
+	const priorityOptions = Object.entries(ActivityPriority).map(([key, value]) => ({
+		label: key.charAt(0) + key.slice(1).toLowerCase(),
+		value: value,
+	}));
 
 	return (
 		<div className="space-y-4 p-4">
@@ -203,10 +227,11 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 											</SelectTrigger>
 										</FormControl>
 										<SelectContent>
-											<SelectItem value={ActivityStatus.TODO}>To Do</SelectItem>
-											<SelectItem value={ActivityStatus.IN_PROGRESS}>In Progress</SelectItem>
-											<SelectItem value={ActivityStatus.REVIEW}>Review</SelectItem>
-											<SelectItem value={ActivityStatus.DONE}>Done</SelectItem>
+											{statusOptions.map(({ label, value }) => (
+												<SelectItem key={value} value={value}>
+													{label}
+												</SelectItem>
+											))}
 										</SelectContent>
 									</Select>
 									<FormMessage />
@@ -227,10 +252,11 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 											</SelectTrigger>
 										</FormControl>
 										<SelectContent>
-											<SelectItem value={ActivityPriority.LOW}>Low</SelectItem>
-											<SelectItem value={ActivityPriority.MEDIUM}>Medium</SelectItem>
-											<SelectItem value={ActivityPriority.HIGH}>High</SelectItem>
-											<SelectItem value={ActivityPriority.CRITICAL}>Critical</SelectItem>
+											{priorityOptions.map(({ label, value }) => (
+												<SelectItem key={value} value={value}>
+													{label}
+												</SelectItem>
+											))}
 										</SelectContent>
 									</Select>
 									<FormMessage />
@@ -247,13 +273,15 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 								<FormLabel>Assignee</FormLabel>
 								<Select
 									onValueChange={(value) => {
-										const selectedUser = {
-											id: value,
-											name: value === "user1" ? "John" : value === "user2" ? "Jane" : "Robert",
-											lastname: value === "user1" ? "Doe" : value === "user2" ? "Smith" : "Johnson",
-											projectRole: "Member",
-										};
-										field.onChange(selectedUser);
+										const selectedUser = users.find((user) => user.id === value);
+										if (selectedUser) {
+											field.onChange({
+												id: selectedUser.id || "",
+												name: selectedUser.name,
+												lastname: selectedUser.lastname,
+												projectRole: selectedUser.projectRole,
+											});
+										}
 									}}
 									value={field.value.id}
 								>
@@ -263,9 +291,11 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 										</SelectTrigger>
 									</FormControl>
 									<SelectContent>
-										<SelectItem value="user1">John Doe</SelectItem>
-										<SelectItem value="user2">Jane Smith</SelectItem>
-										<SelectItem value="user3">Robert Johnson</SelectItem>
+										{users.map((user) => (
+											<SelectItem key={user.id} value={user.id || ""}>
+												{user.name} {user.lastname}
+											</SelectItem>
+										))}
 									</SelectContent>
 								</Select>
 								<FormMessage />

@@ -1,8 +1,8 @@
 export enum ActivityStatus {
-	TODO = "todo",
-	IN_PROGRESS = "in-progress",
+	TODO = "pending",
+	IN_PROGRESS = "in_progress",
 	REVIEW = "review",
-	DONE = "done",
+	DONE = "completed",
 }
 
 export enum ActivityPriority {

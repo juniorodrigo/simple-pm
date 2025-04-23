@@ -21,7 +21,17 @@ const enhanceProject = async (project) => {
 			categoryName,
 		};
 	else {
-		console.log('ERRORRRRRRRRRRRR');
+		const activitiesCount = activities.length;
+		const completedActivities = activities.filter((activity) => activity.status === 'completed').length;
+		const progressPercentage = Math.round((completedActivities / activitiesCount) * 100);
+
+		return {
+			...project,
+			activitiesCount,
+			progressPercentage,
+			categoryColor,
+			categoryName,
+		};
 	}
 };
 
@@ -84,7 +94,20 @@ const getProjectById = async (projectId) => {
 
 	const stages = await prisma.projectStage.findMany({
 		where: { projectId: parseInt(projectId) },
-		include: { ProjectActivity: true },
+		include: {
+			ProjectActivity: {
+				include: {
+					assignedToUser: {
+						select: {
+							id: true,
+							name: true,
+							lastname: true,
+							role: true,
+						},
+					},
+				},
+			},
+		},
 	});
 
 	const enhancedProject = await enhanceProject(project);
@@ -116,7 +139,7 @@ const getProjectById = async (projectId) => {
 			status: stage.status,
 			color: stage.color,
 			ordinalNumber: stage.ordinalNumber,
-			acivities: [],
+			activities: stage.ProjectActivity,
 		})),
 	};
 
