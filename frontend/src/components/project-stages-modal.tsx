@@ -1,16 +1,28 @@
 "use client";
 
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import type { BaseStage } from "@/app/types/stage.type";
-import { Colors } from "@/app/types/enums";
-import { Badge } from "@/components/ui/badge";
 import { Edit, Plus, Save, Trash, X } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { StagesService } from "@/services/stages.service";
+import { Badge } from "@/components/ui/badge";
+import { COLORS, getTagColorClass } from "@/lib/colors";
+import { Colors } from "@/app/types/enums";
+
+const newStageSchema = z.object({
+	name: z.string().min(1, "Name is required"),
+	description: z.string().min(1, "Description is required"),
+	color: z.nativeEnum(Colors),
+});
 
 type ProjectStagesModalProps = {
 	projectId: number;
@@ -20,161 +32,261 @@ type ProjectStagesModalProps = {
 };
 
 export default function ProjectStagesModal({ projectId, stages: initialStages, onClose, onSave }: ProjectStagesModalProps) {
+	// Aplanamos el array anidado si es necesario
+	const flattenedStages: BaseStage[] = Array.isArray(initialStages) ? (Array.isArray(initialStages[0]) ? initialStages[0] : initialStages) : [];
+
+	console.log("Stages procesados:", JSON.stringify(flattenedStages));
+
 	const { toast } = useToast();
-	const [stages, setStages] = useState<BaseStage[]>(initialStages);
+	const [stages, setStages] = useState<BaseStage[]>(flattenedStages);
 	const [editingStage, setEditingStage] = useState<string | null>(null);
-	const [newStage, setNewStage] = useState<Omit<BaseStage, "id">>({
-		name: "",
-		projectId: projectId,
-		description: "",
-		color: Colors.BLUE,
-		ordinalNumber: 0,
+	const [loading, setLoading] = useState<boolean>(false);
+
+	const form = useForm<z.infer<typeof newStageSchema>>({
+		resolver: zodResolver(newStageSchema),
+		defaultValues: {
+			name: "",
+			description: "",
+			color: Colors.BLUE,
+		},
 	});
 
-	const colors = [
-		{ name: "Red", value: Colors.RED },
-		{ name: "Green", value: Colors.GREEN },
-		{ name: "Blue", value: Colors.BLUE },
-		{ name: "Yellow", value: Colors.YELLOW },
-		{ name: "Purple", value: Colors.PURPLE },
-		{ name: "PINK", value: Colors.PINK },
-		{ name: "Gray", value: Colors.GRAY },
-	];
-
-	const handleAddStage = () => {
-		if (newStage.name.trim() === "") return;
+	const handleAddStage = async (values: z.infer<typeof newStageSchema>) => {
+		setLoading(true);
 
 		const newStageObj: BaseStage = {
-			...newStage,
-			id: `s${stages.length + 1}`,
+			...values,
+			id: `temp-${Date.now()}`,
+			projectId: projectId,
 			ordinalNumber: stages.length + 1,
 		};
 
-		setStages([...stages, newStageObj]);
-		setNewStage({
-			name: "",
-			projectId: projectId,
-			description: "",
-			color: Colors.BLUE,
-			ordinalNumber: 0,
-		});
+		try {
+			const response = await StagesService.createStage(String(projectId), newStageObj);
 
-		toast({
-			title: "Stage created",
-			description: `Stage "${newStage.name}" has been created successfully.`,
-		});
-	};
+			if (response.success) {
+				const createdStage = response.data;
+				setStages([...stages, createdStage]);
+				form.reset({
+					name: "",
+					description: "",
+					color: Colors.BLUE,
+				});
+				onSave([...stages, createdStage]);
 
-	const handleUpdateStage = (id: string) => {
-		const stageToUpdate = stages.find((stage) => stage.id === id);
-		if (!stageToUpdate) return;
-
-		setStages(stages.map((stage) => (stage.id === id ? { ...stageToUpdate, ordinalNumber: stage.ordinalNumber } : stage)));
-		setEditingStage(null);
-
-		toast({
-			title: "Stage updated",
-			description: `Stage "${stageToUpdate.name}" has been updated successfully.`,
-		});
-	};
-
-	const handleDeleteStage = (id: string) => {
-		const stageToDelete = stages.find((stage) => stage.id === id);
-		setStages(stages.filter((stage) => stage.id !== id));
-
-		toast({
-			title: "Stage deleted",
-			description: stageToDelete ? `Stage "${stageToDelete.name}" has been deleted.` : "Stage has been deleted.",
-		});
-	};
-
-	const getStageColorClass = (color: string) => {
-		switch (color) {
-			case "red":
-				return "bg-red-100 text-red-800 border-red-200";
-			case "green":
-				return "bg-green-100 text-green-800 border-green-200";
-			case "blue":
-				return "bg-blue-100 text-blue-800 border-blue-200";
-			case "yellow":
-				return "bg-yellow-100 text-yellow-800 border-yellow-200";
-			case "purple":
-				return "bg-purple-100 text-purple-800 border-purple-200";
-			case "pink":
-				return "bg-pink-100 text-pink-800 border-pink-200";
-			case "gray":
-				return "bg-gray-100 text-gray-800 border-gray-200";
-			default:
-				return "bg-gray-100 text-gray-800 border-gray-200";
+				toast({
+					title: "Stage created",
+					description: `Stage "${values.name}" has been created successfully.`,
+				});
+			} else {
+				toast({
+					title: "Error creating stage",
+					description: response.message || "An error occurred while creating the stage.",
+					variant: "destructive",
+				});
+			}
+		} catch (error) {
+			toast({
+				title: "Error",
+				description: "Failed to create stage. Please try again.",
+				variant: "destructive",
+			});
+		} finally {
+			setLoading(false);
 		}
 	};
 
-	const moveStage = (id: string, direction: "up" | "down") => {
+	const handleUpdateStage = async (id: string) => {
+		const stageToUpdate = stages.find((stage) => stage.id === id);
+		if (!stageToUpdate) return;
+
+		setLoading(true);
+
+		try {
+			const response = await StagesService.updateStage(id, stageToUpdate);
+
+			if (response.success) {
+				const updatedStages = stages.map((stage) => (stage.id === id ? response.data : stage));
+				setStages(updatedStages);
+				setEditingStage(null);
+				onSave(updatedStages);
+
+				toast({
+					title: "Stage updated",
+					description: `Stage "${stageToUpdate.name}" has been updated successfully.`,
+				});
+			} else {
+				toast({
+					title: "Error updating stage",
+					description: response.message || "An error occurred while updating the stage.",
+					variant: "destructive",
+				});
+			}
+		} catch (error) {
+			toast({
+				title: "Error",
+				description: "Failed to update stage. Please try again.",
+				variant: "destructive",
+			});
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const handleDeleteStage = async (id: string) => {
+		const stageToDelete = stages.find((stage) => stage.id === id);
+		if (!stageToDelete) return;
+
+		setLoading(true);
+
+		try {
+			const response = await StagesService.deleteStage(id);
+
+			if (response.success) {
+				const updatedStages = stages.filter((stage) => stage.id !== id);
+				setStages(updatedStages);
+				onSave(updatedStages);
+
+				toast({
+					title: "Stage deleted",
+					description: `Stage "${stageToDelete.name}" has been deleted.`,
+				});
+			} else {
+				toast({
+					title: "Error deleting stage",
+					description: response.message || "An error occurred while deleting the stage.",
+					variant: "destructive",
+				});
+			}
+		} catch (error) {
+			toast({
+				title: "Error",
+				description: "Failed to delete stage. Please try again.",
+				variant: "destructive",
+			});
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const moveStage = async (id: string, direction: "up" | "down") => {
 		const stageIndex = stages.findIndex((stage) => stage.id === id);
 		if (stageIndex === -1) return;
 
 		if (direction === "up" && stageIndex === 0) return;
 		if (direction === "down" && stageIndex === stages.length - 1) return;
 
-		const newStages = [...stages];
-		const targetIndex = direction === "up" ? stageIndex - 1 : stageIndex + 1;
+		setLoading(true);
 
-		// Swap the stages
-		const temp = newStages[stageIndex];
-		newStages[stageIndex] = newStages[targetIndex];
-		newStages[targetIndex] = temp;
+		try {
+			// Según las instrucciones:
+			// Para "subir" en la interfaz (reducir ordinalNumber) usamos behavior "down"
+			// Para "bajar" en la interfaz (aumentar ordinalNumber) usamos behavior "up"
+			const toggleBehavior = direction === "up" ? "down" : "up";
 
-		// Update order values
-		newStages.forEach((stage, index) => {
-			stage.ordinalNumber = index + 1;
-		});
+			const response = await StagesService.toggleStage(id, toggleBehavior);
 
-		setStages(newStages);
-	};
+			if (response.success) {
+				// Actualizamos con los datos devueltos por la API
+				if (response.data && Array.isArray(response.data)) {
+					setStages(response.data);
+					onSave(response.data);
+				} else {
+					// Actualización manual como fallback
+					const newStages = [...stages];
+					const targetIndex = direction === "up" ? stageIndex - 1 : stageIndex + 1;
 
-	const handleSaveStages = () => {
-		onSave(stages);
-		onClose();
+					// Swap the stages
+					const temp = newStages[stageIndex];
+					newStages[stageIndex] = newStages[targetIndex];
+					newStages[targetIndex] = temp;
 
-		toast({
-			title: "Stages saved",
-			description: "Project stages have been updated successfully.",
-		});
+					// Update order values
+					newStages.forEach((stage, index) => {
+						stage.ordinalNumber = index + 1;
+					});
+
+					setStages(newStages);
+					onSave(newStages);
+				}
+			} else {
+				toast({
+					title: "Error moving stage",
+					description: response.message || "An error occurred while changing stage order.",
+					variant: "destructive",
+				});
+			}
+		} catch (error) {
+			toast({
+				title: "Error",
+				description: "Failed to change stage order. Please try again.",
+				variant: "destructive",
+			});
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	return (
 		<div className="space-y-6">
-			<div className="space-y-4">
-				<div className="space-y-2">
-					<Label htmlFor="stage-name">Stage Name</Label>
-					<Input id="stage-name" value={newStage.name} onChange={(e) => setNewStage({ ...newStage, name: e.target.value })} placeholder="Enter stage name" />
-				</div>
+			<Form {...form}>
+				<form onSubmit={form.handleSubmit(handleAddStage)} className="space-y-4">
+					<FormField
+						control={form.control}
+						name="name"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Stage Name</FormLabel>
+								<FormControl>
+									<Input {...field} placeholder="Enter stage name" />
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
 
-				<div className="space-y-2">
-					<Label htmlFor="stage-description">Description</Label>
-					<Textarea id="stage-description" value={newStage.description} onChange={(e) => setNewStage({ ...newStage, description: e.target.value })} placeholder="Enter stage description" rows={3} />
-				</div>
+					<FormField
+						control={form.control}
+						name="description"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Description</FormLabel>
+								<FormControl>
+									<Textarea {...field} placeholder="Enter stage description" rows={3} />
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
 
-				<div className="space-y-2">
-					<Label htmlFor="stage-color">Color</Label>
-					<div className="flex gap-2 mt-1.5">
-						{colors.map((color) => (
-							<button
-								key={color.value}
-								type="button"
-								className={`w-6 h-6 rounded-full ${newStage.color === color.value ? "ring-2 ring-offset-2 ring-primary" : ""} bg-${color.value}-500`}
-								onClick={() => setNewStage({ ...newStage, color: color.value })}
-								title={color.name}
-							/>
-						))}
-					</div>
-				</div>
+					<FormField
+						control={form.control}
+						name="color"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Color</FormLabel>
+								<div className="flex gap-2 mt-1.5">
+									{COLORS.map((color) => (
+										<button
+											key={color.value}
+											type="button"
+											className={`w-6 h-6 rounded-full ${field.value === color.value ? "ring-2 ring-offset-2 ring-primary" : ""} bg-${color.value}-500`}
+											onClick={() => field.onChange(color.value)}
+											title={color.name}
+										/>
+									))}
+								</div>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
 
-				<Button onClick={handleAddStage} className="mt-2">
-					<Plus className="mr-2 h-4 w-4" />
-					Add Stage
-				</Button>
-			</div>
+					<Button type="submit" className="mt-2" disabled={loading}>
+						<Plus className="mr-2 h-4 w-4" />
+						Add Stage
+					</Button>
+				</form>
+			</Form>
 
 			<div className="border-t pt-4">
 				<h3 className="font-medium mb-2">Current Stages</h3>
@@ -199,23 +311,23 @@ export default function ProjectStagesModal({ projectId, stages: initialStages, o
 										rows={2}
 									/>
 									<div className="flex gap-2">
-										{colors.map((color) => (
+										{COLORS.map((color) => (
 											<button
 												key={color.value}
 												type="button"
 												className={`w-6 h-6 rounded-full ${stage.color === color.value ? "ring-2 ring-offset-2 ring-primary" : ""} bg-${color.value}-500`}
 												onClick={() => {
-													setStages(stages.map((s) => (s.id === stage.id ? { ...s, color: color.value } : s)));
+													setStages(stages.map((s) => (s.id === stage.id ? { ...s, color: color.value as Colors } : s)));
 												}}
 												title={color.name}
 											/>
 										))}
 									</div>
 									<div className="flex gap-2 pt-2">
-										<Button size="sm" onClick={() => handleUpdateStage(stage.id)}>
+										<Button size="sm" onClick={() => handleUpdateStage(stage.id)} disabled={loading}>
 											<Save className="h-4 w-4 mr-1" /> Save
 										</Button>
-										<Button size="sm" variant="outline" onClick={() => setEditingStage(null)}>
+										<Button size="sm" variant="outline" onClick={() => setEditingStage(null)} disabled={loading}>
 											<X className="h-4 w-4 mr-1" /> Cancel
 										</Button>
 									</div>
@@ -225,25 +337,25 @@ export default function ProjectStagesModal({ projectId, stages: initialStages, o
 									<div className="flex items-center gap-4">
 										<div className="flex items-center">
 											<span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-secondary text-secondary-foreground font-medium text-sm mr-2">{stage.ordinalNumber}</span>
-											<Badge variant="outline" className={getStageColorClass(stage.color)}>
+											<Badge variant="outline" className={getTagColorClass(stage.color)}>
 												{stage.name}
 											</Badge>
 										</div>
 										<span className="text-sm text-muted-foreground line-clamp-1">{stage.description}</span>
 									</div>
 									<div className="flex gap-1">
-										<Button size="sm" variant="ghost" onClick={() => moveStage(stage.id, "up")} disabled={stage.ordinalNumber === 1}>
+										<Button size="sm" variant="ghost" onClick={() => moveStage(stage.id, "up")} disabled={stage.ordinalNumber === 1 || loading}>
 											↑
 										</Button>
-										<Button size="sm" variant="ghost" onClick={() => moveStage(stage.id, "down")} disabled={stage.ordinalNumber === stages.length}>
+										<Button size="sm" variant="ghost" onClick={() => moveStage(stage.id, "down")} disabled={stage.ordinalNumber === stages.length || loading}>
 											↓
 										</Button>
-										<Button size="sm" variant="ghost" onClick={() => setEditingStage(stage.id)}>
+										<Button size="sm" variant="ghost" onClick={() => setEditingStage(stage.id)} disabled={loading}>
 											<Edit className="h-4 w-4" />
 										</Button>
 										<Dialog>
 											<DialogTrigger asChild>
-												<Button size="sm" variant="ghost">
+												<Button size="sm" variant="ghost" disabled={loading}>
 													<Trash className="h-4 w-4 text-destructive" />
 												</Button>
 											</DialogTrigger>
@@ -253,8 +365,10 @@ export default function ProjectStagesModal({ projectId, stages: initialStages, o
 													<DialogDescription>Are you sure you want to delete the stage &quot;{stage.name}&quot;? This action cannot be undone.</DialogDescription>
 												</DialogHeader>
 												<DialogFooter>
-													<Button variant="outline">Cancel</Button>
-													<Button variant="destructive" onClick={() => handleDeleteStage(stage.id)}>
+													<Button variant="outline" disabled={loading}>
+														Cancel
+													</Button>
+													<Button variant="destructive" onClick={() => handleDeleteStage(stage.id)} disabled={loading}>
 														Delete
 													</Button>
 												</DialogFooter>
@@ -269,11 +383,10 @@ export default function ProjectStagesModal({ projectId, stages: initialStages, o
 				</div>
 			</div>
 
-			<div className="flex justify-end space-x-2 pt-2 ">
-				<Button variant="outline" onClick={onClose}>
-					Cancel
+			<div className="flex justify-end space-x-2 pt-2">
+				<Button variant="outline" onClick={onClose} disabled={loading}>
+					Close
 				</Button>
-				<Button onClick={handleSaveStages}>Save Stages</Button>
 			</div>
 		</div>
 	);

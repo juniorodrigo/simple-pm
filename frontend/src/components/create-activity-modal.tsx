@@ -95,14 +95,6 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 		onClose();
 	};
 
-	const availableTags = [
-		{ id: "1", name: "Infrastructure", color: "blue" },
-		{ id: "2", name: "Development", color: "green" },
-		{ id: "3", name: "Maintenance", color: "yellow" },
-		{ id: "4", name: "Critical", color: "red" },
-		{ id: "5", name: "Low Priority", color: "gray" },
-	];
-
 	const addTag = (tagId: string) => {
 		if (!selectedTags.includes(tagId)) {
 			setSelectedTags([...selectedTags, tagId]);
@@ -329,36 +321,6 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 								</FormItem>
 							)}
 						/>
-					</div>
-
-					<div className="space-y-2">
-						<FormLabel>Tags</FormLabel>
-						<div className="flex flex-wrap gap-2 mb-2">
-							{selectedTags.map((tagId) => {
-								const tag = availableTags.find((t) => t.id === tagId);
-								if (!tag) return null;
-								return (
-									<Badge key={tag.id} variant="outline" className={`bg-${tag.color}-100 text-${tag.color}-800 border-${tag.color}-200`}>
-										{tag.name}
-										<Button variant="ghost" size="sm" className="h-4 w-4 p-0 ml-1" onClick={() => removeTag(tag.id)}>
-											<X className="h-3 w-3" />
-										</Button>
-									</Badge>
-								);
-							})}
-						</div>
-						<Select onValueChange={(value) => addTag(value)}>
-							<SelectTrigger>
-								<SelectValue placeholder="Add tag" />
-							</SelectTrigger>
-							<SelectContent>
-								{availableTags.map((tag) => (
-									<SelectItem key={tag.id} value={tag.id} disabled={selectedTags.includes(tag.id)}>
-										{tag.name}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
 					</div>
 
 					<div className="flex justify-end space-x-2 pt-4">

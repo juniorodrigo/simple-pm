@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -13,72 +13,68 @@ import { BaseActivity } from "@/app/types/activity.type";
 import { BaseStage } from "@/app/types/stage.type";
 import { ExtendedProject } from "@/app/types/project.type";
 import { ActivityPriority, ActivityStatus, Colors } from "@/app/types/enums";
+import { ProjectsService } from "@/services/project.service";
 
 export default function ProjectPage({ params }: { params: { id: string } }) {
+	// Obtener el id usando use() para desenvolver params
+	// @ts-expect-error: test
+	const { id } = use(params);
 	const [activeView, setActiveView] = useState<"kanban" | "gantt">("kanban");
 	const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
 	const [projectActivities, setProjectActivities] = useState<BaseActivity[]>([]);
 	const [isStagesModalOpen, setIsStagesModalOpen] = useState(false);
 	const [projectStages, setProjectStages] = useState<BaseStage[]>([]);
-
-	// Project data con tipos correctos
-	const project: ExtendedProject = {
-		id: 1,
-		name: "Infrastructure Upgrade",
-		description: "Server infrastructure upgrade and migration to cloud platform with improved security and performance.",
-		startDate: new Date("2023-10-01"),
-		endDate: new Date("2023-12-15"),
-		progressPercentage: 75,
-		managerUserId: "1",
-		managerUserName: "John Doe",
-		team: [
-			{ id: "2", name: "Jane", lastname: "Smith", projectRole: "Developer" },
-			{ id: "3", name: "Robert", lastname: "Johnson", projectRole: "Developer" },
-			{ id: "4", name: "Emily", lastname: "Davis", projectRole: "QA" },
-		],
-		stages: {
-			id: "stages-1",
-			name: "Project Stages",
-			description: "All project stages",
-			color: Colors.BLUE,
-			projectId: 1,
-			ordinalNumber: 1,
-			activities: [
-				{
-					id: "a1",
-					title: "Requirements Analysis",
-					description: "Gather and analyze system requirements",
-					status: ActivityStatus.DONE,
-					assignedToUser: { id: "2", name: "Jane", lastname: "Smith", projectRole: "Developer" },
-					startDate: new Date("2023-10-01"),
-					endDate: new Date("2023-10-10"),
-					priority: ActivityPriority.HIGH,
-					stageId: "s1",
-				},
-				{
-					id: "a2",
-					title: "Architecture Design",
-					description: "Design system architecture",
-					status: ActivityStatus.DONE,
-					assignedToUser: { id: "1", name: "John", lastname: "Doe", projectRole: "Manager" },
-					startDate: new Date("2023-10-11"),
-					endDate: new Date("2023-10-25"),
-					priority: ActivityPriority.HIGH,
-					stageId: "s2",
-				},
-			],
-		},
-	};
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+	const [project, setProject] = useState<ExtendedProject | null>(null);
 
 	useEffect(() => {
+		const loadProject = async () => {
+			setLoading(true);
+			try {
+				const response = await ProjectsService.getSingleProject(id);
+				if (response.success && response.data) {
+					setProject(response.data);
+					setError(null);
+				} else {
+					setError("No se pudo cargar el proyecto");
+				}
+			} catch (err) {
+				setError("Error al cargar los datos del proyecto");
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		loadProject();
+	}, [id]);
+
+	useEffect(() => {
+		if (!project) return;
+
 		// Solo actualizar si hay cambios reales
-		const newActivities = project.stages?.activities || [];
+		const newActivities = project.stages?.flatMap((stage) => stage.activities || []) || [];
 		if (JSON.stringify(newActivities) !== JSON.stringify(projectActivities)) {
 			setProjectActivities(newActivities);
 		}
 
-		// Actualizar stages
-		const newStages = project.stages ? [project.stages] : [];
+		// Actualizar stages - asegurándonos que sea un array plano
+		let newStages: BaseStage[] = [];
+		if (project.stages) {
+			// Si project.stages es un array, lo usamos directamente
+			if (Array.isArray(project.stages)) {
+				newStages = project.stages;
+			}
+			// Si project.stages tiene a su vez una propiedad stages que es un array
+			else if (Array.isArray(project.stages)) {
+				newStages = project.stages;
+			}
+			// Si stages es un objeto único, lo convertimos en array
+			else {
+				newStages = [project.stages];
+			}
+		}
+
 		if (JSON.stringify(newStages) !== JSON.stringify(projectStages)) {
 			setProjectStages(newStages);
 		}
@@ -89,8 +85,20 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 	};
 
 	const handleUpdateStages = (updatedStages: BaseStage[]) => {
+		// Actualizamos projectStages con los nuevos stages
 		setProjectStages(updatedStages);
+
+		// También actualizamos el objeto project para mantener todo sincronizado
+		if (project) {
+			setProject({
+				...project,
+				stages: updatedStages,
+			});
+		}
 	};
+
+	if (loading) return <div className="flex items-center justify-center h-screen">Cargando datos del proyecto...</div>;
+	if (error || !project) return <div className="flex items-center justify-center h-screen">Error: {error || "No se encontró el proyecto"}</div>;
 
 	return (
 		<div className="space-y-6">

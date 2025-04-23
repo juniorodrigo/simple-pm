@@ -10,6 +10,15 @@ const getProjects = async (): Promise<ApiResponse> => {
 	}
 };
 
+const getSingleProject = async (projectId: string): Promise<ApiResponse> => {
+	try {
+		const petition = await fetch(`/api/is/projects/${projectId}`, { method: "GET" });
+		return await petition.json();
+	} catch (error) {
+		return { success: false };
+	}
+};
+
 const deleteProject = async (projectId: string): Promise<ApiResponse> => {
 	try {
 		const petition = await fetch(`/api/is/projects/${projectId}`, {
@@ -61,4 +70,5 @@ export const ProjectsService = {
 	deleteProject,
 	createProject,
 	updateProject,
+	getSingleProject,
 };

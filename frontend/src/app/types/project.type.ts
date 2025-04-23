@@ -18,5 +18,5 @@ export type BaseProject = {
 };
 
 export type ExtendedProject = BaseProject & {
-	stages?: BaseStage;
+	stages?: BaseStage[];
 };
