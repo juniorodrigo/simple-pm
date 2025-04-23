@@ -1,4 +1,3 @@
-import { BaseActivity } from "./activity.type";
 import { BaseStage } from "./stage.type";
 import { BaseUser } from "./user.type";
 

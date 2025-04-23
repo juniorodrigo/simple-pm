@@ -1,8 +1,8 @@
 import { Service } from './service.js';
 
-const getProjects = async (req, res) => {
+const getStages = async (req, res) => {
 	try {
-		const { data } = await Service.getProjects();
+		const { data } = await Service.getStages();
 		res.success(data, 'Proyectos obtenidos correctamente');
 	} catch (error) {
 		console.error(error);
@@ -10,10 +10,10 @@ const getProjects = async (req, res) => {
 	}
 };
 
-const getProjectById = async (req, res) => {
+const getStageById = async (req, res) => {
 	try {
 		const projectId = req.params.id;
-		const { data } = await Service.getProjectById(projectId);
+		const { data } = await Service.getStageById(projectId);
 		res.success(data, 'Proyecto obtenido correctamente');
 	} catch (error) {
 		console.error(error);
@@ -21,7 +21,7 @@ const getProjectById = async (req, res) => {
 	}
 };
 
-const createProject = async (req, res) => {
+const createStage = async (req, res) => {
 	try {
 		const { name, description, managerUserId, categoryId } = req.body;
 		const requiredFields = { name, description, managerUserId, categoryId };
@@ -31,7 +31,7 @@ const createProject = async (req, res) => {
 		}
 
 		const projectData = { ...req.body };
-		const { success, data } = await Service.createProject(projectData);
+		const { success, data } = await Service.createStage(projectData);
 
 		if (success) res.success(data, 'Proyecto creado correctamente');
 	} catch (error) {
@@ -40,12 +40,12 @@ const createProject = async (req, res) => {
 	}
 };
 
-const updateProject = async (req, res) => {
+const updateStage = async (req, res) => {
 	try {
 		const projectId = req.params.id;
 		const projectData = { ...req.body };
 
-		const { success, data } = await Service.updateProject(projectId, projectData);
+		const { success, data } = await Service.updateStage(projectId, projectData);
 
 		if (success) res.success(data, 'Proyecto actualizado correctamente');
 	} catch (error) {
@@ -54,11 +54,11 @@ const updateProject = async (req, res) => {
 	}
 };
 
-const deleteProject = async (req, res) => {
+const deleteStage = async (req, res) => {
 	try {
 		const projectId = req.params.id;
 
-		const { success } = await Service.deleteProject(projectId);
+		const { success } = await Service.deleteStage(projectId);
 
 		if (success) res.success(null, 'Proyecto eliminado correctamente');
 	} catch (error) {
@@ -68,9 +68,9 @@ const deleteProject = async (req, res) => {
 };
 
 export const Controller = {
-	getProjects,
-	createProject,
-	updateProject,
-	deleteProject,
-	getProjectById,
+	getStages,
+	createStage,
+	updateStage,
+	deleteStage,
+	getStageById,
 };

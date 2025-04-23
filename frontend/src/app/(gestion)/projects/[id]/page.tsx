@@ -41,6 +41,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 			name: "Project Stages",
 			description: "All project stages",
 			color: Colors.BLUE,
+			projectId: 1,
 			ordinalNumber: 1,
 			activities: [
 				{
@@ -53,7 +54,6 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 					endDate: new Date("2023-10-10"),
 					priority: ActivityPriority.HIGH,
 					stageId: "s1",
-					projectId: 1,
 				},
 				{
 					id: "a2",
@@ -65,7 +65,6 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 					endDate: new Date("2023-10-25"),
 					priority: ActivityPriority.HIGH,
 					stageId: "s2",
-					projectId: 1,
 				},
 			],
 		},

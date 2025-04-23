@@ -6,7 +6,7 @@ export type BaseActivity = {
 	title: string;
 	description?: string;
 	stageId: string;
-	projectId: number;
+	// projectId: number;
 	status: ActivityStatus;
 	priority: ActivityPriority;
 	assignedToUser: BaseUser;

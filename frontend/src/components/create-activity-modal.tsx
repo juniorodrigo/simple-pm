@@ -83,7 +83,6 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 		const newActivity: BaseActivity = {
 			id: `a${Math.floor(Math.random() * 1000)}`,
 			...values,
-			projectId: projectId || 1,
 		};
 
 		onSuccess(newActivity);

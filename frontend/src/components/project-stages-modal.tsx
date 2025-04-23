@@ -25,6 +25,7 @@ export default function ProjectStagesModal({ projectId, stages: initialStages, o
 	const [editingStage, setEditingStage] = useState<string | null>(null);
 	const [newStage, setNewStage] = useState<Omit<BaseStage, "id">>({
 		name: "",
+		projectId: projectId,
 		description: "",
 		color: Colors.BLUE,
 		ordinalNumber: 0,
@@ -52,6 +53,7 @@ export default function ProjectStagesModal({ projectId, stages: initialStages, o
 		setStages([...stages, newStageObj]);
 		setNewStage({
 			name: "",
+			projectId: projectId,
 			description: "",
 			color: Colors.BLUE,
 			ordinalNumber: 0,

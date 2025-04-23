@@ -7,6 +7,7 @@ export type BaseStage = {
 	color: Colors;
 	ordinalNumber: number;
 	id: string;
+	projectId: number;
 
 	activitiesCount?: number;
 	activities?: BaseActivity[];

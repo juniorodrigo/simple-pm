@@ -1,31 +1,37 @@
 import prisma from '../../services/prisma.service.js';
 
 // Función auxiliar para añadir métricas adicionales a un proyecto
-const enhanceProject = async (project) => {
-	// // Extraer información de categoría
+const enhanceStage = async (project) => {
+	// Obtener el conteo de actividades
+	const activitiesCount = await prisma.projectActivity.count({
+		where: { projectId: project.id },
+	});
+
+	// Calcular el porcentaje de progreso
+	const completedActivities = await prisma.projectActivity.count({
+		where: {
+			projectId: project.id,
+			status: 'completed',
+		},
+	});
+
+	const progressPercentage = activitiesCount > 0 ? Math.round((completedActivities / activitiesCount) * 100) : 0;
+
+	// Extraer información de categoría
 	const categoryColor = project.category?.color || '';
 	const categoryName = project.category?.name || '';
 
-	//TODO: Mejorar con include activities
-	const stages = await prisma.projectStage.findMany({});
-	const activities = await prisma.projectActivity.findMany({
-		where: { stageId: { in: stages.map((stage) => stage.id) } },
-	});
-
-	if (activities.length === 0)
-		return {
-			...project,
-			activitiesCount: 0,
-			progressPercentage: 0,
-			categoryColor,
-			categoryName,
-		};
-	else {
-		console.log('ERRORRRRRRRRRRRR');
-	}
+	// Combinar todos los datos
+	return {
+		...project,
+		activitiesCount,
+		progressPercentage,
+		categoryColor,
+		categoryName,
+	};
 };
 
-const getProjects = async () => {
+const getStages = async () => {
 	const projects = await prisma.project.findMany({
 		include: {
 			category: true,
@@ -40,7 +46,7 @@ const getProjects = async () => {
 					isActive: true,
 				},
 			},
-			ProjectMember: {
+			StageMember: {
 				include: {
 					user: {
 						select: {
@@ -59,12 +65,12 @@ const getProjects = async () => {
 	});
 
 	// Enriquecer cada proyecto con métricas adicionales
-	const enhancedProjects = await Promise.all(projects.map((project) => enhanceProject(project)));
+	const enhancedStages = await Promise.all(projects.map((project) => enhanceStage(project)));
 
-	return { success: true, data: enhancedProjects };
+	return { success: true, data: enhancedStages };
 };
 
-const getProjectById = async (projectId) => {
+const getStageById = async (projectId) => {
 	const project = await prisma.project.findUnique({
 		where: { id: parseInt(projectId) },
 		include: {
@@ -74,6 +80,7 @@ const getProjectById = async (projectId) => {
 	});
 
 	if (!project) throw new Error('El proyecto no existe');
+	// console.log('Proyecto encontrado:', project);
 
 	const members = await prisma.projectMember.findMany({
 		where: { projectId: parseInt(projectId) },
@@ -82,16 +89,13 @@ const getProjectById = async (projectId) => {
 		},
 	});
 
-	const stages = await prisma.projectStage.findMany({
-		where: { projectId: parseInt(projectId) },
-		include: { ProjectActivity: true },
-	});
+	// console.log('Miembros encontrados:', members);
 
-	const enhancedProject = await enhanceProject(project);
+	const enhancedStage = await enhanceStage(project);
 
-	const { id, name, description, startDate, endDate, progressPercentage, category, manager } = enhancedProject;
+	const { id, name, description, startDate, endDate, progressPercentage, category, manager } = enhancedStage;
 
-	const refinedProject = {
+	const refinedStage = {
 		id,
 		name,
 		description,
@@ -109,21 +113,12 @@ const getProjectById = async (projectId) => {
 			lastname: member.user.lastname,
 			projectRole: member.role,
 		})),
-		stages: stages.map((stage) => ({
-			id: stage.id,
-			name: stage.name,
-			description: stage.description,
-			status: stage.status,
-			color: stage.color,
-			ordinalNumber: stage.ordinalNumber,
-			acivities: [],
-		})),
 	};
 
-	return { success: true, data: refinedProject };
+	return { success: true, data: refinedStage };
 };
 
-const createProject = async (projectData) => {
+const createStage = async (projectData) => {
 	const { name, description, startDate, endDate, status, managerUserId, categoryId, teamMembers } = projectData;
 
 	const project = await prisma.project.create({
@@ -162,34 +157,23 @@ const createProject = async (projectData) => {
 		data: members,
 	});
 
-	const stage = await prisma.projectStage.create({
-		data: {
-			name: 'Inicio',
-			description: 'Etapa inicial del proyecto',
-			status: 'pending',
-			color: 'blue',
-			ordinalNumber: 1,
-			projectId: project.id,
-		},
-	});
-
-	if (!stage) throw new Error('Error al crear el stage inicial del proyecto');
+	console.log('Miembros creados:', membersCreated);
 
 	// Enriquecer el proyecto con métricas adicionales
-	const enhancedProject = await enhanceProject(project);
+	const enhancedStage = await enhanceStage(project);
 
-	return { success: true, data: enhancedProject };
+	return { success: true, data: enhancedStage };
 };
 
-const updateProject = async (projectId, projectData) => {
+const updateStage = async (projectId, projectData) => {
 	const { name, description, startDate, endDate, status, managerUserId, categoryId } = projectData;
 
 	// Verificar si el proyecto existe
-	const existingProject = await prisma.project.findUnique({
+	const existingStage = await prisma.project.findUnique({
 		where: { id: parseInt(projectId) },
 	});
 
-	if (!existingProject) throw new Error('El proyecto no existe');
+	if (!existingStage) throw new Error('El proyecto no existe');
 
 	// Verificar si existe la categoría
 	if (categoryId) {
@@ -209,7 +193,7 @@ const updateProject = async (projectId, projectData) => {
 		if (!existingManager) throw new Error('El usuario manager no existe');
 	}
 
-	const updatedProject = await prisma.project.update({
+	const updatedStage = await prisma.project.update({
 		where: { id: parseInt(projectId) },
 		data: {
 			name,
@@ -237,18 +221,18 @@ const updateProject = async (projectId, projectData) => {
 	});
 
 	// Enriquecer el proyecto actualizado con métricas adicionales
-	const enhancedProject = await enhanceProject(updatedProject);
+	const enhancedStage = await enhanceStage(updatedStage);
 
-	return { success: true, data: enhancedProject };
+	return { success: true, data: enhancedStage };
 };
 
-const deleteProject = async (projectId) => {
+const deleteStage = async (projectId) => {
 	// Verificar si el proyecto existe
-	const existingProject = await prisma.project.findUnique({
+	const existingStage = await prisma.project.findUnique({
 		where: { id: parseInt(projectId) },
 	});
 
-	if (!existingProject) throw new Error('El proyecto no existe');
+	if (!existingStage) throw new Error('El proyecto no existe');
 
 	// Primero eliminar los miembros del proyecto para evitar restricciones de clave externa
 	await prisma.projectMember.deleteMany({
@@ -264,9 +248,9 @@ const deleteProject = async (projectId) => {
 };
 
 export const Service = {
-	getProjects,
-	createProject,
-	updateProject,
-	deleteProject,
-	getProjectById,
+	getStages,
+	createStage,
+	updateStage,
+	deleteStage,
+	getStageById,
 };
