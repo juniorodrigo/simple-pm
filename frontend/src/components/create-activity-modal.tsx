@@ -15,7 +15,6 @@ import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { BaseStage } from "@/app/types/stage.type";
 import { BaseActivity } from "@/app/types/activity.type";
@@ -23,19 +22,27 @@ import { ActivityPriority, ActivityStatus } from "@/app/types/enums";
 import { UsersService } from "@/services/users.service";
 import type { BaseUser } from "@/app/types/user.type";
 import { ActivitysService } from "@/services/activity.service";
+import { getTagColorClass } from "@/lib/colors";
 
 const formSchema = z.object({
 	title: z.string().min(2, {
-		message: "Title must be at least 2 characters.",
+		message: "El título debe tener al menos 2 caracteres.",
 	}),
-	description: z.string().optional(),
+	description: z.string().min(1, {
+		message: "La descripción es obligatoria.",
+	}),
 	status: z.nativeEnum(ActivityStatus),
-	assignedToUser: z.object({
-		id: z.string(),
-		name: z.string(),
-		lastname: z.string(),
-		projectRole: z.string().optional(),
-	}),
+	assignedToUser: z
+		.object({
+			id: z.string(),
+			name: z.string(),
+			lastname: z.string(),
+			projectRole: z.string().optional(),
+		})
+		.refine((data) => data.id !== "", {
+			message: "Debe asignar la actividad a un usuario",
+			path: ["id"],
+		}),
 	startDate: z.date(),
 	endDate: z.date(),
 	priority: z.nativeEnum(ActivityPriority),
@@ -43,7 +50,7 @@ const formSchema = z.object({
 });
 
 type CreateActivityModalProps = {
-	projectId: string;
+	projectId: number;
 	stages?: BaseStage[];
 	onClose: () => void;
 	onSuccess: (activity: BaseActivity) => void;
@@ -63,15 +70,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 		loadUsers();
 	}, []);
 
-	// Use provided stages or fallback to default stages
-	const stages = providedStages || [
-		{ id: "1", name: "Planning", description: "Initial planning", color: "blue", order: 1 },
-		{ id: "2", name: "Architecture", description: "System architecture", color: "purple", order: 2 },
-		{ id: "3", name: "Backend", description: "Backend development", color: "green", order: 3 },
-		{ id: "4", name: "Frontend", description: "Frontend development", color: "pink", order: 4 },
-		{ id: "5", name: "Testing", description: "QA and testing", color: "yellow", order: 5 },
-		{ id: "6", name: "Deployment", description: "Deployment", color: "red", order: 6 },
-	];
+	const stages = providedStages || [];
 
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
@@ -116,27 +115,6 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 		}
 	};
 
-	const getStageColorClass = (color: string) => {
-		switch (color) {
-			case "red":
-				return "bg-red-100 text-red-800 border-red-200";
-			case "green":
-				return "bg-green-100 text-green-800 border-green-200";
-			case "blue":
-				return "bg-blue-100 text-blue-800 border-blue-200";
-			case "yellow":
-				return "bg-yellow-100 text-yellow-800 border-yellow-200";
-			case "purple":
-				return "bg-purple-100 text-purple-800 border-purple-200";
-			case "pink":
-				return "bg-pink-100 text-pink-800 border-pink-200";
-			case "gray":
-				return "bg-gray-100 text-gray-800 border-gray-200";
-			default:
-				return "bg-gray-100 text-gray-800 border-gray-200";
-		}
-	};
-
 	const statusOptions = Object.entries(ActivityStatus).map(([key, value]) => ({
 		label: key
 			.split("_")
@@ -159,9 +137,9 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 						name="title"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Title</FormLabel>
+								<FormLabel>Título</FormLabel>
 								<FormControl>
-									<Input placeholder="Activity title" {...field} />
+									<Input placeholder="Título de la actividad" {...field} />
 								</FormControl>
 								<FormMessage />
 							</FormItem>
@@ -173,9 +151,9 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 						name="description"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Description</FormLabel>
+								<FormLabel>Descripción</FormLabel>
 								<FormControl>
-									<Textarea placeholder="Describe the activity" className="resize-none" {...field} />
+									<Textarea placeholder="Describe la actividad" className="resize-none" {...field} />
 								</FormControl>
 								<FormMessage />
 							</FormItem>
@@ -187,11 +165,11 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 						name="stageId"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Stage</FormLabel>
+								<FormLabel>Etapa</FormLabel>
 								<Select onValueChange={field.onChange} defaultValue={field.value}>
 									<FormControl>
 										<SelectTrigger>
-											<SelectValue placeholder="Select stage" />
+											<SelectValue placeholder="Selecciona la etapa" />
 										</SelectTrigger>
 									</FormControl>
 									<SelectContent>
@@ -200,7 +178,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 											.map((stage) => (
 												<SelectItem key={stage.id} value={stage.id!}>
 													<div className="flex items-center">
-														<Badge variant="outline" className={getStageColorClass(stage.color)}>
+														<Badge variant="outline" className={getTagColorClass(stage.color)}>
 															{stage.name}
 														</Badge>
 													</div>
@@ -219,7 +197,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 							name="status"
 							render={({ field }) => (
 								<FormItem>
-									<FormLabel>Status</FormLabel>
+									<FormLabel>Estado</FormLabel>
 									<Select onValueChange={field.onChange} defaultValue={field.value}>
 										<FormControl>
 											<SelectTrigger>
@@ -244,7 +222,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 							name="priority"
 							render={({ field }) => (
 								<FormItem>
-									<FormLabel>Priority</FormLabel>
+									<FormLabel>Prioridad</FormLabel>
 									<Select onValueChange={field.onChange} defaultValue={field.value}>
 										<FormControl>
 											<SelectTrigger>
@@ -268,9 +246,9 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 					<FormField
 						control={form.control}
 						name="assignedToUser"
-						render={({ field }) => (
+						render={({ field, fieldState }) => (
 							<FormItem>
-								<FormLabel>Assignee</FormLabel>
+								<FormLabel>Asignar a</FormLabel>
 								<Select
 									onValueChange={(value) => {
 										const selectedUser = users.find((user) => user.id === value);
@@ -287,7 +265,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 								>
 									<FormControl>
 										<SelectTrigger>
-											<SelectValue placeholder="Assign to" />
+											<SelectValue placeholder="Seleccionar usuario" />
 										</SelectTrigger>
 									</FormControl>
 									<SelectContent>
@@ -298,7 +276,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 										))}
 									</SelectContent>
 								</Select>
-								<FormMessage />
+								<FormMessage>{fieldState.error?.root?.message || fieldState.error?.message}</FormMessage>
 							</FormItem>
 						)}
 					/>
@@ -309,7 +287,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 							name="startDate"
 							render={({ field }) => (
 								<FormItem className="flex flex-col">
-									<FormLabel>Start Date</FormLabel>
+									<FormLabel>Fecha de Inicio</FormLabel>
 									<Popover>
 										<PopoverTrigger asChild>
 											<FormControl>
@@ -333,7 +311,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 							name="endDate"
 							render={({ field }) => (
 								<FormItem className="flex flex-col">
-									<FormLabel>Due Date</FormLabel>
+									<FormLabel>Fecha de Fin</FormLabel>
 									<Popover>
 										<PopoverTrigger asChild>
 											<FormControl>
@@ -355,9 +333,9 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 
 					<div className="flex justify-end space-x-2 pt-4">
 						<Button type="button" variant="outline" onClick={onClose}>
-							Cancel
+							Cancelar
 						</Button>
-						<Button type="submit">Create Activity</Button>
+						<Button type="submit">Crear Actividad</Button>
 					</div>
 				</form>
 			</Form>

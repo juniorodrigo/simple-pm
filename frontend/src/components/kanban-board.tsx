@@ -20,11 +20,11 @@ type KanbanBoardProps = {
 
 // Mapeo de prioridades a clases CSS (constante para evitar recálculos)
 const PRIORITY_COLORS = {
-	low: "bg-green-100 text-green-800 border-green-200",
-	medium: "bg-blue-100 text-blue-800 border-blue-200",
-	high: "bg-orange-100 text-orange-800 border-orange-200",
-	critical: "bg-red-100 text-red-800 border-red-200",
-	default: "bg-gray-100 text-gray-800 border-gray-200",
+	low: "bg-green-500 text-white",
+	medium: "bg-blue-500 text-white",
+	high: "bg-orange-500 text-white",
+	critical: "bg-red-500 text-white",
+	default: "bg-gray-500 text-white",
 };
 
 // Definir las columnas (lanes) basadas en ActivityStatus
@@ -72,9 +72,9 @@ const ActivityCardContent = memo(({ activity, getPriorityColor, stages }: { acti
 			<p className="text-sm text-muted-foreground line-clamp-2">{activity.description}</p>
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-2">
-					<PriorityBadge priority={activity.priority} className={`rounded-md ${priorityClass}`} />
+					<PriorityBadge priority={activity.priority} className={`text-xs px-2 py-0.5 font-medium shadow-sm ${priorityClass}`} />
 					{activityStage && (
-						<Badge variant="outline" className={`text-xs rounded-full ${getTagColorClass(activityStage.color.toLowerCase())}`}>
+						<Badge variant="outline" className={`text-[10px] px-2 py-0 border border-dashed bg-transparent hover:bg-transparent ${getTagColorClass(activityStage.color.toLowerCase())}`}>
 							{activityStage.name}
 						</Badge>
 					)}
@@ -93,7 +93,6 @@ ActivityCardContent.displayName = "ActivityCardContent";
 // Componente de tarjeta de actividad optimizado
 const ActivityCard = memo(({ activity, getPriorityColor, stages }: { activity: BaseActivity; getPriorityColor: (priority: string) => string; stages: BaseStage[] }) => {
 	const activityStage = stages.find((s) => s.id === activity.stageId);
-	const stageColor = activityStage?.color || "";
 
 	const getStageColorValue = (color: string) => {
 		switch (color.toLowerCase()) {

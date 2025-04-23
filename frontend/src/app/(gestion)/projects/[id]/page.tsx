@@ -130,8 +130,8 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 							New Activity
 						</Button>
 						<DialogContent className="sm:max-w-[600px]">
-							<DialogTitle>Crear Nueva Actividad</DialogTitle>
-							<DialogDescription>Create and organize activities for this project</DialogDescription>
+							<DialogTitle>Nueva Actividad</DialogTitle>
+							<DialogDescription>Crea una actividad para el proyecto</DialogDescription>
 
 							<CreateActivityModal projectId={project.id} stages={projectStages} onClose={() => setIsActivityModalOpen(false)} onSuccess={handleAddActivity} />
 						</DialogContent>
