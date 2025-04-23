@@ -45,6 +45,14 @@ const updateUser = async (userId, userData) => {
 };
 
 const deleteUser = async (userId) => {
+	const existUser = await prisma.projectMember.findFirst({
+		where: {
+			userId: userId,
+		},
+	});
+
+	if (existUser) throw new Error('No se puede eliminar el usuario porque tiene pertenece a un proyecto');
+
 	const result = await prisma.user.delete({
 		where: {
 			id: userId,

@@ -109,7 +109,7 @@ export default function TagsSettings() {
 		} else {
 			toast({
 				title: "Error",
-				description: "No se pudo eliminar la etiqueta",
+				description: response.error,
 				variant: "destructive",
 			});
 		}

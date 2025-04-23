@@ -42,6 +42,14 @@ const updateTag = async (id, tag) => {
 };
 
 const deleteTag = async (id) => {
+	const existingTag = await prisma.project.findFirst({
+		where: {
+			categoryId: id,
+		},
+	});
+
+	if (existingTag) throw new Error('No se puede eliminar el tag porque se utiliza en un proyecto');
+
 	const deletedTag = await prisma.projectCategory.delete({
 		where: { id },
 	});

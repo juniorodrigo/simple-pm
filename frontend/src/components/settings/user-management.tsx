@@ -241,7 +241,7 @@ export default function UserManagement() {
 			toast({
 				variant: "destructive",
 				title: "Error al eliminar usuario",
-				description: "No se pudo eliminar el usuario. Intente nuevamente.",
+				description: response.error,
 			});
 		}
 	};

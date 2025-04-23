@@ -32,6 +32,8 @@ const updateActivity = async (stageId, activityData) => {};
 
 const deleteActivity = async (activityId) => {};
 
+const changeStatus = async (activityId) => {};
+
 export const Service = {
 	getActivities,
 	createActivity,

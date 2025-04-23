@@ -24,6 +24,16 @@ const createActivity = async (req, res) => {
 	}
 };
 
+const changeStatus = async (req, res) => {
+	const activityId = req.params.id;
+	const { newStatus } = req.body;
+
+	const { success, data } = await Service.changeStatus(activityId, newStatus);
+
+	if (success) res.success(data, 'Estado de la actividad actualizado correctamente');
+	else res.error('Error al actualizar el estado de la actividad');
+};
+
 const updateActivity = async (req, res) => {};
 
 const deleteActivity = async (req, res) => {};
@@ -33,4 +43,5 @@ export const Controller = {
 	createActivity,
 	updateActivity,
 	deleteActivity,
+	changeStatus,
 };
