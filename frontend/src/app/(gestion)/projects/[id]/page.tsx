@@ -2,21 +2,19 @@
 
 import { useState, useEffect, use } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { CalendarRange, Clock, Edit, Plus, Users, ListPlus } from "lucide-react";
+import { Edit, Plus, ListPlus, ChevronDown, ChevronUp } from "lucide-react";
 import KanbanBoard from "@/components/kanban-board";
 import GanttChart from "@/components/gantt-chart";
 import CreateActivityModal from "@/components/create-activity-modal";
 import ProjectStagesModal from "@/components/project-stages-modal";
+import ProjectStatsCards from "@/components/project/project-stats-cards";
 import { BaseActivity } from "@/app/types/activity.type";
 import { BaseStage } from "@/app/types/stage.type";
 import { ExtendedProject } from "@/app/types/project.type";
-import { ActivityPriority, ActivityStatus, Colors } from "@/app/types/enums";
 import { ProjectsService } from "@/services/project.service";
 
 export default function ProjectPage({ params }: { params: { id: string } }) {
-	// Obtener el id usando use() para desenvolver params
 	// @ts-expect-error: test
 	const { id } = use(params);
 	const [activeView, setActiveView] = useState<"kanban" | "gantt">("kanban");
@@ -27,6 +25,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [project, setProject] = useState<ExtendedProject | null>(null);
+	const [statsVisible, setStatsVisible] = useState(false); // Estado para controlar la visibilidad, por defecto oculto
 
 	useEffect(() => {
 		const loadProject = async () => {
@@ -110,12 +109,12 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 				<div className="flex items-center gap-2">
 					<Button variant="outline">
 						<Edit className="mr-2 h-4 w-4" />
-						Edit Project
+						Editar Proyecto
 					</Button>
 					<Dialog open={isStagesModalOpen} onOpenChange={setIsStagesModalOpen}>
 						<Button variant="outline" onClick={() => setIsStagesModalOpen(true)}>
 							<ListPlus className="mr-2 h-4 w-4" />
-							Manage Stages
+							Administrar Etapas
 						</Button>
 
 						<DialogContent className="sm:max-w-[700px]">
@@ -127,7 +126,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 					<Dialog open={isActivityModalOpen} onOpenChange={setIsActivityModalOpen}>
 						<Button onClick={() => setIsActivityModalOpen(true)}>
 							<Plus className="mr-2 h-4 w-4" />
-							New Activity
+							Nueva Actividad
 						</Button>
 						<DialogContent className="sm:max-w-[600px]">
 							<DialogTitle>Nueva Actividad</DialogTitle>
@@ -139,75 +138,26 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 				</div>
 			</div>
 
-			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-				<Card>
-					<CardHeader className="pb-2">
-						<CardTitle className="text-sm font-medium">Progress</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<div className="text-2xl font-bold">{project.progressPercentage}%</div>
-						<div className="mt-2 w-full bg-secondary h-2 rounded-full">
-							<div className="bg-primary h-2 rounded-full" style={{ width: `${project.progressPercentage}%` }} />
-						</div>
-					</CardContent>
-				</Card>
-				<Card>
-					<CardHeader className="pb-2">
-						<CardTitle className="text-sm font-medium">Timeline</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<div className="flex items-center text-sm">
-							<CalendarRange className="mr-1 h-4 w-4 text-muted-foreground" />
-							<span>
-								{new Date(project.startDate).toLocaleDateString()} - {new Date(project.endDate).toLocaleDateString()}
-							</span>
-						</div>
-					</CardContent>
-				</Card>
-				<Card>
-					<CardHeader className="pb-2">
-						<CardTitle className="text-sm font-medium">Activities</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<div className="flex items-center text-sm">
-							<Clock className="mr-1 h-4 w-4 text-muted-foreground" />
-							<span>{projectActivities.length} total activities</span>
-						</div>
-						<div className="mt-2 grid grid-cols-3 gap-2 text-xs">
-							<div className="flex flex-col items-center justify-center rounded-lg bg-secondary p-2">
-								<span className="font-medium">To Do</span>
-								<span className="text-lg font-bold">{projectActivities.filter((a) => a.status === ActivityStatus.TODO).length}</span>
-							</div>
-							<div className="flex flex-col items-center justify-center rounded-lg bg-secondary p-2">
-								<span className="font-medium">In Progress</span>
-								<span className="text-lg font-bold">{projectActivities.filter((a) => a.status === ActivityStatus.IN_PROGRESS).length}</span>
-							</div>
-							<div className="flex flex-col items-center justify-center rounded-lg bg-secondary p-2">
-								<span className="font-medium">Done</span>
-								<span className="text-lg font-bold">{projectActivities.filter((a) => a.status === ActivityStatus.DONE).length}</span>
-							</div>
-						</div>
-					</CardContent>
-				</Card>
-				<Card>
-					<CardHeader className="pb-2">
-						<CardTitle className="text-sm font-medium">Team</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<div className="flex items-center text-sm mb-2">
-							<Users className="mr-1 h-4 w-4 text-muted-foreground" />
-							<span>{project.team.length + 1} team members</span>
-						</div>
-						<div className="text-sm">
-							<div className="font-medium">Manager: {project.managerUserName}</div>
-							<div className="mt-1">Team: {project.team.map((member) => `${member.name} ${member.lastname}`).join(", ")}</div>
-						</div>
-					</CardContent>
-				</Card>
+			{/* Estadísticas contraíbles con mejor diseño */}
+			<div className="border rounded-lg overflow-hidden transition-all duration-300">
+				<div className="flex items-center justify-between px-4 py-3 bg-muted/40 cursor-pointer hover:bg-muted/60 transition-colors" onClick={() => setStatsVisible(!statsVisible)}>
+					<h3 className="text-lg font-medium flex items-center gap-2">
+						<span className="text-muted-foreground">Resumen del Proyecto</span>
+					</h3>
+					<Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+						{statsVisible ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+					</Button>
+				</div>
+
+				<div className={`transition-all duration-300 ease-in-out ${statsVisible ? "max-h-96 opacity-100" : "max-h-0 opacity-0 overflow-hidden"}`}>
+					<div className="p-4">
+						<ProjectStatsCards project={project} activities={projectActivities} />
+					</div>
+				</div>
 			</div>
 
 			<div className="flex items-center justify-between">
-				<h2 className="text-xl font-bold">Project Activities</h2>
+				<h2 className="text-xl font-bold">Acividades del Proyecto</h2>
 				<div className="flex items-center space-x-2">
 					<Button variant={activeView === "kanban" ? "default" : "outline"} size="sm" onClick={() => setActiveView("kanban")}>
 						Kanban

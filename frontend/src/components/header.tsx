@@ -17,12 +17,11 @@ export default function Header() {
 			<div className="flex items-center">
 				<h1 className="text-xl font-semibold hidden md:block">
 					{pathname === "/" && "Dashboard"}
-					{pathname === "/projects" && "Projects"}
-					{pathname === "/kanban" && "Kanban Board"}
-					{pathname === "/gantt" && "Gantt Chart"}
-					{pathname === "/tags" && "Tags Management"}
-					{pathname === "/settings" && "Settings"}
-					{pathname.startsWith("/projects/") && "Project Details"}
+					{pathname === "/projects" && "Proyectos"}
+					{pathname === "/kanban" && "Kanban General"}
+					{pathname === "/timeline" && "Proyectos por Etapas"}
+					{pathname === "/settings" && "Configuración"}
+					{pathname.startsWith("/projects/") && "Detalles del Proyecto"}
 				</h1>
 			</div>
 

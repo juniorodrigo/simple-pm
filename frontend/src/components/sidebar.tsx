@@ -25,7 +25,7 @@ export default function Sidebar() {
 			current: pathname === "/",
 		},
 		{
-			name: "Projects",
+			name: "Proyectos",
 			href: "/projects",
 			icon: FolderKanban,
 			current: pathname === "/projects" || pathname.startsWith("/projects/"),
@@ -43,7 +43,7 @@ export default function Sidebar() {
 			current: pathname === "/gantt",
 		},
 		{
-			name: "Settings",
+			name: "Configuración",
 			href: "/settings",
 			icon: Settings,
 			current: pathname === "/settings",

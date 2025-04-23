@@ -12,7 +12,7 @@ export type BaseProject = {
 	categoryName?: string;
 	categoryId?: string;
 	categoryColor?: string;
-	progressPercentage?: number;
+	progressPercentage: number;
 	activitiesCount?: number;
 	team: BaseUser[];
 };
