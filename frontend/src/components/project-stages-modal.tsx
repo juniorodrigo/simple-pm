@@ -7,7 +7,6 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import type { BaseStage } from "@/app/types/stage.type";
@@ -41,6 +40,7 @@ export default function ProjectStagesModal({ projectId, stages: initialStages, o
 	const [stages, setStages] = useState<BaseStage[]>(flattenedStages);
 	const [editingStage, setEditingStage] = useState<string | null>(null);
 	const [loading, setLoading] = useState<boolean>(false);
+	const [showForm, setShowForm] = useState<boolean>(false);
 
 	const form = useForm<z.infer<typeof newStageSchema>>({
 		resolver: zodResolver(newStageSchema),
@@ -73,10 +73,11 @@ export default function ProjectStagesModal({ projectId, stages: initialStages, o
 					color: Colors.BLUE,
 				});
 				onSave([...stages, createdStage]);
+				setShowForm(false);
 
 				toast({
-					title: "Stage created",
-					description: `Stage "${values.name}" has been created successfully.`,
+					title: "Etapa creara",
+					description: `La etapa "${values.name}" ha sido creada.`,
 				});
 			} else {
 				toast({
@@ -112,8 +113,8 @@ export default function ProjectStagesModal({ projectId, stages: initialStages, o
 				onSave(updatedStages);
 
 				toast({
-					title: "Stage updated",
-					description: `Stage "${stageToUpdate.name}" has been updated successfully.`,
+					title: "Etapa actualizada",
+					description: `La etapa "${stageToUpdate.name}" ha sido actualizada.`,
 				});
 			} else {
 				toast({
@@ -148,8 +149,8 @@ export default function ProjectStagesModal({ projectId, stages: initialStages, o
 				onSave(updatedStages);
 
 				toast({
-					title: "Stage deleted",
-					description: `Stage "${stageToDelete.name}" has been deleted.`,
+					title: "Etapa eliminada",
+					description: `La etapa "${stageToDelete.name}" ha sido eliminada.`,
 				});
 			} else {
 				toast({
@@ -229,67 +230,90 @@ export default function ProjectStagesModal({ projectId, stages: initialStages, o
 
 	return (
 		<div className="space-y-6">
-			<Form {...form}>
-				<form onSubmit={form.handleSubmit(handleAddStage)} className="space-y-4">
-					<FormField
-						control={form.control}
-						name="name"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Stage Name</FormLabel>
-								<FormControl>
-									<Input {...field} placeholder="Enter stage name" />
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
+			<div className="flex justify-end items-center mb-4">
+				<Button onClick={() => setShowForm(!showForm)} variant={showForm ? "outline" : "default"} size="sm">
+					{showForm ? (
+						<>
+							<X className="mr-2 h-4 w-4" />
+							Cancelar
+						</>
+					) : (
+						<>
+							<Plus className="mr-2 h-4 w-4" />
+							Añadir Etapa
+						</>
+					)}
+				</Button>
+			</div>
 
-					<FormField
-						control={form.control}
-						name="description"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Description</FormLabel>
-								<FormControl>
-									<Textarea {...field} placeholder="Enter stage description" rows={3} />
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
+			{showForm && (
+				<Form {...form}>
+					<form onSubmit={form.handleSubmit(handleAddStage)} className="space-y-4 border p-4 rounded-lg">
+						<FormField
+							control={form.control}
+							name="name"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Nombre</FormLabel>
+									<FormControl>
+										<Input {...field} placeholder="Ingrese el nombre" />
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
 
-					<FormField
-						control={form.control}
-						name="color"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Color</FormLabel>
-								<div className="flex gap-2 mt-1.5">
-									{COLORS.map((color) => (
-										<button
-											key={color.value}
-											type="button"
-											className={`w-6 h-6 rounded-full ${field.value === color.value ? "ring-2 ring-offset-2 ring-primary" : ""} bg-${color.value}-500`}
-											onClick={() => field.onChange(color.value)}
-											title={color.name}
-										/>
-									))}
-								</div>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
+						<FormField
+							control={form.control}
+							name="description"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Descripción</FormLabel>
+									<FormControl>
+										<Textarea {...field} placeholder="Ingrese la descripción" rows={3} />
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
 
-					<Button type="submit" className="mt-2" disabled={loading}>
-						<Plus className="mr-2 h-4 w-4" />
-						Add Stage
-					</Button>
-				</form>
-			</Form>
+						<FormField
+							control={form.control}
+							name="color"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Color</FormLabel>
+									<div className="flex gap-2 mt-1.5">
+										{COLORS.map((color) => (
+											<button
+												key={color.value}
+												type="button"
+												className={`w-6 h-6 rounded-full ${field.value === color.value ? "ring-2 ring-offset-2 ring-primary" : ""} bg-${color.value}-500`}
+												onClick={() => field.onChange(color.value)}
+												title={color.name}
+											/>
+										))}
+									</div>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
 
-			<div className="border-t pt-4">
-				<h3 className="font-medium mb-2">Current Stages</h3>
+						<div className="flex justify-end space-x-2 pt-2">
+							<Button type="button" variant="outline" onClick={() => setShowForm(false)} disabled={loading}>
+								Cancelar
+							</Button>
+							<Button type="submit" disabled={loading}>
+								<Plus className="mr-2 h-4 w-4" />
+								Crear
+							</Button>
+						</div>
+					</form>
+				</Form>
+			)}
+
+			<div className="">
+				<h3 className="font-medium mb-2">Etapas</h3>
 				<div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
 					{stages.map((stage) => (
 						<div key={stage.id} className="flex items-center justify-between p-3 border rounded-lg">
@@ -300,14 +324,14 @@ export default function ProjectStagesModal({ projectId, stages: initialStages, o
 										onChange={(e) => {
 											setStages(stages.map((s) => (s.id === stage.id ? { ...s, name: e.target.value } : s)));
 										}}
-										placeholder="Stage name"
+										placeholder="Nombre de la etapa"
 									/>
 									<Textarea
 										value={stage.description}
 										onChange={(e) => {
 											setStages(stages.map((s) => (s.id === stage.id ? { ...s, description: e.target.value } : s)));
 										}}
-										placeholder="Stage description"
+										placeholder="Descripción de la etapa"
 										rows={2}
 									/>
 									<div className="flex gap-2">
@@ -361,15 +385,15 @@ export default function ProjectStagesModal({ projectId, stages: initialStages, o
 											</DialogTrigger>
 											<DialogContent>
 												<DialogHeader>
-													<DialogTitle>Delete Stage</DialogTitle>
-													<DialogDescription>Are you sure you want to delete the stage &quot;{stage.name}&quot;? This action cannot be undone.</DialogDescription>
+													<DialogTitle>Eliminar etapa</DialogTitle>
+													<DialogDescription>¿Estás seguro de eliminar la etapa &quot;{stage.name}&quot;? Esta acción no se podrá deshacer.</DialogDescription>
 												</DialogHeader>
 												<DialogFooter>
 													<Button variant="outline" disabled={loading}>
-														Cancel
+														Cancelar
 													</Button>
 													<Button variant="destructive" onClick={() => handleDeleteStage(stage.id)} disabled={loading}>
-														Delete
+														Eliminar
 													</Button>
 												</DialogFooter>
 											</DialogContent>
@@ -385,7 +409,7 @@ export default function ProjectStagesModal({ projectId, stages: initialStages, o
 
 			<div className="flex justify-end space-x-2 pt-2">
 				<Button variant="outline" onClick={onClose} disabled={loading}>
-					Close
+					Cerrar
 				</Button>
 			</div>
 		</div>

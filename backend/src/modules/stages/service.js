@@ -26,9 +26,16 @@ const createStage = async (projectId, stageData) => {
 };
 
 const updateStage = async (stageId, stageData) => {
+	console.log(stageData);
+
 	const stage = await prisma.projectStage.update({
 		where: { id: stageId },
-		data: { ...stageData },
+		data: {
+			name: stageData.name,
+			description: stageData.description,
+			color: stageData.color,
+			status: stageData.status,
+		},
 	});
 
 	return { success: true, data: stage };
