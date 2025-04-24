@@ -7,7 +7,9 @@ const enhanceProject = async (project) => {
 	const categoryName = project.category?.name || '';
 
 	//TODO: Mejorar con include activities
-	const stages = await prisma.projectStage.findMany({});
+	const stages = await prisma.projectStage.findMany({
+		where: { projectId: project.id },
+	});
 	const activities = await prisma.projectActivity.findMany({
 		where: { stageId: { in: stages.map((stage) => stage.id) } },
 	});

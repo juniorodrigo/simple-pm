@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
+import { es } from "date-fns/locale";
 import { CalendarIcon, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -25,7 +26,7 @@ import { useToast } from "@/components/ui/use-toast";
 
 const formSchema = z.object({
 	name: z.string().min(2, {
-		message: "Project name must be at least 2 characters.",
+		message: "Debe tener al menos dos caracteres.",
 	}),
 	description: z.string().optional(),
 	startDate: z.date().optional(),
@@ -37,11 +38,20 @@ const formSchema = z.object({
 	categoryId: z.string().optional(),
 });
 
+type DateRange = {
+	from: Date;
+	to?: Date;
+};
+
 export default function CreateProjectForm() {
 	const { toast } = useToast();
 	const [users, setUsers] = useState<User[]>([]);
 	const [availableTags, setAvailableTags] = useState<Tag[]>([]);
 	const [loading, setLoading] = useState(false);
+	const [dateRange, setDateRange] = useState<DateRange>({
+		from: new Date(),
+		to: addDays(new Date(), 30), // Por defecto, un mes de duración
+	});
 
 	useEffect(() => {
 		const loadData = async () => {
@@ -73,6 +83,16 @@ export default function CreateProjectForm() {
 		},
 	});
 
+	// Sincronizar el rango de fechas con los campos del formulario
+	useEffect(() => {
+		if (dateRange.from) {
+			form.setValue("startDate", dateRange.from);
+		}
+		if (dateRange.to) {
+			form.setValue("endDate", dateRange.to || dateRange.from);
+		}
+	}, [dateRange, form]);
+
 	const watchTeamMembers = form.watch("teamMembers");
 	const availableManagers = users.filter((user) => watchTeamMembers.includes(user.id || ""));
 
@@ -90,6 +110,7 @@ export default function CreateProjectForm() {
 				team: teamMembers,
 			};
 
+			// @ts-expect-error: lujan
 			const response = await ProjectsService.createProject(projectData as BaseProject);
 
 			if (response.success) {
@@ -119,9 +140,9 @@ export default function CreateProjectForm() {
 						name="name"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Project Name</FormLabel>
+								<FormLabel>Nombre del proyecto</FormLabel>
 								<FormControl>
-									<Input placeholder="Enter project name" {...field} />
+									<Input placeholder="Ingrese el nombre del proyecto" {...field} />
 								</FormControl>
 								<FormMessage />
 							</FormItem>
@@ -133,63 +154,64 @@ export default function CreateProjectForm() {
 						name="description"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Description</FormLabel>
+								<FormLabel>Descripción</FormLabel>
 								<FormControl>
-									<Textarea placeholder="Describe the project" className="resize-none" {...field} />
+									<Textarea placeholder="Describe el proyecto" className="resize-none" {...field} />
 								</FormControl>
 								<FormMessage />
 							</FormItem>
 						)}
 					/>
 
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<FormField
-							control={form.control}
-							name="startDate"
-							render={({ field }) => (
-								<FormItem className="flex flex-col">
-									<FormLabel>Start Date</FormLabel>
-									<Popover>
-										<PopoverTrigger asChild>
-											<FormControl>
-												<Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-													{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-													<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-												</Button>
-											</FormControl>
-										</PopoverTrigger>
-										<PopoverContent className="w-auto p-0" align="start">
-											<Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
-										</PopoverContent>
-									</Popover>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+					<div className="space-y-2">
+						<FormLabel>Duración del Proyecto</FormLabel>
+						<Popover>
+							<PopoverTrigger asChild>
+								<Button id="date-range" variant={"outline"} className={cn("w-full justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
+									<CalendarIcon className="mr-2 h-4 w-4" />
+									{dateRange?.from ? (
+										dateRange.to ? (
+											<>
+												{format(dateRange.from, "PPP", { locale: es })} - {format(dateRange.to, "PPP", { locale: es })}
+											</>
+										) : (
+											format(dateRange.from, "PPP", { locale: es })
+										)
+									) : (
+										<span>Selecciona un rango de fechas</span>
+									)}
+								</Button>
+							</PopoverTrigger>
+							<PopoverContent className="w-auto p-0" align="start">
+								<Calendar
+									initialFocus
+									mode="range"
+									defaultMonth={dateRange?.from}
+									selected={dateRange}
+									onSelect={(range) => {
+										if (range?.from) {
+											setDateRange({
+												from: range.from,
+												to: range.to || range.from,
+											});
+										}
+									}}
+									locale={es}
+									numberOfMonths={2}
+								/>
+							</PopoverContent>
+						</Popover>
+						<div className="flex justify-between text-xs text-muted-foreground">
+							<p>Inicio: {dateRange.from ? format(dateRange.from, "PPP", { locale: es }) : "No seleccionada"}</p>
+							<p>Fin: {dateRange.to ? format(dateRange.to, "PPP", { locale: es }) : "No seleccionada"}</p>
+						</div>
+						{(form.formState.errors.startDate || form.formState.errors.endDate) && <p className="text-sm font-medium text-destructive">Por favor selecciona un rango de fechas válido</p>}
+					</div>
 
-						<FormField
-							control={form.control}
-							name="endDate"
-							render={({ field }) => (
-								<FormItem className="flex flex-col">
-									<FormLabel>End Date</FormLabel>
-									<Popover>
-										<PopoverTrigger asChild>
-											<FormControl>
-												<Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-													{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-													<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-												</Button>
-											</FormControl>
-										</PopoverTrigger>
-										<PopoverContent className="w-auto p-0" align="start">
-											<Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
-										</PopoverContent>
-									</Popover>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+					{/* Campos ocultos para mantener la compatibilidad con el esquema */}
+					<div className="hidden">
+						<FormField control={form.control} name="startDate" render={({ field }) => <input type="hidden" {...field} value={field.value?.toISOString()} />} />
+						<FormField control={form.control} name="endDate" render={({ field }) => <input type="hidden" {...field} value={field.value?.toISOString()} />} />
 					</div>
 
 					<FormField

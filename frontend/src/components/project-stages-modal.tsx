@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import type { BaseStage } from "@/app/types/stage.type";
 import { Edit, Plus, Save, Trash, X } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { StagesService } from "@/services/stages.service";
 import { Badge } from "@/components/ui/badge";
 import { COLORS, getTagColorClass } from "@/lib/colors";
@@ -389,9 +389,11 @@ export default function ProjectStagesModal({ projectId, stages: initialStages, o
 													<DialogDescription>¿Estás seguro de eliminar la etapa &quot;{stage.name}&quot;? Esta acción no se podrá deshacer.</DialogDescription>
 												</DialogHeader>
 												<DialogFooter>
-													<Button variant="outline" disabled={loading}>
-														Cancelar
-													</Button>
+													<DialogClose asChild>
+														<Button variant="outline" disabled={loading}>
+															Cancelar
+														</Button>
+													</DialogClose>
 													<Button variant="destructive" onClick={() => handleDeleteStage(stage.id)} disabled={loading}>
 														Eliminar
 													</Button>

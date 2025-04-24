@@ -5,12 +5,26 @@ export enum ActivityStatus {
 	DONE = "completed",
 }
 
+export const ActivitiesLabels = {
+	[ActivityStatus.TODO]: "Pendiente",
+	[ActivityStatus.IN_PROGRESS]: "En Progreso",
+	[ActivityStatus.REVIEW]: "En Revisión",
+	[ActivityStatus.DONE]: "Completado",
+};
+
 export enum ActivityPriority {
 	LOW = "low",
 	MEDIUM = "medium",
 	HIGH = "high",
 	CRITICAL = "critical",
 }
+
+export const ActivityPriorityLabels = {
+	[ActivityPriority.LOW]: "Baja",
+	[ActivityPriority.MEDIUM]: "Media",
+	[ActivityPriority.HIGH]: "Alta",
+	[ActivityPriority.CRITICAL]: "Crítica",
+};
 
 export enum Role {
 	EDITOR = "editor",

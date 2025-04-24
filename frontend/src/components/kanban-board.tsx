@@ -7,7 +7,7 @@ import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, KeyboardSensor, 
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { BaseActivity } from "@/app/types/activity.type";
 import { BaseStage } from "@/app/types/stage.type";
-import { ActivityStatus } from "@/app/types/enums";
+import { ActivityStatus, ActivitiesLabels } from "@/app/types/enums";
 import { ActivitysService } from "@/services/activity.service";
 import { useToast } from "@/hooks/use-toast";
 import { ActivityCard } from "@/components/activity-card";
@@ -22,13 +22,11 @@ type KanbanBoardProps = {
 	onActivityClick?: (activity: BaseActivity) => void;
 };
 
-// Definir las columnas (lanes) basadas en ActivityStatus
-const LANES = [
-	{ id: ActivityStatus.TODO, title: "To Do" },
-	{ id: ActivityStatus.IN_PROGRESS, title: "In Progress" },
-	{ id: ActivityStatus.REVIEW, title: "Review" },
-	{ id: ActivityStatus.DONE, title: "Done" },
-];
+// Generar las columnas (lanes) automáticamente desde el enum ActivityStatus y sus etiquetas
+const LANES = Object.values(ActivityStatus).map((statusValue) => ({
+	id: statusValue,
+	title: ActivitiesLabels[statusValue],
+}));
 
 // Componente principal optimizado
 export default function KanbanBoard({ activities: initialActivities, stages, onActivityChange, onActivityClick }: KanbanBoardProps) {

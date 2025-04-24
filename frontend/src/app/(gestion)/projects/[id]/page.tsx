@@ -118,15 +118,12 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 		const updatedActivities = [...projectActivities, newActivity];
 		setProjectActivities(updatedActivities);
 
-		// Llamamos a handleActivityChange para actualizar todo correctamente
 		handleActivityChange(updatedActivities);
 	};
 
 	const handleUpdateStages = (updatedStages: BaseStage[]) => {
-		// Actualizamos projectStages con los nuevos stages
 		setProjectStages(updatedStages);
 
-		// También actualizamos el objeto project para mantener todo sincronizado
 		if (project) {
 			setProject({
 				...project,
@@ -135,7 +132,6 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 		}
 	};
 
-	// Manejo de clic en actividades para editar
 	const handleActivityClick = (activity: BaseActivity) => {
 		setEditingActivity(activity);
 		setIsActivityModalOpen(true);

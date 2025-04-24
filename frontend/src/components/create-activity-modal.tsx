@@ -11,14 +11,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
+import { es } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import type { BaseStage } from "@/app/types/stage.type";
 import { BaseActivity } from "@/app/types/activity.type";
-import { ActivityPriority, ActivityStatus } from "@/app/types/enums";
+import { ActivityPriority, ActivityStatus, ActivitiesLabels, ActivityPriorityLabels } from "@/app/types/enums";
 import { UsersService } from "@/services/users.service";
 import type { BaseUser } from "@/app/types/user.type";
 import { ActivitysService } from "@/services/activity.service";
@@ -57,10 +58,19 @@ type CreateActivityModalProps = {
 	onSuccess: (activity: BaseActivity) => void;
 };
 
+type DateRange = {
+	from: Date;
+	to?: Date;
+};
+
 export default function CreateActivityModal({ projectId, stages: providedStages, activity, onClose, onSuccess }: CreateActivityModalProps) {
 	const { toast } = useToast();
 	const [users, setUsers] = useState<BaseUser[]>([]);
 	const isEditMode = !!activity;
+	const [dateRange, setDateRange] = useState<DateRange>({
+		from: new Date(),
+		to: addDays(new Date(), 7),
+	});
 
 	useEffect(() => {
 		const loadUsers = async () => {
@@ -117,8 +127,21 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 				priority: activity.priority,
 				stageId: activity.stageId,
 			});
+			setDateRange({
+				from: new Date(activity.startDate),
+				to: new Date(activity.endDate),
+			});
 		}
 	}, [activity, form]);
+
+	// Sincronizar el rango de fechas con los campos del formulario
+	useEffect(() => {
+		if (dateRange.from) {
+			form.setValue("startDate", dateRange.from);
+			// Si no hay fecha final o es la misma que la inicial, usar la fecha inicial para ambos
+			form.setValue("endDate", dateRange.to || dateRange.from);
+		}
+	}, [dateRange, form]);
 
 	const onSubmit = async (values: z.infer<typeof formSchema>) => {
 		if (isEditMode && activity) {
@@ -154,36 +177,33 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 			const response = await ActivitysService.createActivity(values.stageId, newActivity);
 
 			if (response.success) {
-				// Asegurémonos de que la respuesta de la API contiene el ID real asignado
-				// Si response.data incluye el ID, usamos ese, si no, usamos el generado localmente
 				const createdActivity = response.data?.id ? { ...newActivity, id: response.data.id } : newActivity;
 				onSuccess(createdActivity);
 				toast({
-					title: "Activity created",
-					description: "The activity has been created successfully.",
+					title: "Actividad Creada",
+					description: "La actividad ha sido creada correctamente.",
 				});
 				onClose();
 			} else {
 				toast({
 					title: "Error",
-					description: "There was an error creating the activity.",
+					description: "Hubo un error al crear la actividad.",
 					variant: "destructive",
 				});
 			}
 		}
 	};
 
-	const statusOptions = Object.entries(ActivityStatus).map(([key, value]) => ({
-		label: key
-			.split("_")
-			.map((word) => word.charAt(0) + word.slice(1).toLowerCase())
-			.join(" "),
-		value: value,
+	// Reemplazar la generación hardcodeada de opciones por las etiquetas de los enums
+	// Usar los objetos de etiquetas para las opciones de los selectores
+	const statusOptions = Object.values(ActivityStatus).map((statusValue) => ({
+		label: ActivitiesLabels[statusValue],
+		value: statusValue,
 	}));
 
-	const priorityOptions = Object.entries(ActivityPriority).map(([key, value]) => ({
-		label: key.charAt(0) + key.slice(1).toLowerCase(),
-		value: value,
+	const priorityOptions = Object.values(ActivityPriority).map((priorityValue) => ({
+		label: ActivityPriorityLabels[priorityValue],
+		value: priorityValue,
 	}));
 
 	return (
@@ -259,7 +279,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 									<Select onValueChange={field.onChange} defaultValue={field.value}>
 										<FormControl>
 											<SelectTrigger>
-												<SelectValue placeholder="Select status" />
+												<SelectValue placeholder="Seleccionar estado" />
 											</SelectTrigger>
 										</FormControl>
 										<SelectContent>
@@ -284,7 +304,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 									<Select onValueChange={field.onChange} defaultValue={field.value}>
 										<FormControl>
 											<SelectTrigger>
-												<SelectValue placeholder="Select priority" />
+												<SelectValue placeholder="Seleccionar prioridad" />
 											</SelectTrigger>
 										</FormControl>
 										<SelectContent>
@@ -339,54 +359,57 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 						)}
 					/>
 
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<FormField
-							control={form.control}
-							name="startDate"
-							render={({ field }) => (
-								<FormItem className="flex flex-col">
-									<FormLabel>Fecha de Inicio</FormLabel>
-									<Popover>
-										<PopoverTrigger asChild>
-											<FormControl>
-												<Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-													{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-													<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-												</Button>
-											</FormControl>
-										</PopoverTrigger>
-										<PopoverContent className="w-auto p-0" align="start">
-											<Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
-										</PopoverContent>
-									</Popover>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+					<div className="space-y-2">
+						<FormLabel>Rango de fechas</FormLabel>
+						<Popover>
+							<PopoverTrigger asChild>
+								<Button id="date-range" variant={"outline"} className={cn("w-full justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
+									<CalendarIcon className="mr-2 h-4 w-4" />
+									{dateRange?.from ? (
+										dateRange.to && dateRange.from.getTime() !== dateRange.to.getTime() ? (
+											<>
+												{format(dateRange.from, "PPP", { locale: es })} - {format(dateRange.to, "PPP", { locale: es })}
+											</>
+										) : (
+											<>Un solo día: {format(dateRange.from, "PPP", { locale: es })}</>
+										)
+									) : (
+										<span>Selecciona fechas</span>
+									)}
+								</Button>
+							</PopoverTrigger>
+							<PopoverContent className="w-auto p-0" align="start">
+								<div className="p-2 text-xs text-muted-foreground">Puedes seleccionar un solo día o un rango de fechas</div>
+								<Calendar
+									initialFocus
+									mode="range"
+									defaultMonth={dateRange?.from}
+									selected={dateRange}
+									onSelect={(range) => {
+										if (range?.from) {
+											setDateRange({
+												from: range.from,
+												to: range.to || range.from,
+											});
+										}
+									}}
+									locale={es}
+									numberOfMonths={2}
+								/>
+							</PopoverContent>
+						</Popover>
+						<div className="flex justify-between text-xs text-muted-foreground">
+							<p>Inicio: {dateRange.from ? format(dateRange.from, "PPP", { locale: es }) : "No seleccionada"}</p>
+							<p>Fin: {dateRange.to ? format(dateRange.to, "PPP", { locale: es }) : "Igual que inicio"}</p>
+						</div>
+						{dateRange.from && dateRange.to && dateRange.from.getTime() === dateRange.to.getTime() && <p className="text-xs text-muted-foreground italic">La actividad comenzará y terminará el mismo día</p>}
+						{(form.formState.errors.startDate || form.formState.errors.endDate) && <p className="text-sm font-medium text-destructive">Por favor selecciona un rango de fechas válido</p>}
+					</div>
 
-						<FormField
-							control={form.control}
-							name="endDate"
-							render={({ field }) => (
-								<FormItem className="flex flex-col">
-									<FormLabel>Fecha de Fin</FormLabel>
-									<Popover>
-										<PopoverTrigger asChild>
-											<FormControl>
-												<Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-													{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-													<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-												</Button>
-											</FormControl>
-										</PopoverTrigger>
-										<PopoverContent className="w-auto p-0" align="start">
-											<Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
-										</PopoverContent>
-									</Popover>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+					{/* Campos ocultos para mantener la compatibilidad con el esquema */}
+					<div className="hidden">
+						<FormField control={form.control} name="startDate" render={({ field }) => <input type="hidden" {...field} value={field.value?.toISOString()} />} />
+						<FormField control={form.control} name="endDate" render={({ field }) => <input type="hidden" {...field} value={field.value?.toISOString()} />} />
 					</div>
 
 					<div className="flex justify-end space-x-2 pt-4">
