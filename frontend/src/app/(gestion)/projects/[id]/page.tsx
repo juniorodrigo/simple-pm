@@ -19,6 +19,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 	const { id } = use(params);
 	const [activeView, setActiveView] = useState<"kanban" | "gantt">("kanban");
 	const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
+	const [editingActivity, setEditingActivity] = useState<BaseActivity | null>(null);
 	const [projectActivities, setProjectActivities] = useState<BaseActivity[]>([]);
 	const [isStagesModalOpen, setIsStagesModalOpen] = useState(false);
 	const [projectStages, setProjectStages] = useState<BaseStage[]>([]);
@@ -134,6 +135,29 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 		}
 	};
 
+	// Manejo de clic en actividades para editar
+	const handleActivityClick = (activity: BaseActivity) => {
+		setEditingActivity(activity);
+		setIsActivityModalOpen(true);
+	};
+
+	const handleCloseModal = () => {
+		setIsActivityModalOpen(false);
+		setEditingActivity(null);
+	};
+
+	const handleAddOrUpdateActivity = (activity: BaseActivity) => {
+		if (editingActivity) {
+			// Es una actualización - reemplazar la actividad editada
+			const updatedActivities = projectActivities.map((a) => (a.id === activity.id ? activity : a));
+			setProjectActivities(updatedActivities);
+			handleActivityChange(updatedActivities);
+		} else {
+			// Es una nueva actividad
+			handleAddActivity(activity);
+		}
+	};
+
 	if (loading) return <div className="flex items-center justify-center h-screen">Cargando datos del proyecto...</div>;
 	if (error || !project) return <div className="flex items-center justify-center h-screen">Error: {error || "No se encontró el proyecto"}</div>;
 
@@ -161,16 +185,21 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 							<ProjectStagesModal projectId={project.id} stages={projectStages} onClose={() => setIsStagesModalOpen(false)} onSave={handleUpdateStages} />
 						</DialogContent>
 					</Dialog>
-					<Dialog open={isActivityModalOpen} onOpenChange={setIsActivityModalOpen}>
+					<Dialog
+						open={isActivityModalOpen}
+						onOpenChange={(open) => {
+							setIsActivityModalOpen(open);
+							if (!open) setEditingActivity(null);
+						}}
+					>
 						<Button onClick={() => setIsActivityModalOpen(true)}>
 							<Plus className="mr-2 h-4 w-4" />
 							Nueva Actividad
 						</Button>
 						<DialogContent className="sm:max-w-[600px]">
-							<DialogTitle>Nueva Actividad</DialogTitle>
-							<DialogDescription>Crea una actividad para el proyecto</DialogDescription>
-
-							<CreateActivityModal projectId={project.id} stages={projectStages} onClose={() => setIsActivityModalOpen(false)} onSuccess={handleAddActivity} />
+							<DialogTitle>{editingActivity ? "Editar Actividad" : "Nueva Actividad"}</DialogTitle>
+							<DialogDescription>{editingActivity ? "Actualiza los detalles de la actividad" : "Crea una actividad para el proyecto"}</DialogDescription>
+							<CreateActivityModal projectId={project.id} stages={projectStages} activity={editingActivity} onClose={handleCloseModal} onSuccess={handleAddOrUpdateActivity} />
 						</DialogContent>
 					</Dialog>
 				</div>
@@ -208,7 +237,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 
 			<div className="border rounded-lg p-4">
 				{activeView === "kanban" ? (
-					<KanbanBoard activities={projectActivities} stages={projectStages} onActivityChange={handleActivityChange} />
+					<KanbanBoard activities={projectActivities} stages={projectStages} onActivityChange={handleActivityChange} onActivityClick={handleActivityClick} />
 				) : (
 					<GanttChart activities={projectActivities} stages={projectStages} />
 				)}

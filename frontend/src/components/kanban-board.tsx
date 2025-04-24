@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, memo, useMemo } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, KeyboardSensor, PointerSensor, useSensor, useSensors, closestCorners, useDroppable, MeasuringStrategy } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
@@ -11,14 +10,16 @@ import { BaseStage } from "@/app/types/stage.type";
 import { ActivityStatus } from "@/app/types/enums";
 import { ActivitysService } from "@/services/activity.service";
 import { useToast } from "@/hooks/use-toast";
-import { ActivityCard, ActivityCardContent, PRIORITY_COLORS, getStageColorValue } from "@/components/activity-card";
+import { ActivityCard } from "@/components/activity-card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { getPriorityColor } from "@/lib/colors";
 
 type KanbanBoardProps = {
 	activities: BaseActivity[];
 	stages: BaseStage[];
 	onActivityChange?: (activities: BaseActivity[]) => void;
+	onActivityClick?: (activity: BaseActivity) => void;
 };
 
 // Definir las columnas (lanes) basadas en ActivityStatus
@@ -30,7 +31,7 @@ const LANES = [
 ];
 
 // Componente principal optimizado
-export default function KanbanBoard({ activities: initialActivities, stages, onActivityChange }: KanbanBoardProps) {
+export default function KanbanBoard({ activities: initialActivities, stages, onActivityChange, onActivityClick }: KanbanBoardProps) {
 	const [activities, setActivities] = useState<BaseActivity[]>([]);
 	const [activeId, setActiveId] = useState<string | null>(null);
 	const { toast } = useToast();
@@ -159,9 +160,6 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 		[activities, onActivityChange]
 	);
 
-	// Usar función simple en vez de callback para getPriorityColor
-	const getPriorityColor = (priority: string): string => PRIORITY_COLORS[priority as keyof typeof PRIORITY_COLORS] || PRIORITY_COLORS.default;
-
 	// Actividad activa memoizada eficientemente
 	const activeActivity = useMemo(() => (activeId ? activities.find((a) => a.id === activeId) : null), [activeId, activities]);
 
@@ -187,15 +185,33 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 	// DragOverlay optimizado con una referencia estable
 	const dragOverlay = useMemo(() => {
 		if (!activeId || !activeActivity) return null;
-		return <ActivityCard activity={activeActivity} getPriorityColor={getPriorityColor} stages={stages} />;
+		return <ActivityCard activity={activeActivity} stages={stages} />;
 	}, [activeId, activeActivity, getPriorityColor, stages]);
+
+	// Manejador para clics de actividad
+	const handleActivityClick = useCallback(
+		(activity: BaseActivity) => {
+			if (onActivityClick) {
+				onActivityClick(activity);
+			}
+		},
+		[onActivityClick]
+	);
 
 	return (
 		<>
 			<DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} collisionDetection={closestCorners} measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}>
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 					{LANES.map((lane) => (
-						<LaneContainer key={lane.id} lane={lane} activities={laneActivities[lane.id] || []} getPriorityColor={getPriorityColor} stages={stages} onDeleteActivity={handleDeleteActivity} />
+						<LaneContainer
+							key={lane.id}
+							lane={lane}
+							activities={laneActivities[lane.id] || []}
+							getPriorityColor={getPriorityColor}
+							stages={stages}
+							onDeleteActivity={handleDeleteActivity}
+							onActivityClick={handleActivityClick}
+						/>
 					))}
 				</div>
 
@@ -231,12 +247,14 @@ const LaneContainer = memo(
 		getPriorityColor,
 		stages,
 		onDeleteActivity,
+		onActivityClick,
 	}: {
 		lane: { id: string; title: string };
 		activities: BaseActivity[];
 		getPriorityColor: (priority: string) => string;
 		stages: BaseStage[];
 		onDeleteActivity: (id: string) => void;
+		onActivityClick?: (activity: BaseActivity) => void;
 	}) => {
 		const { setNodeRef, isOver } = useDroppable({
 			id: lane.id,
@@ -264,7 +282,7 @@ const LaneContainer = memo(
 					{activities.length > 0 ? (
 						<SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
 							{activities.map((activity) => (
-								<SortableItem key={activity.id} activity={activity} getPriorityColor={getPriorityColor} stages={stages} onDelete={onDeleteActivity} />
+								<SortableItem key={activity.id} activity={activity} getPriorityColor={getPriorityColor} stages={stages} onDelete={onDeleteActivity} onClick={onActivityClick} />
 							))}
 						</SortableContext>
 					) : (
@@ -278,7 +296,19 @@ const LaneContainer = memo(
 
 // Item sortable optimizado - ahora más ligero
 const SortableItem = memo(
-	({ activity, getPriorityColor, stages, onDelete }: { activity: BaseActivity; getPriorityColor: (priority: string) => string; stages: BaseStage[]; onDelete?: (id: string) => void }) => {
+	({
+		activity,
+		getPriorityColor,
+		stages,
+		onDelete,
+		onClick,
+	}: {
+		activity: BaseActivity;
+		getPriorityColor: (priority: string) => string;
+		stages: BaseStage[];
+		onDelete?: (id: string) => void;
+		onClick?: (activity: BaseActivity) => void;
+	}) => {
 		const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
 			id: activity.id,
 			data: {
@@ -297,7 +327,7 @@ const SortableItem = memo(
 
 		return (
 			<div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-				<ActivityCard activity={activity} getPriorityColor={getPriorityColor} stages={stages} onDelete={onDelete} />
+				<ActivityCard activity={activity} stages={stages} onDelete={onDelete} onClick={onClick} />
 			</div>
 		);
 	}

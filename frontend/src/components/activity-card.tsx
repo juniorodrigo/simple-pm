@@ -80,16 +80,25 @@ export const ActivityCardContent = memo(({ activity, stages, onDelete }: { activ
 ActivityCardContent.displayName = "ActivityCardContent";
 
 // Componente de tarjeta de actividad optimizado
-export const ActivityCard = memo(({ activity, stages, onDelete }: { activity: BaseActivity; stages: BaseStage[]; onDelete?: (id: string) => void }) => {
-	const activityStage = stages.find((s) => s.id === activity.stageId);
-	const borderColor = activityStage ? getStageColorValue(activityStage.color) : undefined;
+export const ActivityCard = memo(
+	({ activity, stages, onDelete, onClick }: { activity: BaseActivity; stages: BaseStage[]; onDelete?: (id: string) => void; onClick?: (activity: BaseActivity) => void }) => {
+		const activityStage = stages.find((s) => s.id === activity.stageId);
+		const borderColor = activityStage ? getStageColorValue(activityStage.color) : undefined;
 
-	return (
-		<Card className="mb-1.5 cursor-grab overflow-hidden shadow-sm" style={{ borderLeft: borderColor ? `4px solid ${borderColor}` : undefined }}>
-			<CardContent className="p-2.5">
-				<ActivityCardContent activity={activity} stages={stages} onDelete={onDelete} />
-			</CardContent>
-		</Card>
-	);
-});
+		const handleClick = (e: React.MouseEvent) => {
+			if (onClick) {
+				e.stopPropagation();
+				onClick(activity);
+			}
+		};
+
+		return (
+			<Card className="mb-1.5 cursor-grab overflow-hidden shadow-sm" style={{ borderLeft: borderColor ? `4px solid ${borderColor}` : undefined }} onClick={handleClick}>
+				<CardContent className="p-2.5">
+					<ActivityCardContent activity={activity} stages={stages} onDelete={onDelete} />
+				</CardContent>
+			</Card>
+		);
+	}
+);
 ActivityCard.displayName = "ActivityCard";

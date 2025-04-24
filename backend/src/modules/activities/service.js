@@ -28,7 +28,30 @@ const createActivity = async (stageId, activityData) => {
 	return { success: true, data };
 };
 
-const updateActivity = async (stageId, activityData) => {};
+const updateActivity = async (activityId, activityData) => {
+	console.log('activityData', activityData);
+
+	const data = await prisma.projectActivity.update({
+		where: {
+			id: activityId,
+		},
+		data: {
+			title: activityData.title,
+			description: activityData.description,
+			status: activityData.status,
+			priority: activityData.priority,
+			assignedToUser: {
+				connect: {
+					id: activityData.assignedToUser.id,
+				},
+			},
+			startDate: activityData.startDate,
+			endDate: activityData.endDate,
+		},
+	});
+
+	return { success: true, data };
+};
 
 const deleteActivity = async (activityId) => {
 	const data = await prisma.projectActivity.delete({

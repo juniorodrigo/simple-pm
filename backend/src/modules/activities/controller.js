@@ -34,7 +34,23 @@ const changeStatus = async (req, res) => {
 	else res.error('Error al actualizar el estado de la actividad');
 };
 
-const updateActivity = async (req, res) => {};
+const updateActivity = async (req, res) => {
+	const activityId = req.params.id;
+	const { title, description, status, priority, assignedToUser, startDate, endDate } = req.body;
+
+	const requiredFields = { title, description, status, priority, assignedToUser, startDate, endDate };
+
+	if (Object.values(requiredFields).some((field) => !field)) {
+		res.error('Faltan algunos datos de la actividad');
+	}
+
+	const activity = { ...req.body };
+
+	const { data, success } = await Service.updateActivity(activityId, activity);
+
+	if (success) res.success(data, 'Actividad actualizada correctamente');
+	else res.error('Error al actualizar la actividad');
+};
 
 const deleteActivity = async (req, res) => {
 	const activityId = req.params.id;

@@ -71,6 +71,17 @@ export default function GanttChart({ activities, stages }: GanttChartProps) {
 		};
 	}, [dateRange]);
 
+	const getStageColor = (stageId: string): string => {
+		const stage = stages.find((s) => s.id === stageId);
+		console.log("DEBUG - stage encontrado:", stage);
+
+		if (!stage || !stage.color) {
+			return "#6E6E6E"; // Color predeterminado si no se encuentra el stage o no tiene color
+		}
+
+		return stage.color;
+	};
+
 	const getBarPosition = (activity: BaseActivity) => {
 		if (dateRange.length === 0) return { left: 0, width: 0 };
 
@@ -171,10 +182,11 @@ export default function GanttChart({ activities, stages }: GanttChartProps) {
 							<div key={activity.id} className="flex border-b hover:bg-secondary/20">
 								<div className={`w-64 min-w-64 p-3 border-r ${getStatusColor(activity.status)}`}>
 									<div className="font-medium">{activity.title}</div>
-									<div className="flex items-center justify-between mt-2">
+									<div className="flex items-center space-x-2 mt-2">
 										<Badge variant="outline" className={`text-xs px-1.5 py-0 font-medium shadow-sm border bg-white ${getPriorityColor(activity.priority)}`}>
 											{activity.priority}
 										</Badge>
+										<div className="flex-grow"></div>
 										<Avatar className="h-6 w-6">
 											<AvatarImage src="/placeholder-user.jpg" alt={activity.assignedToUser.name} />
 											<AvatarFallback>{getInitials(activity.assignedToUser.name)}</AvatarFallback>
@@ -202,7 +214,7 @@ export default function GanttChart({ activities, stages }: GanttChartProps) {
 												style={{
 													left: `${getBarPosition(activity).left}px`,
 													width: `${getBarPosition(activity).width}px`,
-													backgroundColor: getStageColorValue(activity.stageId),
+													backgroundColor: getStageColorValue(getStageColor(activity.stageId)),
 													height: "60px",
 													border: `1px solid ${isPast(new Date(activity.endDate)) ? "#d1d5db" : "transparent"}`,
 												}}
@@ -218,7 +230,6 @@ export default function GanttChart({ activities, stages }: GanttChartProps) {
 														</div>
 													</div>
 												)}
-												<div className={`h-1 w-full absolute bottom-0 ${getPriorityBgColor(activity.priority)}`}></div>
 											</div>
 										</TooltipTrigger>
 										<TooltipContent>
@@ -235,13 +246,16 @@ export default function GanttChart({ activities, stages }: GanttChartProps) {
 						))}
 					</div>
 
-					{/* Today indicator */}
+					{/* Today indicator - modificado para ser menos intrusivo */}
 					{dateRange.length > 0 && (
 						<div
-							className="absolute top-0 bottom-0 w-0.5 bg-primary z-20"
+							className="absolute w-0.5 bg-primary/50 z-10"
 							style={{
 								left: `${(differenceInDays(new Date(), dateRange[0]) + 0.5) * 40}px`,
 								display: differenceInDays(new Date(), dateRange[0]) >= 0 && differenceInDays(new Date(), dateRange[dateRange.length - 1]) <= 0 ? "block" : "none",
+								top: "36px", // Altura del encabezado
+								bottom: "0",
+								backgroundColor: "transparent",
 							}}
 						/>
 					)}

@@ -47,14 +47,14 @@ const createActivity = async (stageId: string, activity: BaseActivity): Promise<
 	}
 };
 
-const updateActivity = async (userId: string, Activity: BaseActivity): Promise<ApiResponse> => {
+const updateActivity = async (activityId: string, activity: BaseActivity): Promise<ApiResponse> => {
 	try {
-		const petition = await fetch(`/api/is/activities/${userId}`, {
+		const petition = await fetch(`/api/is/activities/${activityId}`, {
 			method: "PUT",
 			headers: {
 				"Content-Type": "application/json",
 			},
-			body: JSON.stringify(Activity),
+			body: JSON.stringify(activity),
 		});
 
 		return await petition.json();

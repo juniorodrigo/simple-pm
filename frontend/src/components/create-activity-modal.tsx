@@ -52,13 +52,15 @@ const formSchema = z.object({
 type CreateActivityModalProps = {
 	projectId: number;
 	stages?: BaseStage[];
+	activity?: BaseActivity | null; // Nueva prop para modo edición
 	onClose: () => void;
 	onSuccess: (activity: BaseActivity) => void;
 };
 
-export default function CreateActivityModal({ projectId, stages: providedStages, onClose, onSuccess }: CreateActivityModalProps) {
+export default function CreateActivityModal({ projectId, stages: providedStages, activity, onClose, onSuccess }: CreateActivityModalProps) {
 	const { toast } = useToast();
 	const [users, setUsers] = useState<BaseUser[]>([]);
+	const isEditMode = !!activity;
 
 	useEffect(() => {
 		const loadUsers = async () => {
@@ -74,49 +76,100 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
-		defaultValues: {
-			title: "",
-			description: "",
-			status: ActivityStatus.TODO,
-			assignedToUser: {
-				id: "",
-				name: "",
-				lastname: "",
-				projectRole: "",
-			},
-			startDate: new Date(),
-			endDate: new Date(),
-			priority: ActivityPriority.MEDIUM,
-			stageId: stages[0]?.id || "",
-		},
+		defaultValues: activity
+			? {
+					title: activity.title,
+					description: activity.description,
+					status: activity.status,
+					assignedToUser: activity.assignedToUser,
+					startDate: new Date(activity.startDate),
+					endDate: new Date(activity.endDate),
+					priority: activity.priority,
+					stageId: activity.stageId,
+			  }
+			: {
+					title: "",
+					description: "",
+					status: ActivityStatus.TODO,
+					assignedToUser: {
+						id: "",
+						name: "",
+						lastname: "",
+						projectRole: "",
+					},
+					startDate: new Date(),
+					endDate: new Date(),
+					priority: ActivityPriority.MEDIUM,
+					stageId: stages[0]?.id || "",
+			  },
 	});
 
+	// Actualizar formulario cuando cambia la actividad
+	useEffect(() => {
+		if (activity) {
+			form.reset({
+				title: activity.title,
+				description: activity.description,
+				status: activity.status,
+				assignedToUser: activity.assignedToUser,
+				startDate: new Date(activity.startDate),
+				endDate: new Date(activity.endDate),
+				priority: activity.priority,
+				stageId: activity.stageId,
+			});
+		}
+	}, [activity, form]);
+
 	const onSubmit = async (values: z.infer<typeof formSchema>) => {
-		const newActivity: BaseActivity = {
-			id: `a${Math.floor(Math.random() * 1000)}`,
-			...values,
-		};
+		if (isEditMode && activity) {
+			// Modo edición - actualizar actividad existente
+			const updatedActivity: BaseActivity = {
+				...activity,
+				...values,
+			};
 
-		const response = await ActivitysService.createActivity(values.stageId, newActivity);
+			const response = await ActivitysService.updateActivity(updatedActivity.id, updatedActivity);
 
-		if (response.success) {
-			// Asegurémonos de que la respuesta de la API contiene el ID real asignado
-			// Si response.data incluye el ID, usamos ese, si no, usamos el generado localmente
-			const createdActivity = response.data?.id ? { ...newActivity, id: response.data.id } : newActivity;
-
-			onSuccess(createdActivity);
-
-			toast({
-				title: "Activity created",
-				description: "The activity has been created successfully.",
-			});
-			onClose();
+			if (response.success) {
+				onSuccess(updatedActivity);
+				toast({
+					title: "Actividad actualizada",
+					description: "La actividad ha sido actualizada correctamente.",
+				});
+				onClose();
+			} else {
+				toast({
+					title: "Error",
+					description: "Hubo un error al actualizar la actividad.",
+					variant: "destructive",
+				});
+			}
 		} else {
-			toast({
-				title: "Error",
-				description: "There was an error creating the activity.",
-				variant: "destructive",
-			});
+			// Modo creación - crear nueva actividad
+			const newActivity: BaseActivity = {
+				id: `a${Math.floor(Math.random() * 1000)}`,
+				...values,
+			};
+
+			const response = await ActivitysService.createActivity(values.stageId, newActivity);
+
+			if (response.success) {
+				// Asegurémonos de que la respuesta de la API contiene el ID real asignado
+				// Si response.data incluye el ID, usamos ese, si no, usamos el generado localmente
+				const createdActivity = response.data?.id ? { ...newActivity, id: response.data.id } : newActivity;
+				onSuccess(createdActivity);
+				toast({
+					title: "Activity created",
+					description: "The activity has been created successfully.",
+				});
+				onClose();
+			} else {
+				toast({
+					title: "Error",
+					description: "There was an error creating the activity.",
+					variant: "destructive",
+				});
+			}
 		}
 	};
 
@@ -134,7 +187,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 	}));
 
 	return (
-		<div className="space-y-4 p-4">
+		<div className="space-y-4 px-4">
 			<Form {...form}>
 				<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 					<FormField
@@ -340,7 +393,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 						<Button type="button" variant="outline" onClick={onClose}>
 							Cancelar
 						</Button>
-						<Button type="submit">Crear Actividad</Button>
+						<Button type="submit">{isEditMode ? "Actualizar Actividad" : "Crear Actividad"}</Button>
 					</div>
 				</form>
 			</Form>
