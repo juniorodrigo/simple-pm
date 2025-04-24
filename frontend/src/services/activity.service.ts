@@ -63,9 +63,26 @@ const updateActivity = async (userId: string, Activity: BaseActivity): Promise<A
 	}
 };
 
+const updateActivityStatus = async (userId: string, status: string): Promise<ApiResponse> => {
+	try {
+		const petition = await fetch(`/api/is/activities/${userId}/change-status`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({ newStatus: status }),
+		});
+
+		return await petition.json();
+	} catch (error) {
+		return { success: false };
+	}
+};
+
 export const ActivitysService = {
 	getActivitys,
 	deleteActivity,
 	createActivity,
 	updateActivity,
+	updateActivityStatus,
 };

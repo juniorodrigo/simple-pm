@@ -30,13 +30,35 @@ const createActivity = async (stageId, activityData) => {
 
 const updateActivity = async (stageId, activityData) => {};
 
-const deleteActivity = async (activityId) => {};
+const deleteActivity = async (activityId) => {
+	const data = await prisma.projectActivity.delete({
+		where: {
+			id: activityId,
+		},
+	});
+	return { success: true, data };
+};
 
-const changeStatus = async (activityId) => {};
+const changeStatus = async (activityId, newStatus) => {
+	// console.log(newStatus, 'THIS IS THE NEW STATUS');
+	const data = await prisma.projectActivity.update({
+		where: {
+			id: activityId,
+		},
+		data: {
+			status: newStatus,
+		},
+	});
+
+	// console.log('data', data);
+
+	return { success: true, data };
+};
 
 export const Service = {
 	getActivities,
 	createActivity,
 	updateActivity,
 	deleteActivity,
+	changeStatus,
 };

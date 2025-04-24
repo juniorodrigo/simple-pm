@@ -25,7 +25,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [project, setProject] = useState<ExtendedProject | null>(null);
-	const [statsVisible, setStatsVisible] = useState(false); // Estado para controlar la visibilidad, por defecto oculto
+	const [statsVisible, setStatsVisible] = useState(true); // Cambiado a true por defecto para mejor visibilidad
 
 	useEffect(() => {
 		const loadProject = async () => {
@@ -79,8 +79,46 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 		}
 	}, [project]);
 
+	// Esta función maneja cualquier cambio en las actividades
+	const handleActivityChange = (updatedActivities: BaseActivity[]) => {
+		setProjectActivities(updatedActivities);
+
+		// También actualizamos el project para que ProjectStatsCards se actualice
+		if (project) {
+			const updatedProject = { ...project };
+
+			// Actualizamos las actividades dentro de sus respectivos stages
+			if (updatedProject.stages && Array.isArray(updatedProject.stages)) {
+				updatedProject.stages = updatedProject.stages.map((stage) => {
+					if (stage.activities && Array.isArray(stage.activities)) {
+						// Filtramos solo las actividades que pertenecen a este stage
+						const stageActivities = updatedActivities.filter((act) => act.stageId === stage.id);
+						return { ...stage, activities: stageActivities };
+					}
+					return stage;
+				});
+			}
+
+			// Calcular nuevo porcentaje de progreso basado en actividades completadas
+			const totalActivities = updatedActivities.length;
+			if (totalActivities > 0) {
+				const completedActivities = updatedActivities.filter((act) => act.status == "completed").length;
+				// Actualizar el porcentaje de progreso (redondeado a entero)
+				updatedProject.progressPercentage = Math.round((completedActivities / totalActivities) * 100);
+			} else {
+				updatedProject.progressPercentage = 0;
+			}
+
+			setProject(updatedProject);
+		}
+	};
+
 	const handleAddActivity = (newActivity: BaseActivity) => {
-		setProjectActivities((prev) => [...prev, newActivity]);
+		const updatedActivities = [...projectActivities, newActivity];
+		setProjectActivities(updatedActivities);
+
+		// Llamamos a handleActivityChange para actualizar todo correctamente
+		handleActivityChange(updatedActivities);
 	};
 
 	const handleUpdateStages = (updatedStages: BaseStage[]) => {
@@ -169,7 +207,11 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 			</div>
 
 			<div className="border rounded-lg p-4">
-				{activeView === "kanban" ? <KanbanBoard activities={projectActivities} stages={projectStages} /> : <GanttChart activities={projectActivities} stages={projectStages} />}
+				{activeView === "kanban" ? (
+					<KanbanBoard activities={projectActivities} stages={projectStages} onActivityChange={handleActivityChange} />
+				) : (
+					<GanttChart activities={projectActivities} stages={projectStages} />
+				)}
 			</div>
 		</div>
 	);

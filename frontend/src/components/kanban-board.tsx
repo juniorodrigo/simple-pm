@@ -4,27 +4,21 @@
 import { useState, useEffect, useCallback, memo, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { CalendarClock } from "lucide-react";
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, KeyboardSensor, PointerSensor, useSensor, useSensors, closestCorners, useDroppable, MeasuringStrategy } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { BaseActivity } from "@/app/types/activity.type";
 import { BaseStage } from "@/app/types/stage.type";
 import { ActivityStatus } from "@/app/types/enums";
-import { getTagColorClass } from "@/lib/colors";
+import { ActivitysService } from "@/services/activity.service";
+import { useToast } from "@/hooks/use-toast";
+import { ActivityCard, ActivityCardContent, PRIORITY_COLORS, getStageColorValue } from "@/components/activity-card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 type KanbanBoardProps = {
 	activities: BaseActivity[];
 	stages: BaseStage[];
-};
-
-// Mapeo de prioridades a clases CSS (constante para evitar recálculos)
-const PRIORITY_COLORS = {
-	low: "bg-green-500 text-white",
-	medium: "bg-blue-500 text-white",
-	high: "bg-orange-500 text-white",
-	critical: "bg-red-500 text-white",
-	default: "bg-gray-500 text-white",
+	onActivityChange?: (activities: BaseActivity[]) => void;
 };
 
 // Definir las columnas (lanes) basadas en ActivityStatus
@@ -35,101 +29,15 @@ const LANES = [
 	{ id: ActivityStatus.DONE, title: "Done" },
 ];
 
-// Componentes memoizados
-const PriorityBadge = memo(({ priority, className }: { priority: string; className: string }) => (
-	<Badge variant="outline" className={className}>
-		{priority}
-	</Badge>
-));
-
-const UserAvatar = memo(({ name, initials }: { name: string; initials: string }) => (
-	<Avatar className="h-6 w-6">
-		<AvatarImage src="/placeholder-user.jpg" alt={name} />
-		<AvatarFallback>{initials}</AvatarFallback>
-	</Avatar>
-));
-
-// Utilidad para obtener iniciales (fuera del componente para evitar recreación)
-const getInitials = (name: string): string =>
-	name
-		.split(" ")
-		.map((part) => part[0])
-		.join("")
-		.toUpperCase();
-
-// Componente de contenido de tarjeta memoizado (separado de la lógica de arrastre)
-const ActivityCardContent = memo(({ activity, getPriorityColor, stages }: { activity: BaseActivity; getPriorityColor: (priority: string) => string; stages: BaseStage[] }) => {
-	const priorityClass = getPriorityColor(activity.priority);
-	const userInitials = getInitials(activity.assignedToUser.name + " " + activity.assignedToUser.lastname);
-	const dueDate = new Date(activity.endDate).toLocaleDateString();
-
-	// Encontrar el stage al que pertenece esta actividad
-	const activityStage = stages.find((s) => s.id === activity.stageId);
-
-	return (
-		<div className="space-y-2 h-full pl-3">
-			<div className="font-medium">{activity.title}</div>
-			<p className="text-sm text-muted-foreground line-clamp-2">{activity.description}</p>
-			<div className="flex items-center justify-between">
-				<div className="flex items-center gap-2">
-					<PriorityBadge priority={activity.priority} className={`text-xs px-2 py-0.5 font-medium shadow-sm ${priorityClass}`} />
-					{activityStage && (
-						<Badge variant="outline" className={`text-[10px] px-2 py-0 border border-dashed bg-transparent hover:bg-transparent ${getTagColorClass(activityStage.color.toLowerCase())}`}>
-							{activityStage.name}
-						</Badge>
-					)}
-				</div>
-				<UserAvatar name={activity.assignedToUser.name + " " + activity.assignedToUser.lastname} initials={userInitials} />
-			</div>
-			<div className="flex items-center text-xs text-muted-foreground">
-				<CalendarClock className="mr-1 h-3 w-3" />
-				<span>Due: {dueDate}</span>
-			</div>
-		</div>
-	);
-});
-ActivityCardContent.displayName = "ActivityCardContent";
-
-// Componente de tarjeta de actividad optimizado
-const ActivityCard = memo(({ activity, getPriorityColor, stages }: { activity: BaseActivity; getPriorityColor: (priority: string) => string; stages: BaseStage[] }) => {
-	const activityStage = stages.find((s) => s.id === activity.stageId);
-
-	const getStageColorValue = (color: string) => {
-		switch (color.toLowerCase()) {
-			case "red":
-				return "#ef4444";
-			case "green":
-				return "#22c55e";
-			case "blue":
-				return "#3b82f6";
-			case "yellow":
-				return "#eab308";
-			case "purple":
-				return "#a855f7";
-			case "pink":
-				return "#ec4899";
-			case "gray":
-				return "#6b7280";
-			default:
-				return "#6b7280";
-		}
-	};
-
-	const borderColor = activityStage ? getStageColorValue(activityStage.color) : undefined;
-
-	return (
-		<Card className="mb-2 cursor-grab overflow-hidden" style={{ borderLeft: borderColor ? `4px solid ${borderColor}` : undefined }}>
-			<CardContent className="p-3">
-				<ActivityCardContent activity={activity} getPriorityColor={getPriorityColor} stages={stages} />
-			</CardContent>
-		</Card>
-	);
-});
-
 // Componente principal optimizado
-export default function KanbanBoard({ activities: initialActivities, stages }: KanbanBoardProps) {
+export default function KanbanBoard({ activities: initialActivities, stages, onActivityChange }: KanbanBoardProps) {
 	const [activities, setActivities] = useState<BaseActivity[]>([]);
 	const [activeId, setActiveId] = useState<string | null>(null);
+	const { toast } = useToast();
+
+	// Nuevos estados para el modal de confirmación
+	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+	const [activityToDelete, setActivityToDelete] = useState<string | null>(null);
 
 	// Actualizar actividades solo cuando cambian
 	useEffect(() => {
@@ -147,6 +55,52 @@ export default function KanbanBoard({ activities: initialActivities, stages }: K
 			coordinateGetter: sortableKeyboardCoordinates,
 		})
 	);
+
+	// Función para mostrar el modal de confirmación
+	const handleDeleteActivity = useCallback((activityId: string) => {
+		setActivityToDelete(activityId);
+		setIsDeleteModalOpen(true);
+	}, []);
+
+	// Función para confirmar la eliminación
+	const confirmDeleteActivity = useCallback(async () => {
+		if (!activityToDelete) return;
+
+		// Llamar al servicio para eliminar la actividad
+		const response = await ActivitysService.deleteActivity(activityToDelete);
+
+		if (response.success) {
+			// Actualizar el estado local eliminando la actividad
+			const updatedActivities = activities.filter((activity) => activity.id !== activityToDelete);
+			setActivities(updatedActivities);
+
+			// Notificar al componente padre sobre el cambio
+			if (onActivityChange) {
+				onActivityChange(updatedActivities);
+			}
+
+			toast({
+				title: "Actividad eliminada",
+				description: "La actividad ha sido eliminada correctamente",
+			});
+		} else {
+			toast({
+				title: "Error",
+				description: "No se pudo eliminar la actividad",
+				variant: "destructive",
+			});
+		}
+
+		// Cerrar el modal y limpiar el estado
+		setIsDeleteModalOpen(false);
+		setActivityToDelete(null);
+	}, [activityToDelete, activities, onActivityChange, toast]);
+
+	// Función para cancelar la eliminación
+	const cancelDeleteActivity = useCallback(() => {
+		setIsDeleteModalOpen(false);
+		setActivityToDelete(null);
+	}, []);
 
 	// Callbacks optimizados
 	const handleDragStart = useCallback((event: DragStartEvent) => {
@@ -176,13 +130,33 @@ export default function KanbanBoard({ activities: initialActivities, stages }: K
 				const newStatus = overId as ActivityStatus;
 
 				if (newStatus && activeActivity.status !== newStatus) {
-					setActivities((prev) => prev.map((activity) => (activity.id === activeId ? { ...activity, status: newStatus } : activity)));
+					// Actualizar estado local para una experiencia de usuario inmediata
+					const updatedActivities = activities.map((activity) => (activity.id === activeId ? { ...activity, status: newStatus } : activity));
+
+					setActivities(updatedActivities);
+
+					// Notificar al componente padre sobre el cambio
+					if (onActivityChange) {
+						onActivityChange(updatedActivities);
+					}
+
+					// Llamar a la API para persistir el cambio en la base de datos
+					ActivitysService.updateActivityStatus(activeId, newStatus)
+						.then((response) => {
+							if (!response.success) {
+								console.error("Error al actualizar el estado de la actividad:", response);
+								// En caso de error se podría revertir el cambio en el estado local
+							}
+						})
+						.catch((error) => {
+							console.error("Falló la llamada a la API:", error);
+						});
 				}
 			}
 
 			setActiveId(null);
 		},
-		[activities]
+		[activities, onActivityChange]
 	);
 
 	// Usar función simple en vez de callback para getPriorityColor
@@ -217,21 +191,53 @@ export default function KanbanBoard({ activities: initialActivities, stages }: K
 	}, [activeId, activeActivity, getPriorityColor, stages]);
 
 	return (
-		<DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} collisionDetection={closestCorners} measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}>
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-				{LANES.map((lane) => (
-					<LaneContainer key={lane.id} lane={lane} activities={laneActivities[lane.id] || []} getPriorityColor={getPriorityColor} stages={stages} />
-				))}
-			</div>
+		<>
+			<DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} collisionDetection={closestCorners} measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}>
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+					{LANES.map((lane) => (
+						<LaneContainer key={lane.id} lane={lane} activities={laneActivities[lane.id] || []} getPriorityColor={getPriorityColor} stages={stages} onDeleteActivity={handleDeleteActivity} />
+					))}
+				</div>
 
-			<DragOverlay>{dragOverlay}</DragOverlay>
-		</DndContext>
+				<DragOverlay>{dragOverlay}</DragOverlay>
+			</DndContext>
+
+			{/* Modal de confirmación de eliminación */}
+			<Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+				<DialogContent className="sm:max-w-[425px]">
+					<DialogHeader>
+						<DialogTitle>Confirmar eliminación</DialogTitle>
+						<DialogDescription>¿Estás seguro de que deseas eliminar esta actividad? Esta acción no se puede deshacer.</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button variant="outline" onClick={cancelDeleteActivity}>
+							Cancelar
+						</Button>
+						<Button variant="destructive" onClick={confirmDeleteActivity}>
+							Eliminar
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+		</>
 	);
 }
 
 // Contenedor de lane optimizado
 const LaneContainer = memo(
-	({ lane, activities, getPriorityColor, stages }: { lane: { id: string; title: string }; activities: BaseActivity[]; getPriorityColor: (priority: string) => string; stages: BaseStage[] }) => {
+	({
+		lane,
+		activities,
+		getPriorityColor,
+		stages,
+		onDeleteActivity,
+	}: {
+		lane: { id: string; title: string };
+		activities: BaseActivity[];
+		getPriorityColor: (priority: string) => string;
+		stages: BaseStage[];
+		onDeleteActivity: (id: string) => void;
+	}) => {
 		const { setNodeRef, isOver } = useDroppable({
 			id: lane.id,
 			data: {
@@ -258,7 +264,7 @@ const LaneContainer = memo(
 					{activities.length > 0 ? (
 						<SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
 							{activities.map((activity) => (
-								<SortableItem key={activity.id} activity={activity} getPriorityColor={getPriorityColor} stages={stages} />
+								<SortableItem key={activity.id} activity={activity} getPriorityColor={getPriorityColor} stages={stages} onDelete={onDeleteActivity} />
 							))}
 						</SortableContext>
 					) : (
@@ -271,54 +277,28 @@ const LaneContainer = memo(
 );
 
 // Item sortable optimizado - ahora más ligero
-const SortableItem = memo(({ activity, getPriorityColor, stages }: { activity: BaseActivity; getPriorityColor: (priority: string) => string; stages: BaseStage[] }) => {
-	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-		id: activity.id,
-		data: {
-			type: "task",
-			activity,
-			status: activity.status,
-		},
-	});
+const SortableItem = memo(
+	({ activity, getPriorityColor, stages, onDelete }: { activity: BaseActivity; getPriorityColor: (priority: string) => string; stages: BaseStage[]; onDelete?: (id: string) => void }) => {
+		const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+			id: activity.id,
+			data: {
+				type: "task",
+				activity,
+				status: activity.status,
+			},
+		});
 
-	// Encontrar el stage y obtener el color
-	const activityStage = stages.find((s) => s.id === activity.stageId);
-	const getStageColorValue = (color: string) => {
-		switch (color.toLowerCase()) {
-			case "red":
-				return "#ef4444";
-			case "green":
-				return "#22c55e";
-			case "blue":
-				return "#3b82f6";
-			case "yellow":
-				return "#eab308";
-			case "purple":
-				return "#a855f7";
-			case "pink":
-				return "#ec4899";
-			case "gray":
-				return "#6b7280";
-			default:
-				return "#6b7280";
-		}
-	};
+		const style = {
+			transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+			transition,
+			opacity: isDragging ? 0.5 : 1,
+			zIndex: isDragging ? 1 : 0,
+		};
 
-	const borderColor = activityStage ? getStageColorValue(activityStage.color) : undefined;
-
-	const style = {
-		transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
-		transition,
-		opacity: isDragging ? 0.5 : 1,
-		zIndex: isDragging ? 1 : 0,
-		borderLeft: borderColor ? `4px solid ${borderColor}` : undefined,
-	};
-
-	return (
-		<Card ref={setNodeRef} style={style} className="mb-2 cursor-grab active:cursor-grabbing overflow-hidden" {...attributes} {...listeners}>
-			<CardContent className="p-3">
-				<ActivityCardContent activity={activity} getPriorityColor={getPriorityColor} stages={stages} />
-			</CardContent>
-		</Card>
-	);
-});
+		return (
+			<div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+				<ActivityCard activity={activity} getPriorityColor={getPriorityColor} stages={stages} onDelete={onDelete} />
+			</div>
+		);
+	}
+);

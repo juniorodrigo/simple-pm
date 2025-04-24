@@ -36,7 +36,14 @@ const changeStatus = async (req, res) => {
 
 const updateActivity = async (req, res) => {};
 
-const deleteActivity = async (req, res) => {};
+const deleteActivity = async (req, res) => {
+	const activityId = req.params.id;
+
+	const { success, data } = await Service.deleteActivity(activityId);
+
+	if (success) res.success(data, 'Actividad eliminada correctamente');
+	else res.error('Error al eliminar la actividad');
+};
 
 export const Controller = {
 	getActivities,

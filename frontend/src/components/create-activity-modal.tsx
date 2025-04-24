@@ -100,7 +100,12 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 		const response = await ActivitysService.createActivity(values.stageId, newActivity);
 
 		if (response.success) {
-			onSuccess(newActivity);
+			// Asegurémonos de que la respuesta de la API contiene el ID real asignado
+			// Si response.data incluye el ID, usamos ese, si no, usamos el generado localmente
+			const createdActivity = response.data?.id ? { ...newActivity, id: response.data.id } : newActivity;
+
+			onSuccess(createdActivity);
+
 			toast({
 				title: "Activity created",
 				description: "The activity has been created successfully.",
