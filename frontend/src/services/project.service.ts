@@ -49,14 +49,14 @@ const createProject = async (project: BaseProject): Promise<ApiResponse> => {
 	}
 };
 
-const updateProject = async (userId: string, Project: BaseProject): Promise<ApiResponse> => {
+const updateProject = async (projectId: string, project: BaseProject): Promise<ApiResponse> => {
 	try {
-		const petition = await fetch(`/api/is/projects/${userId}`, {
+		const petition = await fetch(`/api/is/projects/${projectId}`, {
 			method: "PUT",
 			headers: {
 				"Content-Type": "application/json",
 			},
-			body: JSON.stringify(Project),
+			body: JSON.stringify(project),
 		});
 
 		return await petition.json();

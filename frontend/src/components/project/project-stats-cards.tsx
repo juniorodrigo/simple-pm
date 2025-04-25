@@ -35,7 +35,7 @@ export default function ProjectStatsCards({ project, activities }: ProjectStatsC
 	return (
 		<div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
 			{/* Tarjeta de Progreso */}
-			<Card className="overflow-hidden border-l-4 border-l-primary shadow-sm hover:shadow transition-shadow">
+			<Card className="overflow-hidden border-l-4 border-l-primary shadow-sm hover:shadow transition-shadow ">
 				<CardHeader className="flex flex-row items-center justify-between py-1.5 px-3 space-y-0 bg-muted/30">
 					<CardTitle className="text-sm font-medium">Progreso</CardTitle>
 					<div className="rounded-full bg-primary/20 p-1">
@@ -64,7 +64,7 @@ export default function ProjectStatsCards({ project, activities }: ProjectStatsC
 			</Card>
 
 			{/* Tarjeta de Rango de Tiempo */}
-			<Card className="overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow transition-shadow">
+			<Card className="overflow-hidden border-l-4 border-l-primary shadow-sm hover:shadow transition-shadow">
 				<CardHeader className="flex flex-row items-center justify-between py-1.5 px-3 space-y-0 bg-muted/30">
 					<CardTitle className="text-sm font-medium">Rango de Tiempo</CardTitle>
 					<div className="rounded-full bg-blue-100 p-1">
@@ -102,7 +102,7 @@ export default function ProjectStatsCards({ project, activities }: ProjectStatsC
 			</Card>
 
 			{/* Tarjeta de Actividades */}
-			<Card className="overflow-hidden border-l-4 border-l-purple-500 shadow-sm hover:shadow transition-shadow">
+			<Card className="overflow-hidden border-l-4 border-l-primary shadow-sm hover:shadow transition-shadow">
 				<CardHeader className="flex flex-row items-center justify-between py-1.5 px-3 space-y-0 bg-muted/30">
 					<CardTitle className="text-sm font-medium">Actividades</CardTitle>
 					<div className="rounded-full bg-purple-100 p-1">
@@ -138,7 +138,7 @@ export default function ProjectStatsCards({ project, activities }: ProjectStatsC
 			</Card>
 
 			{/* Tarjeta de Equipo */}
-			<Card className="overflow-hidden border-l-4 border-l-amber-500 shadow-sm hover:shadow transition-shadow">
+			<Card className="overflow-hidden border-l-4 border-l-primary shadow-sm hover:shadow transition-shadow">
 				<CardHeader className="flex flex-row items-center justify-between py-1.5 px-3 space-y-0 bg-muted/30">
 					<CardTitle className="text-sm font-medium">Equipo</CardTitle>
 					<div className="rounded-full bg-amber-100 p-1">

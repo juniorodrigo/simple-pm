@@ -1,12 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { ProjectCard } from "@/components/project-bystage-card";
 
 export default function GanttPage() {
 	const [selectedProject, setSelectedProject] = useState<string>("all");
@@ -86,33 +84,12 @@ export default function GanttPage() {
 	// Filter projects based on selected project
 	const filteredProjects = selectedProject === "all" ? projects : projects.filter((project) => project.id === selectedProject);
 
-	const getStageColorClass = (color: string) => {
-		switch (color) {
-			case "red":
-				return "bg-red-100 text-red-800 border-red-200";
-			case "green":
-				return "bg-green-100 text-green-800 border-green-200";
-			case "blue":
-				return "bg-blue-100 text-blue-800 border-blue-200";
-			case "yellow":
-				return "bg-yellow-100 text-yellow-800 border-yellow-200";
-			case "purple":
-				return "bg-purple-100 text-purple-800 border-purple-200";
-			case "pink":
-				return "bg-pink-100 text-pink-800 border-pink-200";
-			case "gray":
-				return "bg-gray-100 text-gray-800 border-gray-200";
-			default:
-				return "bg-gray-100 text-gray-800 border-gray-200";
-		}
-	};
-
 	return (
 		<div className="space-y-6">
 			<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 				<div>
-					<h1 className="text-2xl font-bold">Project Timeline Overview</h1>
-					<p className="text-muted-foreground">Visualize project stages and progress</p>
+					<h1 className="text-2xl font-bold">Vista de Proyectos por Etapas</h1>
+					<p className="text-muted-foreground">Visualiza el progreso de los proyectos por etapas individuales</p>
 				</div>
 			</div>
 
@@ -134,55 +111,13 @@ export default function GanttPage() {
 				</div>
 				<div className="relative w-full md:w-64">
 					<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-					<Input type="search" placeholder="Search projects..." className="w-full pl-8" />
+					<Input type="search" placeholder="Buscar proyectos..." className="w-full pl-8" />
 				</div>
 			</div>
 
-			<div className="space-y-6">
+			<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 				{filteredProjects.map((project) => (
-					<Card key={project.id}>
-						<CardHeader className="pb-2">
-							<div className="flex justify-between items-center">
-								<div>
-									<CardTitle>{project.name}</CardTitle>
-									<CardDescription>
-										{new Date(project.startDate).toLocaleDateString()} - {new Date(project.endDate).toLocaleDateString()}
-									</CardDescription>
-								</div>
-								<div className="text-right">
-									<div className="text-sm font-medium">Overall Progress</div>
-									<div className="text-2xl font-bold">{project.progress}%</div>
-								</div>
-							</div>
-						</CardHeader>
-						<CardContent>
-							<div className="space-y-4">
-								{project.stages.map((stage) => (
-									<div key={stage.id} className="space-y-1">
-										<div className="flex justify-between items-center">
-											<div className="flex items-center">
-												<Badge variant="outline" className={getStageColorClass(stage.color)}>
-													{stage.name}
-												</Badge>
-												<span className="text-sm ml-2">
-													{new Date(stage.startDate).toLocaleDateString()} - {new Date(stage.endDate).toLocaleDateString()}
-												</span>
-											</div>
-											<span className="text-sm font-medium">{stage.progress}%</span>
-										</div>
-										<div className="w-full bg-secondary h-2 rounded-full">
-											<div className={`h-2 rounded-full bg-${stage.color}-500`} style={{ width: `${stage.progress}%` }} />
-										</div>
-									</div>
-								))}
-							</div>
-							<div className="mt-4">
-								<Button variant="outline" className="w-full" asChild>
-									<a href={`/projects/${project.id}`}>View Project Details</a>
-								</Button>
-							</div>
-						</CardContent>
-					</Card>
+					<ProjectCard key={project.id} project={project} />
 				))}
 			</div>
 		</div>

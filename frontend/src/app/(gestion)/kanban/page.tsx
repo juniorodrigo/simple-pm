@@ -1,156 +1,139 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search } from "lucide-react";
-import KanbanBoard from "@/components/kanban-board";
-import CreateActivityForm from "@/components/create-activity-form";
+import { Plus, Search, Loader2 } from "lucide-react";
+import { ProjectsService } from "@/services/project.service";
+import { BaseProject } from "@/app/types/project.type";
+import ProjectKanbanBoard from "@/components/project-kanban-board";
+import { useToast } from "@/hooks/use-toast";
+import CreateProjectForm from "@/components/create-project-form";
+import { useRouter } from "next/navigation";
 
 export default function KanbanPage() {
-	const [selectedProject, setSelectedProject] = useState<string>("all");
+	const [selectedCategory, setSelectedCategory] = useState<string>("all");
+	const [projects, setProjects] = useState<BaseProject[]>([]);
+	const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+	const [searchTerm, setSearchTerm] = useState("");
+	const [loading, setLoading] = useState(true);
+	const [isDialogOpen, setIsDialogOpen] = useState(false);
+	const { toast } = useToast();
+	const router = useRouter();
 
-	// Mock data for projects and activities
-	const projects = [
-		{ id: "1", name: "Infrastructure Upgrade" },
-		{ id: "2", name: "CRM Development" },
-		{ id: "3", name: "Network Maintenance" },
-		{ id: "4", name: "Database Migration" },
-	];
+	// Cargar proyectos
+	useEffect(() => {
+		async function loadProjects() {
+			setLoading(true);
+			try {
+				const response = await ProjectsService.getProjects();
+				if (response.success && response.data) {
+					setProjects(response.data);
 
-	const activities = [
-		{
-			id: "a1",
-			title: "Requirements Analysis",
-			description: "Gather and analyze system requirements",
-			status: "done",
-			assignee: "Jane Smith",
-			startDate: "2023-10-01",
-			dueDate: "2023-10-10",
-			priority: "high",
-			tags: ["Infrastructure"],
-			projectId: "1",
-		},
-		{
-			id: "a2",
-			title: "Architecture Design",
-			description: "Design system architecture",
-			status: "done",
-			assignee: "John Doe",
-			startDate: "2023-10-11",
-			dueDate: "2023-10-25",
-			priority: "high",
-			tags: ["Infrastructure"],
-			projectId: "1",
-		},
-		{
-			id: "a3",
-			title: "Server Provisioning",
-			description: "Provision and configure new servers",
-			status: "in-progress",
-			assignee: "Robert Johnson",
-			startDate: "2023-10-26",
-			dueDate: "2023-11-15",
-			priority: "medium",
-			tags: ["Infrastructure"],
-			projectId: "1",
-		},
-		{
-			id: "a4",
-			title: "Data Migration",
-			description: "Migrate data to new infrastructure",
-			status: "todo",
-			assignee: "Emily Davis",
-			startDate: "2023-11-16",
-			dueDate: "2023-12-05",
-			priority: "critical",
-			tags: ["Infrastructure", "Critical"],
-			projectId: "1",
-		},
-		{
-			id: "a5",
-			title: "Database Schema Design",
-			description: "Design database schema for CRM",
-			status: "done",
-			assignee: "Jane Smith",
-			startDate: "2023-09-15",
-			dueDate: "2023-09-30",
-			priority: "high",
-			tags: ["Development"],
-			projectId: "2",
-		},
-		{
-			id: "a6",
-			title: "Frontend Development",
-			description: "Develop CRM frontend",
-			status: "in-progress",
-			assignee: "Robert Johnson",
-			startDate: "2023-10-01",
-			dueDate: "2023-11-15",
-			priority: "medium",
-			tags: ["Development"],
-			projectId: "2",
-		},
-		{
-			id: "a7",
-			title: "Backend API Development",
-			description: "Develop CRM backend APIs",
-			status: "in-progress",
-			assignee: "John Doe",
-			startDate: "2023-10-01",
-			dueDate: "2023-11-30",
-			priority: "high",
-			tags: ["Development"],
-			projectId: "2",
-		},
-		{
-			id: "a8",
-			title: "Network Audit",
-			description: "Perform network audit",
-			status: "done",
-			assignee: "Emily Davis",
-			startDate: "2023-11-01",
-			dueDate: "2023-11-07",
-			priority: "medium",
-			tags: ["Maintenance"],
-			projectId: "3",
-		},
-		{
-			id: "a9",
-			title: "Security Updates",
-			description: "Apply security patches",
-			status: "todo",
-			assignee: "Robert Johnson",
-			startDate: "2023-11-08",
-			dueDate: "2023-11-15",
-			priority: "critical",
-			tags: ["Maintenance", "Critical"],
-			projectId: "3",
-		},
-	];
+					// Extraer categorías únicas de los proyectos
+					const uniqueCategories = new Map();
+					response.data.forEach((project: BaseProject) => {
+						if (project.categoryId && project.categoryName) {
+							uniqueCategories.set(project.categoryId, {
+								id: project.categoryId,
+								name: project.categoryName,
+							});
+						}
+					});
+					setCategories(Array.from(uniqueCategories.values()));
+				} else {
+					toast({
+						title: "Error",
+						description: "No se recibieron datos de proyectos",
+						variant: "destructive",
+					});
+				}
+			} catch (error) {
+				toast({
+					title: "Error",
+					description: "No se pudieron cargar los proyectos",
+					variant: "destructive",
+				});
+			} finally {
+				setLoading(false);
+			}
+		}
 
-	// Filter activities based on selected project
-	const filteredActivities = selectedProject === "all" ? activities : activities.filter((activity) => activity.projectId === selectedProject);
+		loadProjects();
+	}, [toast]);
+
+	// Filtrar proyectos por categoría y término de búsqueda
+	const filteredProjects = projects.filter((project) => {
+		const matchesCategory = selectedCategory === "all" || project.categoryId === selectedCategory;
+		const matchesSearch = searchTerm === "" || project.name.toLowerCase().includes(searchTerm.toLowerCase()) || project.description?.toLowerCase().includes(searchTerm.toLowerCase());
+
+		return matchesCategory && matchesSearch;
+	});
+
+	// Manejar cambios en proyectos (después de arrastrar)
+	const handleProjectChange = async (updatedProjects: BaseProject[]) => {
+		setProjects(updatedProjects);
+	};
+
+	// Función para recargar proyectos después de crear uno nuevo
+	const handleProjectCreated = async () => {
+		setIsDialogOpen(false);
+		setLoading(true);
+		try {
+			const response = await ProjectsService.getProjects();
+			if (response.success && response.data) {
+				setProjects(response.data);
+
+				// Extraer categorías únicas de los proyectos
+				const uniqueCategories = new Map();
+				response.data.forEach((project: BaseProject) => {
+					if (project.categoryId && project.categoryName) {
+						uniqueCategories.set(project.categoryId, {
+							id: project.categoryId,
+							name: project.categoryName,
+						});
+					}
+				});
+				setCategories(Array.from(uniqueCategories.values()));
+			}
+		} catch (error) {
+			toast({
+				title: "Error",
+				description: "No se pudieron recargar los proyectos",
+				variant: "destructive",
+			});
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	// Función para manejar el clic en un proyecto
+	const handleProjectClick = (project: BaseProject) => {
+		router.push(`/projects/${project.id}`);
+	};
 
 	return (
 		<div className="space-y-6">
 			<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 				<div>
-					<h1 className="text-2xl font-bold">Kanban Board</h1>
-					<p className="text-muted-foreground">Manage your activities using drag and drop</p>
+					<h1 className="text-2xl font-bold">Lista de Proyectos</h1>
+					<p className="text-muted-foreground">Gestiona tus proyectos usando arrastrar y soltar</p>
 				</div>
 				<div className="flex items-center gap-2">
-					<Dialog>
+					<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
 						<DialogTrigger asChild>
 							<Button>
 								<Plus className="mr-2 h-4 w-4" />
-								New Activity
+								Nuevo Proyecto
 							</Button>
 						</DialogTrigger>
-						<DialogContent>
-							<CreateActivityForm />
+						<DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+							<DialogHeader>
+								<DialogTitle>Crear nuevo proyecto</DialogTitle>
+							</DialogHeader>
+							<CreateProjectForm onSuccess={handleProjectCreated} />
 						</DialogContent>
 					</Dialog>
 				</div>
@@ -158,15 +141,15 @@ export default function KanbanPage() {
 
 			<div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
 				<div className="w-full md:w-64">
-					<Select value={selectedProject} onValueChange={setSelectedProject}>
+					<Select value={selectedCategory} onValueChange={setSelectedCategory}>
 						<SelectTrigger>
-							<SelectValue placeholder="Select project" />
+							<SelectValue placeholder="Filtrar por categoría" />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="all">All Projects</SelectItem>
-							{projects.map((project) => (
-								<SelectItem key={project.id} value={project.id}>
-									{project.name}
+							<SelectItem value="all">Todas las categorías</SelectItem>
+							{categories.map((category) => (
+								<SelectItem key={category.id} value={category.id}>
+									{category.name}
 								</SelectItem>
 							))}
 						</SelectContent>
@@ -174,11 +157,27 @@ export default function KanbanPage() {
 				</div>
 				<div className="relative w-full md:w-64">
 					<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-					<Input type="search" placeholder="Search activities..." className="w-full pl-8" />
+					<Input type="search" placeholder="Buscar proyectos..." className="w-full pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+				</div>
+				<div className="text-sm text-muted-foreground">
+					{loading ? (
+						<span className="flex items-center">
+							<Loader2 className="h-3 w-3 mr-1 animate-spin" />
+							Cargando proyectos...
+						</span>
+					) : (
+						`${filteredProjects.length} proyectos`
+					)}
 				</div>
 			</div>
 
-			<KanbanBoard activities={filteredActivities} />
+			{loading ? (
+				<div className="flex justify-center items-center h-64">
+					<Loader2 className="h-8 w-8 animate-spin text-primary" />
+				</div>
+			) : (
+				<ProjectKanbanBoard projects={filteredProjects} onProjectChange={handleProjectChange} onProjectClick={handleProjectClick} />
+			)}
 		</div>
 	);
 }

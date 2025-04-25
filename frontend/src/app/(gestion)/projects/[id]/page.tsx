@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { Edit, Plus, ListPlus, ChevronDown, ChevronUp } from "lucide-react";
+import { Edit, Plus, ListPlus, ChevronDown, ChevronUp, X } from "lucide-react";
 import KanbanBoard from "@/components/kanban-board";
 import GanttChart from "@/components/gantt-chart";
 import CreateActivityModal from "@/components/create-activity-modal";
@@ -13,6 +13,10 @@ import { BaseActivity } from "@/app/types/activity.type";
 import { BaseStage } from "@/app/types/stage.type";
 import { ExtendedProject } from "@/app/types/project.type";
 import { ProjectsService } from "@/services/project.service";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { getTagColorClass } from "@/lib/colors";
+import CreateProjectForm from "@/components/create-project-form";
 
 export default function ProjectPage({ params }: { params: { id: string } }) {
 	// @ts-expect-error: test
@@ -26,7 +30,12 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [project, setProject] = useState<ExtendedProject | null>(null);
-	const [statsVisible, setStatsVisible] = useState(true); // Cambiado a true por defecto para mejor visibilidad
+	const [statsVisible, setStatsVisible] = useState(true);
+	const [selectedStageId, setSelectedStageId] = useState<string | null>("all");
+	const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false);
+
+	// Filtrar actividades basadas en la etapa seleccionada
+	const filteredActivities = selectedStageId && selectedStageId !== "all" ? projectActivities.filter((activity) => activity.stageId === selectedStageId) : projectActivities;
 
 	useEffect(() => {
 		const loadProject = async () => {
@@ -154,6 +163,22 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 		}
 	};
 
+	const clearFilter = () => {
+		setSelectedStageId("all");
+	};
+
+	const handleProjectUpdated = async () => {
+		// Recargar los datos del proyecto
+		try {
+			const response = await ProjectsService.getSingleProject(id);
+			if (response.success && response.data) {
+				setProject(response.data);
+			}
+		} catch (error) {
+			console.error("Error al recargar el proyecto", error);
+		}
+	};
+
 	if (loading) return <div className="flex items-center justify-center h-screen">Cargando datos del proyecto...</div>;
 	if (error || !project) return <div className="flex items-center justify-center h-screen">Error: {error || "No se encontró el proyecto"}</div>;
 
@@ -165,10 +190,17 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 					<p className="text-muted-foreground">{project.description}</p>
 				</div>
 				<div className="flex items-center gap-2">
-					<Button variant="outline">
-						<Edit className="mr-2 h-4 w-4" />
-						Editar Proyecto
-					</Button>
+					<Dialog open={isEditProjectModalOpen} onOpenChange={setIsEditProjectModalOpen}>
+						<Button variant="outline" onClick={() => setIsEditProjectModalOpen(true)}>
+							<Edit className="mr-2 h-4 w-4" />
+							Editar Proyecto
+						</Button>
+						<DialogContent className="sm:max-w-[700px]">
+							<DialogTitle>Editar Proyecto</DialogTitle>
+							<DialogDescription>Actualiza los detalles del proyecto</DialogDescription>
+							{project && <CreateProjectForm isEditing={true} projectData={project} onSuccess={handleProjectUpdated} />}
+						</DialogContent>
+					</Dialog>
 					<Dialog open={isStagesModalOpen} onOpenChange={setIsStagesModalOpen}>
 						<Button variant="outline" onClick={() => setIsStagesModalOpen(true)}>
 							<ListPlus className="mr-2 h-4 w-4" />
@@ -177,7 +209,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 
 						<DialogContent className="sm:max-w-[700px]">
 							<DialogTitle>Gestionar Etapas del Proyecto</DialogTitle>
-							<DialogDescription>Create and organize stages for this project</DialogDescription>
+							<DialogDescription>Crea y gestiona las etapas del proyecto</DialogDescription>
 							<ProjectStagesModal projectId={project.id} stages={projectStages} onClose={() => setIsStagesModalOpen(false)} onSave={handleUpdateStages} />
 						</DialogContent>
 					</Dialog>
@@ -221,10 +253,38 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 
 			<div className="flex items-center justify-between">
 				<h2 className="text-xl font-bold">Acividades del Proyecto</h2>
-				<div className="flex items-center space-x-2">
+				<div className="flex items-center space-x-2 flex-wrap gap-2">
+					{/* Selector de etapas para filtrar */}
+					<Select value={selectedStageId || "all"} onValueChange={(value) => setSelectedStageId(value)}>
+						<SelectTrigger className="w-[180px]">
+							<SelectValue placeholder="Filtrar por etapa" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="all">Todas las etapas</SelectItem>
+							{projectStages.map((stage) => (
+								<SelectItem key={stage.id} value={stage.id}>
+									<div className="flex items-center">
+										<Badge variant="outline" className={getTagColorClass(stage.color)}>
+											{stage.name}
+										</Badge>
+									</div>
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+
+					{/* Botón para limpiar filtros (solo visible cuando hay filtro activo y no es "all") */}
+					{selectedStageId && selectedStageId !== "all" && (
+						<Button variant="outline" size="sm" onClick={clearFilter}>
+							<X className="mr-2 h-4 w-4" />
+							Limpiar filtro
+						</Button>
+					)}
+
 					<Button variant={activeView === "kanban" ? "default" : "outline"} size="sm" onClick={() => setActiveView("kanban")}>
 						Kanban
 					</Button>
+
 					<Button variant={activeView === "gantt" ? "default" : "outline"} size="sm" onClick={() => setActiveView("gantt")}>
 						Gantt
 					</Button>
@@ -233,9 +293,9 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 
 			<div className="border rounded-lg p-4">
 				{activeView === "kanban" ? (
-					<KanbanBoard activities={projectActivities} stages={projectStages} onActivityChange={handleActivityChange} onActivityClick={handleActivityClick} />
+					<KanbanBoard activities={filteredActivities} stages={projectStages} onActivityChange={handleActivityChange} onActivityClick={handleActivityClick} />
 				) : (
-					<GanttChart activities={projectActivities} stages={projectStages} />
+					<GanttChart activities={filteredActivities} stages={projectStages} />
 				)}
 			</div>
 		</div>

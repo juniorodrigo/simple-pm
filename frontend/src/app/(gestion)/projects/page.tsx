@@ -63,7 +63,7 @@ export default function ProjectsPage() {
 										</div>
 										<div className="flex items-center">
 											<Clock className="mr-1 h-4 w-4 text-muted-foreground" />
-											<span>{project.activitiesCount ?? 0} actividades</span>
+											<span>{project.activitiesCount ?? 0} activities</span>
 										</div>
 									</div>
 									<div>

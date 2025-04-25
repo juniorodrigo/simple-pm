@@ -64,7 +64,7 @@ model Project {
   description   String
   startDate     DateTime?       @db.Timestamp(6)
   endDate       DateTime?       @db.Timestamp(6)
-  status        ProjectStatus   @default(active)
+  status        ProjectStatus   @default(in_progress)
   createdAt     DateTime?       @default(now()) @db.Timestamp(6)
   completedAt   DateTime?       @db.Timestamp(6)
   updatedAt     DateTime?       @default(now()) @db.Timestamp(6)
@@ -163,8 +163,7 @@ enum Colors {
 }
 
 enum ProjectStatus {
-  active
+  in_progress
+  review
   completed
-  on_hold
-  cancelled
 }

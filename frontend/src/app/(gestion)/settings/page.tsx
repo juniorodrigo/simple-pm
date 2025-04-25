@@ -21,15 +21,15 @@ export default function SettingsPage() {
 	return (
 		<div className="space-y-6">
 			<div>
-				<h1 className="text-2xl font-bold">Settings</h1>
-				<p className="text-muted-foreground">Manage your application settings and preferences</p>
+				<h1 className="text-2xl font-bold">Configuración</h1>
+				<p className="text-muted-foreground">Administra la configuración y preferencias de la aplicación</p>
 			</div>
 
 			<Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
 				<TabsList>
 					<TabsTrigger value="general">General</TabsTrigger>
-					<TabsTrigger value="users">Users & Roles</TabsTrigger>
-					<TabsTrigger value="tags">Tags</TabsTrigger>
+					<TabsTrigger value="users">Usuarios y Roles</TabsTrigger>
+					<TabsTrigger value="tags">Etiquetas</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="general" className="space-y-4">

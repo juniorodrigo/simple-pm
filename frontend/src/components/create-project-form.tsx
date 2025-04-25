@@ -12,7 +12,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format, addDays } from "date-fns";
 import { es } from "date-fns/locale";
-import { CalendarIcon, X } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UsersService } from "@/services/users.service";
@@ -20,7 +20,7 @@ import { TagsService } from "@/services/tags.service";
 import { ProjectsService } from "@/services/project.service";
 import { User } from "@/app/types/user.type";
 import { Tag } from "@/app/types/tag.type";
-import { BaseProject } from "@/app/types/project.type";
+import { BaseProject, ExtendedProject } from "@/app/types/project.type";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -43,15 +43,48 @@ type DateRange = {
 	to?: Date;
 };
 
-export default function CreateProjectForm() {
+interface CreateProjectFormProps {
+	isEditing?: boolean;
+	projectData?: ExtendedProject;
+	onSuccess?: () => void;
+}
+
+export default function CreateProjectForm({ isEditing = false, projectData, onSuccess }: CreateProjectFormProps) {
 	const { toast } = useToast();
 	const [users, setUsers] = useState<User[]>([]);
 	const [availableTags, setAvailableTags] = useState<Tag[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [dateRange, setDateRange] = useState<DateRange>({
 		from: new Date(),
-		to: addDays(new Date(), 30), // Por defecto, un mes de duración
+		to: addDays(new Date(), 30),
 	});
+
+	// Inicializar el formulario con valores predeterminados o datos del proyecto si está en modo edición
+	const form = useForm<z.infer<typeof formSchema>>({
+		resolver: zodResolver(formSchema),
+		defaultValues: {
+			name: isEditing && projectData ? projectData.name : "",
+			description: isEditing && projectData ? projectData.description || "" : "",
+			startDate: isEditing && projectData && projectData.startDate ? new Date(projectData.startDate) : new Date(),
+			endDate: isEditing && projectData && projectData.endDate ? new Date(projectData.endDate) : addDays(new Date(), 30),
+			managerUserId: isEditing && projectData ? projectData.managerUserId || "" : "",
+			teamMembers: isEditing && projectData && projectData.team ? projectData.team.map((member) => member.id || "") : [],
+			categoryId: isEditing && projectData ? projectData.categoryId || "" : "",
+		},
+	});
+
+	// Configurar el rango de fechas inicial si estamos editando
+	useEffect(() => {
+		if (isEditing && projectData) {
+			const start = projectData.startDate ? new Date(projectData.startDate) : new Date();
+			const end = projectData.endDate ? new Date(projectData.endDate) : addDays(start, 30);
+
+			setDateRange({
+				from: start,
+				to: end,
+			});
+		}
+	}, [isEditing, projectData]);
 
 	useEffect(() => {
 		const loadData = async () => {
@@ -69,19 +102,6 @@ export default function CreateProjectForm() {
 
 		loadData();
 	}, []);
-
-	const form = useForm<z.infer<typeof formSchema>>({
-		resolver: zodResolver(formSchema),
-		defaultValues: {
-			name: "",
-			description: "",
-			startDate: new Date(),
-			endDate: new Date(),
-			managerUserId: "",
-			teamMembers: [],
-			categoryId: "",
-		},
-	});
 
 	// Sincronizar el rango de fechas con los campos del formulario
 	useEffect(() => {
@@ -110,23 +130,44 @@ export default function CreateProjectForm() {
 				team: teamMembers,
 			};
 
-			// @ts-expect-error: lujan
-			const response = await ProjectsService.createProject(projectData as BaseProject);
+			let response;
+			// @ts-expect-error: test
 
-			if (response.success) {
-				toast({
-					title: "Proyecto creado con éxito",
-					variant: "default",
-				});
-				form.reset();
-				window.location.reload();
+			if (isEditing && projectData?.id) {
+				// Actualizar proyecto existente
+				// @ts-expect-error: test
+				response = await ProjectsService.updateProject(projectData.id, projectData as BaseProject);
+
+				if (response.success) {
+					toast({
+						title: "Proyecto actualizado con éxito",
+						variant: "default",
+					});
+
+					// Llamar al callback de éxito si existe
+					if (onSuccess) {
+						onSuccess();
+					}
+				}
+			} else {
+				// @ts-expect-error: test
+				response = await ProjectsService.createProject(projectData as BaseProject);
+
+				if (response.success) {
+					toast({
+						title: "Proyecto creado con éxito",
+						variant: "default",
+					});
+					form.reset();
+					window.location.reload();
+				}
 			}
 		} catch (error) {
 			toast({
-				title: "Error al crear el proyecto",
+				title: isEditing ? "Error al actualizar el proyecto" : "Error al crear el proyecto",
 				variant: "destructive",
 			});
-			console.error("Error creating project");
+			console.error(isEditing ? "Error updating project" : "Error creating project");
 		}
 		setLoading(false);
 	};
@@ -293,10 +334,10 @@ export default function CreateProjectForm() {
 
 					<div className="flex justify-end space-x-2 pt-4">
 						<Button type="button" variant="outline">
-							Cancel
+							Cancelar
 						</Button>
 						<Button type="submit" disabled={loading}>
-							{loading ? "Creando..." : "Crear Proyecto"}
+							{loading ? (isEditing ? "Actualizando..." : "Creando...") : isEditing ? "Actualizar Proyecto" : "Crear Proyecto"}
 						</Button>
 					</div>
 				</form>

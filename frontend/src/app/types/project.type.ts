@@ -15,6 +15,8 @@ export type BaseProject = {
 	progressPercentage: number;
 	activitiesCount?: number;
 	team: BaseUser[];
+	status?: string;
+	manager?: BaseUser;
 };
 
 export type ExtendedProject = BaseProject & {

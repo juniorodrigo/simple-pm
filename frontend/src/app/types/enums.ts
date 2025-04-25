@@ -49,8 +49,15 @@ export enum Colors {
 }
 
 export enum ProjectStatus {
-	ACTIVE = "active",
+	PENDING = "pending",
+	IN_PROGRESS = "in_progress",
+	REVIEW = "review",
 	COMPLETED = "completed",
-	ON_HOLD = "on_hold",
-	CANCELLED = "cancelled",
 }
+
+export const ProjectStatusLabels = {
+	[ProjectStatus.PENDING]: "Pendiente",
+	[ProjectStatus.IN_PROGRESS]: "En Progreso",
+	[ProjectStatus.REVIEW]: "En Revisión",
+	[ProjectStatus.COMPLETED]: "Completado",
+};
