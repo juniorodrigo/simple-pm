@@ -29,7 +29,7 @@ export const PRIORITY_BG_COLORS = {
 // Colores para los estados de actividades
 export const STATUS_COLORS = {
 	todo: "border-l-4 border-l-slate-400",
-	"in-progress": "border-l-4 border-l-blue-500",
+	in_progress: "border-l-4 border-l-blue-500",
 	review: "border-l-4 border-l-purple-500",
 	done: "border-l-4 border-l-green-500",
 	default: "",
@@ -90,5 +90,30 @@ export function getStageColorValue(color: string) {
 			// Si ya es un valor hexadecimal, devolverlo directamente
 			if (color.startsWith("#")) return color;
 			return "#6b7280";
+	}
+}
+
+export function getStageColorTailwind(color: string) {
+	if (!color) return "bg-gray-500"; // Color gris por defecto si no hay color
+
+	switch (color.toLowerCase()) {
+		case "red":
+			return "red-500";
+		case "green":
+			return "green-500";
+		case "blue":
+			return "blue-500";
+		case "amber":
+			return "amber-500";
+		case "violet":
+			return "violet-500";
+		case "rose":
+			return "rose-500";
+		case "gray":
+			return "gray-500";
+		default:
+			// Si ya es una clase de Tailwind, devolverla directamente
+			if (color.startsWith("bg-")) return color;
+			return "bg-base";
 	}
 }

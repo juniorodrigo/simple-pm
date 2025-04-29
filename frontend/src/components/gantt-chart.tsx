@@ -9,7 +9,7 @@ import { BaseStage } from "@/app/types/stage.type";
 import { CalendarIcon, AlertTriangleIcon, CheckIcon, ArrowRightIcon, ClockIcon } from "lucide-react";
 import { es } from "date-fns/locale";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { getStageColorValue, getPriorityBgColor, getPriorityColor, getStatusColor } from "@/lib/colors";
+import { getStageColorValue, getPriorityColor, getStatusColor } from "@/lib/colors";
 
 type GanttChartProps = {
 	activities: BaseActivity[];
@@ -92,7 +92,7 @@ export default function GanttChart({ activities, stages }: GanttChartProps) {
 		console.log("DEBUG - stage encontrado:", stage);
 
 		if (!stage || !stage.color) {
-			return "#6E6E6E"; // Color predeterminado si no se encuentra el stage o no tiene color
+			return "base"; // Color predeterminado si no se encuentra el stage o no tiene color
 		}
 
 		return stage.color;
@@ -272,7 +272,7 @@ export default function GanttChart({ activities, stages }: GanttChartProps) {
 
 								return (
 									<div key={activity.id} className="flex border-b hover:bg-secondary/20">
-										<div className={`w-64 min-w-64 p-3 border-r ${getStatusColor(activity.status)} sticky left-0 bg-background z-10`}>
+										<div className={`w-64 min-w-64 p-3 border-r border-l-4 border-l-${getStageColor(activity.stageId)}-500 sticky left-0 bg-background z-10`}>
 											<div className="font-medium">{activity.title}</div>
 											<div className="flex items-center space-x-2 mt-2">
 												<Badge variant="outline" className={`text-xs px-1.5 py-0 font-medium shadow-sm border bg-white ${getPriorityColor(activity.priority)}`}>
