@@ -4,7 +4,17 @@ const getActivities = async (req, res) => {};
 
 const createActivity = async (req, res) => {
 	try {
-		const { title, description, status, priority, assignedToUser, startDate, endDate } = req.body;
+		const {
+			title,
+			description,
+			status,
+			priority,
+			assignedToUser,
+			startDate,
+			endDate,
+			executedStartDate,
+			executedEndDate,
+		} = req.body;
 
 		const requiredFields = { title, description, status, priority, assignedToUser, startDate, endDate };
 		const stageId = req.params.stageId;
@@ -36,7 +46,17 @@ const changeStatus = async (req, res) => {
 
 const updateActivity = async (req, res) => {
 	const activityId = req.params.id;
-	const { title, description, status, priority, assignedToUser, startDate, endDate } = req.body;
+	const {
+		title,
+		description,
+		status,
+		priority,
+		assignedToUser,
+		startDate,
+		endDate,
+		executedStartDate,
+		executedEndDate,
+	} = req.body;
 
 	const requiredFields = { title, description, status, priority, assignedToUser, startDate, endDate };
 

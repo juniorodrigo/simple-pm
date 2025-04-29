@@ -46,6 +46,8 @@ const formSchema = z.object({
 		}),
 	startDate: z.date(),
 	endDate: z.date(),
+	executedStartDate: z.date().optional(),
+	executedEndDate: z.date().optional(),
 	priority: z.nativeEnum(ActivityPriority),
 	stageId: z.string(),
 });
@@ -72,6 +74,9 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 		to: addDays(new Date(), 7),
 	});
 
+	// Nuevo estado para las fechas ejecutadas
+	const [executedDateRange, setExecutedDateRange] = useState<DateRange | null>(null);
+
 	useEffect(() => {
 		const loadUsers = async () => {
 			const response = await UsersService.getUsers();
@@ -94,6 +99,8 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 					assignedToUser: activity.assignedToUser,
 					startDate: new Date(activity.startDate),
 					endDate: new Date(activity.endDate),
+					executedStartDate: activity.executedStartDate ? new Date(activity.executedStartDate) : undefined,
+					executedEndDate: activity.executedEndDate ? new Date(activity.executedEndDate) : undefined,
 					priority: activity.priority,
 					stageId: activity.stageId,
 			  }
@@ -109,6 +116,8 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 					},
 					startDate: new Date(),
 					endDate: new Date(),
+					executedStartDate: undefined,
+					executedEndDate: undefined,
 					priority: ActivityPriority.MEDIUM,
 					stageId: stages[0]?.id || "",
 			  },
@@ -124,13 +133,24 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 				assignedToUser: activity.assignedToUser,
 				startDate: new Date(activity.startDate),
 				endDate: new Date(activity.endDate),
+				executedStartDate: activity.executedStartDate ? new Date(activity.executedStartDate) : undefined,
+				executedEndDate: activity.executedEndDate ? new Date(activity.executedEndDate) : undefined,
 				priority: activity.priority,
 				stageId: activity.stageId,
 			});
+
 			setDateRange({
 				from: new Date(activity.startDate),
 				to: new Date(activity.endDate),
 			});
+
+			// Inicializar el rango de fechas ejecutadas si existen
+			if (activity.executedStartDate) {
+				setExecutedDateRange({
+					from: new Date(activity.executedStartDate),
+					to: activity.executedEndDate ? new Date(activity.executedEndDate) : undefined,
+				});
+			}
 		}
 	}, [activity, form]);
 
@@ -142,6 +162,25 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 			form.setValue("endDate", dateRange.to || dateRange.from);
 		}
 	}, [dateRange, form]);
+
+	// Sincronizar el rango de fechas ejecutadas con los campos del formulario
+	useEffect(() => {
+		if (executedDateRange?.from) {
+			form.setValue("executedStartDate", executedDateRange.from);
+			form.setValue("executedEndDate", executedDateRange.to || executedDateRange.from);
+		} else {
+			form.setValue("executedStartDate", undefined);
+			form.setValue("executedEndDate", undefined);
+		}
+	}, [executedDateRange, form]);
+
+	// Limpia las fechas ejecutadas cuando el estado cambia a algo diferente de DONE
+	useEffect(() => {
+		const status = form.watch("status");
+		if (status !== ActivityStatus.DONE && executedDateRange) {
+			clearExecutedDates();
+		}
+	}, [form.watch("status")]);
 
 	const onSubmit = async (values: z.infer<typeof formSchema>) => {
 		if (isEditMode && activity) {
@@ -205,6 +244,13 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 		label: ActivityPriorityLabels[priorityValue],
 		value: priorityValue,
 	}));
+
+	// Función para limpiar las fechas ejecutadas
+	const clearExecutedDates = () => {
+		setExecutedDateRange(null);
+		form.setValue("executedStartDate", undefined);
+		form.setValue("executedEndDate", undefined);
+	};
 
 	return (
 		<div className="space-y-4 px-4">
@@ -360,7 +406,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 					/>
 
 					<div className="space-y-2">
-						<FormLabel>Rango de fechas</FormLabel>
+						<FormLabel>Fechas planificadas</FormLabel>
 						<Popover>
 							<PopoverTrigger asChild>
 								<Button id="date-range" variant={"outline"} className={cn("w-full justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
@@ -406,10 +452,71 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 						{(form.formState.errors.startDate || form.formState.errors.endDate) && <p className="text-sm font-medium text-destructive">Por favor selecciona un rango de fechas válido</p>}
 					</div>
 
+					{/* Nuevos campos para fechas ejecutadas - solo visibles cuando el estado es DONE */}
+					{form.watch("status") === ActivityStatus.DONE && (
+						<div className="space-y-2">
+							<div className="flex items-center justify-between">
+								<FormLabel>Fechas reales de ejecución (opcional)</FormLabel>
+								{executedDateRange && (
+									<Button type="button" variant="ghost" size="sm" onClick={clearExecutedDates} className="h-8 text-xs">
+										Limpiar fechas
+									</Button>
+								)}
+							</div>
+							<Popover>
+								<PopoverTrigger asChild>
+									<Button id="executed-date-range" variant={"outline"} className={cn("w-full justify-start text-left font-normal", !executedDateRange && "text-muted-foreground")}>
+										<CalendarIcon className="mr-2 h-4 w-4" />
+										{executedDateRange?.from ? (
+											executedDateRange.to && executedDateRange.from.getTime() !== executedDateRange.to.getTime() ? (
+												<>
+													{format(executedDateRange.from, "PPP", { locale: es })} - {format(executedDateRange.to, "PPP", { locale: es })}
+												</>
+											) : (
+												<>Un solo día: {format(executedDateRange.from, "PPP", { locale: es })}</>
+											)
+										) : (
+											<span>Selecciona fechas reales de ejecución</span>
+										)}
+									</Button>
+								</PopoverTrigger>
+								<PopoverContent className="w-auto p-0" align="start">
+									<div className="p-2 text-xs text-muted-foreground">Selecciona las fechas reales en que se ejecutó la actividad</div>
+									<Calendar
+										initialFocus
+										mode="range"
+										defaultMonth={executedDateRange?.from || new Date()}
+										selected={executedDateRange || undefined}
+										onSelect={(range) => {
+											if (range?.from) {
+												setExecutedDateRange({
+													from: range.from,
+													to: range.to || range.from,
+												});
+											} else {
+												setExecutedDateRange(null);
+											}
+										}}
+										locale={es}
+										numberOfMonths={2}
+									/>
+								</PopoverContent>
+							</Popover>
+							{executedDateRange && (
+								<div className="flex justify-between text-xs text-muted-foreground">
+									<p>Inicio real: {format(executedDateRange.from, "PPP", { locale: es })}</p>
+									<p>Fin real: {executedDateRange.to ? format(executedDateRange.to, "PPP", { locale: es }) : "Igual que inicio"}</p>
+								</div>
+							)}
+						</div>
+					)}
+
 					{/* Campos ocultos para mantener la compatibilidad con el esquema */}
 					<div className="hidden">
 						<FormField control={form.control} name="startDate" render={({ field }) => <input type="hidden" {...field} value={field.value?.toISOString()} />} />
 						<FormField control={form.control} name="endDate" render={({ field }) => <input type="hidden" {...field} value={field.value?.toISOString()} />} />
+						<FormField control={form.control} name="executedStartDate" render={({ field }) => <>{field.value && <input type="hidden" {...field} value={field.value?.toISOString()} />}</>} />
+						<FormField control={form.control} name="executedEndDate" render={({ field }) => <>{field.value && <input type="hidden" {...field} value={field.value?.toISOString()} />}</>} />
 					</div>
 
 					<div className="flex justify-end space-x-2 pt-4">

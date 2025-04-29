@@ -12,4 +12,6 @@ export type BaseActivity = {
 	assignedToUser: BaseUser;
 	startDate: Date;
 	endDate: Date;
+	executedStartDate?: Date | undefined;
+	executedEndDate?: Date | undefined;
 };

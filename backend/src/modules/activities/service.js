@@ -23,6 +23,8 @@ const createActivity = async (stageId, activityData) => {
 			},
 			startDate: activityData.startDate,
 			endDate: activityData.endDate,
+			executedStartDate: activityData.executedStartDate,
+			executedEndDate: activityData.executedEndDate,
 		},
 	});
 	return { success: true, data };
@@ -47,6 +49,8 @@ const updateActivity = async (activityId, activityData) => {
 			},
 			startDate: activityData.startDate,
 			endDate: activityData.endDate,
+			executedStartDate: activityData.executedStartDate,
+			executedEndDate: activityData.executedEndDate,
 		},
 	});
 

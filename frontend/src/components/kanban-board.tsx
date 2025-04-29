@@ -14,6 +14,7 @@ import { ActivityCard } from "@/components/activity-card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { getPriorityColor } from "@/lib/colors";
+import ExecutionDateModal from "@/components/execution-date-modal";
 
 type KanbanBoardProps = {
 	activities: BaseActivity[];
@@ -34,9 +35,13 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 	const [activeId, setActiveId] = useState<string | null>(null);
 	const { toast } = useToast();
 
-	// Nuevos estados para el modal de confirmación
+	// Estados para el modal de confirmación
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 	const [activityToDelete, setActivityToDelete] = useState<string | null>(null);
+
+	// Nuevos estados para el modal de fechas de ejecución
+	const [isExecutionDateModalOpen, setIsExecutionDateModalOpen] = useState(false);
+	const [completedActivity, setCompletedActivity] = useState<BaseActivity | null>(null);
 
 	// Actualizar actividades solo cuando cambian
 	useEffect(() => {
@@ -134,6 +139,12 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 
 					setActivities(updatedActivities);
 
+					// Si el nuevo estado es DONE y viene de un estado diferente, mostrar el modal de fechas de ejecución
+					if (newStatus === ActivityStatus.DONE && activeActivity.status !== ActivityStatus.DONE) {
+						setCompletedActivity(activeActivity);
+						setIsExecutionDateModalOpen(true);
+					}
+
 					// Notificar al componente padre sobre el cambio
 					if (onActivityChange) {
 						onActivityChange(updatedActivities);
@@ -154,6 +165,26 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 			}
 
 			setActiveId(null);
+		},
+		[activities, onActivityChange]
+	);
+
+	// Manejar el éxito del registro de fechas de ejecución
+	const handleExecutionDateSuccess = useCallback(
+		(updatedActivity: BaseActivity) => {
+			// Actualizar la actividad en el estado local
+			const updatedActivities = activities.map((activity) => (activity.id === updatedActivity.id ? updatedActivity : activity));
+
+			setActivities(updatedActivities);
+
+			// Notificar al componente padre sobre el cambio
+			if (onActivityChange) {
+				onActivityChange(updatedActivities);
+			}
+
+			// Cerrar el modal
+			setIsExecutionDateModalOpen(false);
+			setCompletedActivity(null);
 		},
 		[activities, onActivityChange]
 	);
@@ -233,6 +264,9 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+
+			{/* Nuevo modal para fechas de ejecución */}
+			<ExecutionDateModal activity={completedActivity} isOpen={isExecutionDateModalOpen} onClose={() => setIsExecutionDateModalOpen(false)} onSuccess={handleExecutionDateSuccess} />
 		</>
 	);
 }

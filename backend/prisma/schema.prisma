@@ -90,15 +90,17 @@ model ProjectMember {
 }
 
 model ProjectActivity {
-  id               String           @id @default(cuid())
-  title            String
-  description      String
-  stageId          String
-  status           ActivityStatus   @default(pending)
-  priority         ActivityPriority @default(medium)
-  assignedToUserId String
-  startDate        DateTime?        @db.Timestamp(6)
-  endDate          DateTime?        @db.Timestamp(6)
+  id                String           @id @default(cuid())
+  title             String
+  description       String
+  stageId           String
+  status            ActivityStatus   @default(pending)
+  priority          ActivityPriority @default(medium)
+  assignedToUserId  String
+  startDate         DateTime?        @db.Timestamp(6)
+  endDate           DateTime?        @db.Timestamp(6)
+  executedStartDate DateTime?        @db.Timestamp(6)
+  executedEndDate   DateTime?        @db.Timestamp(6)
 
   createdAt DateTime? @default(now()) @db.Timestamp(6)
   updatedAt DateTime? @default(now()) @db.Timestamp(6)

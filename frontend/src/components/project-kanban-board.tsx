@@ -236,13 +236,13 @@ export default function ProjectKanbanBoard({ projects: initialProjects, onProjec
 						x: 0,
 						y: 0.2,
 					},
-					speed: {
-						x: 10,
-						y: 10,
-					},
+					// speed: {
+					// 	x: 10,
+					// 	y: 10,
+					// },
 				}}
 			>
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-hidden">
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 overflow-hidden">
 					{LANES.map((lane) => (
 						<LaneContainer key={lane.id} lane={lane} projects={laneProjects[lane.id] || []} onDeleteProject={handleDeleteProject} onProjectClick={handleProjectClick} />
 					))}
@@ -373,7 +373,7 @@ const SortableItem = memo(({ project, onDelete, onClick }: { project: BaseProjec
 	};
 
 	return (
-		<div ref={setNodeRef} style={style} {...attributes} {...listeners} className="mb-2 touch-manipulation">
+		<div ref={setNodeRef} {...attributes} {...listeners} className="mb-2 touch-manipulation">
 			<ProjectCard project={project} onDelete={onDelete ? () => onDelete(project.id.toString()) : undefined} onClick={onClick ? () => onClick(project) : undefined} isDragging={isDragging} />
 		</div>
 	);
