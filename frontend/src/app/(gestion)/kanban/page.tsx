@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Loader2 } from "lucide-react";
+import { Plus, Search, Loader2, KanbanSquare, GanttChart } from "lucide-react";
 import { ProjectsService } from "@/services/project.service";
 import { BaseProject } from "@/app/types/project.type";
 import ProjectKanbanBoard from "@/components/project-kanban-board";
 import { useToast } from "@/hooks/use-toast";
 import CreateProjectForm from "@/components/create-project-form";
 import { useRouter } from "next/navigation";
+import ProjectsGantt from "@/components/projects-gantt";
 
 export default function KanbanPage() {
 	const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -20,6 +21,7 @@ export default function KanbanPage() {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [loading, setLoading] = useState(true);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
+	const [activeView, setActiveView] = useState<"kanban" | "gantt">("kanban");
 	const { toast } = useToast();
 	const router = useRouter();
 
@@ -139,35 +141,48 @@ export default function KanbanPage() {
 				</div>
 			</div>
 
-			<div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
-				<div className="w-full md:w-64">
-					<Select value={selectedCategory} onValueChange={setSelectedCategory}>
-						<SelectTrigger>
-							<SelectValue placeholder="Filtrar por categoría" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="all">Todas las categorías</SelectItem>
-							{categories.map((category) => (
-								<SelectItem key={category.id} value={category.id}>
-									{category.name}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
+			<div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+				<div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+					<div className="w-full md:w-64">
+						<Select value={selectedCategory} onValueChange={setSelectedCategory}>
+							<SelectTrigger>
+								<SelectValue placeholder="Filtrar por categoría" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="all">Todas las categorías</SelectItem>
+								{categories.map((category) => (
+									<SelectItem key={category.id} value={category.id}>
+										{category.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+					<div className="relative w-full md:w-64">
+						<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+						<Input type="search" placeholder="Buscar proyectos..." className="w-full pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+					</div>
+					<div className="text-sm text-muted-foreground">
+						{loading ? (
+							<span className="flex items-center">
+								<Loader2 className="h-3 w-3 mr-1 animate-spin" />
+								Cargando proyectos...
+							</span>
+						) : (
+							`${filteredProjects.length} proyectos`
+						)}
+					</div>
 				</div>
-				<div className="relative w-full md:w-64">
-					<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-					<Input type="search" placeholder="Buscar proyectos..." className="w-full pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-				</div>
-				<div className="text-sm text-muted-foreground">
-					{loading ? (
-						<span className="flex items-center">
-							<Loader2 className="h-3 w-3 mr-1 animate-spin" />
-							Cargando proyectos...
-						</span>
-					) : (
-						`${filteredProjects.length} proyectos`
-					)}
+
+				<div className="flex border rounded-md overflow-hidden">
+					<Button variant={activeView === "kanban" ? "default" : "ghost"} className={`rounded-none ${activeView === "kanban" ? "" : "border-r"}`} onClick={() => setActiveView("kanban")}>
+						<KanbanSquare className="mr-2 h-4 w-4" />
+						Kanban
+					</Button>
+					<Button variant={activeView === "gantt" ? "default" : "ghost"} className="rounded-none" onClick={() => setActiveView("gantt")}>
+						<GanttChart className="mr-2 h-4 w-4" />
+						Gantt
+					</Button>
 				</div>
 			</div>
 
@@ -175,8 +190,10 @@ export default function KanbanPage() {
 				<div className="flex justify-center items-center h-64">
 					<Loader2 className="h-8 w-8 animate-spin text-primary" />
 				</div>
-			) : (
+			) : activeView === "kanban" ? (
 				<ProjectKanbanBoard projects={filteredProjects} onProjectChange={handleProjectChange} onProjectClick={handleProjectClick} />
+			) : (
+				<ProjectsGantt projects={filteredProjects} />
 			)}
 		</div>
 	);
