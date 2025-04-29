@@ -243,8 +243,8 @@ export default function GanttChart({ activities, stages }: GanttChartProps) {
 				<div className="overflow-x-auto border rounded-md shadow">
 					<div style={{ minWidth: `${chartWidth}px` }} className="relative">
 						{/* Header with dates */}
-						<div className="flex border-b sticky top-0 bg-background z-10">
-							<div className="w-64 min-w-64 p-3 border-r font-medium bg-secondary/30">Actividad</div>
+						<div className="flex border-b sticky top-0 bg-background z-20">
+							<div className="w-64 min-w-64 p-3 border-r font-medium sticky left-0 z-30 bg-background shadow-sm">Actividad</div>
 							<div className="flex-1 flex">
 								{dateRange.map((date, index) => (
 									<div
@@ -272,7 +272,7 @@ export default function GanttChart({ activities, stages }: GanttChartProps) {
 
 								return (
 									<div key={activity.id} className="flex border-b hover:bg-secondary/20">
-										<div className={`w-64 min-w-64 p-3 border-r ${getStatusColor(activity.status)}`}>
+										<div className={`w-64 min-w-64 p-3 border-r ${getStatusColor(activity.status)} sticky left-0 bg-background z-10`}>
 											<div className="font-medium">{activity.title}</div>
 											<div className="flex items-center space-x-2 mt-2">
 												<Badge variant="outline" className={`text-xs px-1.5 py-0 font-medium shadow-sm border bg-white ${getPriorityColor(activity.priority)}`}>
