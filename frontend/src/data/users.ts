@@ -13,7 +13,7 @@ export const users: User[] = [
 		name: "Wilfredo",
 		lastname: "Melgar",
 		email: "wmelgar@madridinmobiliaria.pe",
-		password: "pmsystem",
+		password: "wmelgar",
 		role: "admin",
 	},
 	{
@@ -45,7 +45,7 @@ export const users: User[] = [
 		name: "Zeus",
 		lastname: "Holguín",
 		email: "zholguin@madridinmobiliaria.pe",
-		password: "pmsystem",
+		password: "zholguin",
 		role: "viewer",
 	},
 	{
@@ -53,7 +53,7 @@ export const users: User[] = [
 		name: "César",
 		lastname: "Madrid",
 		email: "cmadrid@madridinmobiliaria.pe",
-		password: "pmsystem",
+		password: "cmadrid",
 		role: "viewer",
 	},
 ];
