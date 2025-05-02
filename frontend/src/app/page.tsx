@@ -14,7 +14,7 @@ import CreateProjectForm from "@/components/create-project-form";
 import { useRouter } from "next/navigation";
 import ProjectsGantt from "@/components/projects-gantt";
 
-export default function KanbanPage() {
+export default function Home() {
 	const [selectedCategory, setSelectedCategory] = useState<string>("all");
 	const [projects, setProjects] = useState<BaseProject[]>([]);
 	const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
