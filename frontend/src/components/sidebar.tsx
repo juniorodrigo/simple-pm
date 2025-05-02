@@ -23,12 +23,12 @@ export default function Sidebar() {
 	};
 
 	const navigation = [
-		{
-			name: "Dashboard",
-			href: "/",
-			icon: LayoutDashboard,
-			current: pathname === "/",
-		},
+		// {
+		// 	name: "Dashboard",
+		// 	href: "/",
+		// 	icon: LayoutDashboard,
+		// 	current: pathname === "/",
+		// },
 		// {
 		// 	name: "Proyectos",
 		// 	href: "/projects",
