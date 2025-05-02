@@ -42,7 +42,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	const login = async (email: string, password: string): Promise<AuthenticatedUser | null> => {
 		const foundUser = users.find((user) => user.email === email && user.password === password);
 
+		console.log("trying to login", email, password);
+
 		if (foundUser) {
+			console.log("user found", foundUser);
+
 			const { password: _, ...authenticatedUser } = foundUser;
 
 			// Actualizar el estado de forma síncrona
