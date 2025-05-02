@@ -31,13 +31,14 @@ const LANES = Object.values(ProjectStatus).map((statusValue) => ({
 	title: ProjectStatusLabels[statusValue],
 }));
 
-type ProjectKanbanBoardProps = {
+interface ProjectKanbanBoardProps {
 	projects: BaseProject[];
-	onProjectChange?: (projects: BaseProject[]) => void;
-	onProjectClick?: (project: BaseProject) => void;
-};
+	onProjectChange: (updatedProjects: BaseProject[]) => Promise<void>;
+	onProjectClick: (project: BaseProject) => void;
+	isViewer?: boolean; // Nueva propiedad para controlar permisos
+}
 
-export default function ProjectKanbanBoard({ projects: initialProjects, onProjectChange, onProjectClick }: ProjectKanbanBoardProps) {
+export default function ProjectKanbanBoard({ projects: initialProjects, onProjectChange, onProjectClick, isViewer }: ProjectKanbanBoardProps) {
 	const [projects, setProjects] = useState<BaseProject[]>([]);
 	const [activeId, setActiveId] = useState<string | null>(null);
 	const { toast } = useToast();
@@ -61,6 +62,9 @@ export default function ProjectKanbanBoard({ projects: initialProjects, onProjec
 			coordinateGetter: sortableKeyboardCoordinates,
 		})
 	);
+
+	// Deshabilitar drag and drop si el usuario es viewer
+	const isDraggable = !isViewer;
 
 	// Función para mostrar el modal de confirmación de eliminación
 	const handleDeleteProject = useCallback((projectId: string) => {
@@ -244,7 +248,7 @@ export default function ProjectKanbanBoard({ projects: initialProjects, onProjec
 			>
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 overflow-hidden">
 					{LANES.map((lane) => (
-						<LaneContainer key={lane.id} lane={lane} projects={laneProjects[lane.id] || []} onDeleteProject={handleDeleteProject} onProjectClick={handleProjectClick} />
+						<LaneContainer key={lane.id} lane={lane} projects={laneProjects[lane.id] || []} onDeleteProject={handleDeleteProject} onProjectClick={handleProjectClick} isViewer={isViewer} />
 					))}
 				</div>
 
@@ -279,11 +283,13 @@ const LaneContainer = memo(
 		projects,
 		onDeleteProject,
 		onProjectClick,
+		isViewer,
 	}: {
 		lane: { id: string; title: string };
 		projects: BaseProject[];
 		onDeleteProject: (id: string) => void;
 		onProjectClick?: (project: BaseProject) => void;
+		isViewer?: boolean;
 	}) => {
 		const { setNodeRef, isOver } = useDroppable({
 			id: lane.id,
@@ -340,7 +346,7 @@ const LaneContainer = memo(
 					{projects.length > 0 ? (
 						<SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
 							{projects.map((project) => (
-								<SortableItem key={project.id.toString()} project={project} onDelete={onDeleteProject} onClick={onProjectClick} />
+								<SortableItem key={project.id.toString()} project={project} onDelete={isViewer ? undefined : onDeleteProject} onClick={onProjectClick} />
 							))}
 						</SortableContext>
 					) : (

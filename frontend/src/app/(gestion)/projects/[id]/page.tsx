@@ -17,8 +17,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { getTagColorClass } from "@/lib/colors";
 import CreateProjectForm from "@/components/create-project-form";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function ProjectPage({ params }: { params: { id: string } }) {
+	const { user } = useAuth();
+	const isViewer = user?.role === "viewer";
+
 	// @ts-expect-error: test
 	const { id } = use(params);
 	const [activeView, setActiveView] = useState<"kanban" | "gantt">("kanban");
@@ -189,48 +193,50 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 					<h1 className="text-2xl font-bold">{project.name}</h1>
 					<p className="text-muted-foreground">{project.description}</p>
 				</div>
-				<div className="flex items-center gap-2">
-					<Dialog open={isEditProjectModalOpen} onOpenChange={setIsEditProjectModalOpen}>
-						<Button variant="outline" onClick={() => setIsEditProjectModalOpen(true)}>
-							<Edit className="mr-2 h-4 w-4" />
-							Editar Proyecto
-						</Button>
-						<DialogContent className="sm:max-w-[700px]">
-							<DialogTitle>Editar Proyecto</DialogTitle>
-							<DialogDescription>Actualiza los detalles del proyecto</DialogDescription>
-							{project && <CreateProjectForm isEditing={true} projectData={project} onSuccess={handleProjectUpdated} />}
-						</DialogContent>
-					</Dialog>
-					<Dialog open={isStagesModalOpen} onOpenChange={setIsStagesModalOpen}>
-						<Button variant="outline" onClick={() => setIsStagesModalOpen(true)}>
-							<ListPlus className="mr-2 h-4 w-4" />
-							Administrar Etapas
-						</Button>
+				{!isViewer && (
+					<div className="flex items-center gap-2">
+						<Dialog open={isEditProjectModalOpen} onOpenChange={setIsEditProjectModalOpen}>
+							<Button variant="outline" onClick={() => setIsEditProjectModalOpen(true)}>
+								<Edit className="mr-2 h-4 w-4" />
+								Editar Proyecto
+							</Button>
+							<DialogContent className="sm:max-w-[700px]">
+								<DialogTitle>Editar Proyecto</DialogTitle>
+								<DialogDescription>Actualiza los detalles del proyecto</DialogDescription>
+								{project && <CreateProjectForm isEditing={true} projectData={project} onSuccess={handleProjectUpdated} />}
+							</DialogContent>
+						</Dialog>
+						<Dialog open={isStagesModalOpen} onOpenChange={setIsStagesModalOpen}>
+							<Button variant="outline" onClick={() => setIsStagesModalOpen(true)}>
+								<ListPlus className="mr-2 h-4 w-4" />
+								Administrar Etapas
+							</Button>
 
-						<DialogContent className="sm:max-w-[700px]">
-							<DialogTitle>Gestionar Etapas del Proyecto</DialogTitle>
-							<DialogDescription>Crea y gestiona las etapas del proyecto</DialogDescription>
-							<ProjectStagesModal projectId={project.id} stages={projectStages} onClose={() => setIsStagesModalOpen(false)} onSave={handleUpdateStages} />
-						</DialogContent>
-					</Dialog>
-					<Dialog
-						open={isActivityModalOpen}
-						onOpenChange={(open) => {
-							setIsActivityModalOpen(open);
-							if (!open) setEditingActivity(null);
-						}}
-					>
-						<Button onClick={() => setIsActivityModalOpen(true)}>
-							<Plus className="mr-2 h-4 w-4" />
-							Nueva Actividad
-						</Button>
-						<DialogContent className="sm:max-w-[600px]">
-							<DialogTitle>{editingActivity ? "Editar Actividad" : "Nueva Actividad"}</DialogTitle>
-							<DialogDescription>{editingActivity ? "Actualiza los detalles de la actividad" : "Crea una actividad para el proyecto"}</DialogDescription>
-							<CreateActivityModal projectId={project.id} stages={projectStages} activity={editingActivity} onClose={handleCloseModal} onSuccess={handleAddOrUpdateActivity} />
-						</DialogContent>
-					</Dialog>
-				</div>
+							<DialogContent className="sm:max-w-[700px]">
+								<DialogTitle>Gestionar Etapas del Proyecto</DialogTitle>
+								<DialogDescription>Crea y gestiona las etapas del proyecto</DialogDescription>
+								<ProjectStagesModal projectId={project.id} stages={projectStages} onClose={() => setIsStagesModalOpen(false)} onSave={handleUpdateStages} />
+							</DialogContent>
+						</Dialog>
+						<Dialog
+							open={isActivityModalOpen}
+							onOpenChange={(open) => {
+								setIsActivityModalOpen(open);
+								if (!open) setEditingActivity(null);
+							}}
+						>
+							<Button onClick={() => setIsActivityModalOpen(true)}>
+								<Plus className="mr-2 h-4 w-4" />
+								Nueva Actividad
+							</Button>
+							<DialogContent className="sm:max-w-[600px]">
+								<DialogTitle>{editingActivity ? "Editar Actividad" : "Nueva Actividad"}</DialogTitle>
+								<DialogDescription>{editingActivity ? "Actualiza los detalles de la actividad" : "Crea una actividad para el proyecto"}</DialogDescription>
+								<CreateActivityModal projectId={project.id} stages={projectStages} activity={editingActivity} onClose={handleCloseModal} onSuccess={handleAddOrUpdateActivity} />
+							</DialogContent>
+						</Dialog>
+					</div>
+				)}
 			</div>
 
 			{/* Estadísticas contraíbles con mejor diseño */}
@@ -293,7 +299,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 
 			<div className="border rounded-lg p-4">
 				{activeView === "kanban" ? (
-					<KanbanBoard activities={filteredActivities} stages={projectStages} onActivityChange={handleActivityChange} onActivityClick={handleActivityClick} />
+					<KanbanBoard activities={filteredActivities} stages={projectStages} onActivityChange={isViewer ? undefined : handleActivityChange} onActivityClick={handleActivityClick} isViewer={isViewer} />
 				) : (
 					<GanttChart activities={filteredActivities} stages={projectStages} />
 				)}

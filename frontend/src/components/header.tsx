@@ -18,6 +18,12 @@ export default function Header() {
 		logout();
 	};
 
+	// Obtener las iniciales del usuario
+	const getUserInitials = () => {
+		if (!user) return "";
+		return `${user.name.charAt(0)}${user.lastname.charAt(0)}`;
+	};
+
 	return (
 		<header className="border-b bg-background p-4 flex items-center justify-between">
 			<div className="flex items-center">
@@ -51,10 +57,8 @@ export default function Header() {
 						<DropdownMenuTrigger asChild>
 							<Button variant="ghost" className="relative h-8 w-8 rounded-full">
 								<Avatar className="h-8 w-8">
-									<AvatarFallback>
-										{user.name.charAt(0)}
-										{user.lastname.charAt(0)}
-									</AvatarFallback>
+									{/* Eliminamos la referencia a profileImage que no existe */}
+									<AvatarFallback className="bg-primary text-primary-foreground">{getUserInitials()}</AvatarFallback>
 								</Avatar>
 							</Button>
 						</DropdownMenuTrigger>
