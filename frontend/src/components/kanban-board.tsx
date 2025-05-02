@@ -16,12 +16,13 @@ import { Button } from "@/components/ui/button";
 import { getPriorityColor } from "@/lib/colors";
 import ExecutionDateModal from "@/components/execution-date-modal";
 
-type KanbanBoardProps = {
+interface KanbanBoardProps {
 	activities: BaseActivity[];
 	stages: BaseStage[];
-	onActivityChange?: (activities: BaseActivity[]) => void;
+	onActivityChange?: (updatedActivities: BaseActivity[]) => void;
 	onActivityClick?: (activity: BaseActivity) => void;
-};
+	isViewer?: boolean; // Nueva propiedad para controlar permisos
+}
 
 // Generar las columnas (lanes) automáticamente desde el enum ActivityStatus y sus etiquetas
 const LANES = Object.values(ActivityStatus).map((statusValue) => ({

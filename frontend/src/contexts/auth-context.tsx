@@ -10,7 +10,7 @@ type AuthenticatedUser = Omit<User, "password">;
 
 interface AuthContextType {
 	user: AuthenticatedUser | null;
-	login: (email: string, password: string) => Promise<boolean>;
+	login: (email: string, password: string) => Promise<AuthenticatedUser | null>;
 	logout: () => void;
 	isLoading: boolean;
 }
@@ -39,21 +39,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		setIsLoading(false);
 	}, []);
 
-	const login = async (email: string, password: string): Promise<boolean> => {
+	const login = async (email: string, password: string): Promise<AuthenticatedUser | null> => {
 		const foundUser = users.find((user) => user.email === email && user.password === password);
 
 		if (foundUser) {
 			const { password: _, ...authenticatedUser } = foundUser;
 
+			// Actualizar el estado de forma síncrona
 			setUser(authenticatedUser);
+
+			// Guardar en cookie
 			setCookie("user", JSON.stringify(authenticatedUser), {
 				maxAge: 60 * 60 * 24, // 1 día
 			});
 
-			return true;
+			return authenticatedUser;
 		}
 
-		return false;
+		return null;
 	};
 
 	const logout = () => {

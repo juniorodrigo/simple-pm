@@ -6,6 +6,7 @@ import { CalendarClock, Trash2 } from "lucide-react";
 import { BaseActivity } from "@/app/types/activity.type";
 import { BaseStage } from "@/app/types/stage.type";
 import { getTagColorClass, getStageColorValue, getPriorityColor } from "@/lib/colors";
+import { useAuth } from "@/contexts/auth-context";
 
 // Utilidad para obtener iniciales (fuera del componente para evitar recreación)
 export const getInitials = (name: string): string =>
@@ -33,6 +34,8 @@ UserAvatar.displayName = "UserAvatar";
 
 // Componente de contenido de tarjeta memoizado
 export const ActivityCardContent = memo(({ activity, stages, onDelete }: { activity: BaseActivity; stages: BaseStage[]; onDelete?: (id: string) => void }) => {
+	const { user } = useAuth();
+	const isViewer = user?.role === "viewer";
 	const priorityClass = getPriorityColor(activity.priority);
 	const userInitials = getInitials(activity.assignedToUser.name + " " + activity.assignedToUser.lastname);
 	const dueDate = new Date(activity.endDate).toLocaleDateString();
@@ -45,7 +48,7 @@ export const ActivityCardContent = memo(({ activity, stages, onDelete }: { activ
 			<div className="absolute top-0 right-0 flex gap-1.5 items-center">
 				<PriorityBadge priority={activity.priority} className={`text-xs px-1.5 py-0 font-medium shadow-sm border bg-white ${priorityClass}`} />
 
-				{onDelete && (
+				{onDelete && !isViewer && (
 					<button
 						onClick={(e) => {
 							e.stopPropagation();

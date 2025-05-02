@@ -6,6 +6,7 @@ import { BaseProject } from "@/app/types/project.type";
 import { ProjectStatus, ProjectStatusLabels } from "@/app/types/enums";
 import { getStageColorValue } from "@/lib/colors";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/auth-context";
 
 interface ProjectCardProps {
 	project: BaseProject;
@@ -15,6 +16,8 @@ interface ProjectCardProps {
 }
 
 const ProjectCard = memo(({ project, onDelete, onClick, isDragging }: ProjectCardProps) => {
+	const { user } = useAuth();
+	const isViewer = user?.role === "viewer";
 	const formattedStartDate = new Date(project.startDate).toLocaleDateString();
 	const formattedEndDate = new Date(project.endDate).toLocaleDateString();
 
@@ -63,7 +66,7 @@ const ProjectCard = memo(({ project, onDelete, onClick, isDragging }: ProjectCar
 					</div>
 					<h3 className="font-medium text-base mt-1">{project.name}</h3>
 				</div>
-				{onDelete && (
+				{onDelete && !isViewer && (
 					<Button
 						variant="ghost"
 						size="icon"

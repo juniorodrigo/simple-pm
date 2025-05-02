@@ -24,20 +24,25 @@ export default function LoginPage() {
 		setIsLoading(true);
 
 		try {
-			const success = await login(email, password);
+			const authenticatedUser = await login(email, password);
 
-			if (success) {
+			if (authenticatedUser) {
 				toast({
 					title: "¡Inicio de sesión exitoso!",
 					description: "Bienvenido al sistema.",
 				});
-				router.push(callbackUrl);
+
+				// Redirigiendo a /kanban con recarga completa
+				setTimeout(() => {
+					window.location.href = "/kanban";
+				}, 100);
 			} else {
 				toast({
 					variant: "destructive",
 					title: "Error de autenticación",
 					description: "Credenciales incorrectas. Inténtalo de nuevo.",
 				});
+				setIsLoading(false);
 			}
 		} catch (error) {
 			toast({
@@ -45,7 +50,6 @@ export default function LoginPage() {
 				title: "Error",
 				description: "Ocurrió un error durante el inicio de sesión.",
 			});
-		} finally {
 			setIsLoading(false);
 		}
 	};

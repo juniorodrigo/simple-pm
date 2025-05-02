@@ -13,8 +13,11 @@ import { useToast } from "@/hooks/use-toast";
 import CreateProjectForm from "@/components/create-project-form";
 import { useRouter } from "next/navigation";
 import ProjectsGantt from "@/components/projects-gantt";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function KanbanPage() {
+	const { user } = useAuth();
+	const isViewer = user?.role === "viewer";
 	const [selectedCategory, setSelectedCategory] = useState<string>("all");
 	const [projects, setProjects] = useState<BaseProject[]>([]);
 	const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
@@ -123,22 +126,24 @@ export default function KanbanPage() {
 					<h1 className="text-2xl font-bold">Lista de Proyectos</h1>
 					<p className="text-muted-foreground">Gestiona tus proyectos usando arrastrar y soltar</p>
 				</div>
-				<div className="flex items-center gap-2">
-					<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-						<DialogTrigger asChild>
-							<Button>
-								<Plus className="mr-2 h-4 w-4" />
-								Nuevo Proyecto
-							</Button>
-						</DialogTrigger>
-						<DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-							<DialogHeader>
-								<DialogTitle>Crear nuevo proyecto</DialogTitle>
-							</DialogHeader>
-							<CreateProjectForm onSuccess={handleProjectCreated} />
-						</DialogContent>
-					</Dialog>
-				</div>
+				{!isViewer && (
+					<div className="flex items-center gap-2">
+						<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+							<DialogTrigger asChild>
+								<Button>
+									<Plus className="mr-2 h-4 w-4" />
+									Nuevo Proyecto
+								</Button>
+							</DialogTrigger>
+							<DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+								<DialogHeader>
+									<DialogTitle>Crear nuevo proyecto</DialogTitle>
+								</DialogHeader>
+								<CreateProjectForm onSuccess={handleProjectCreated} />
+							</DialogContent>
+						</Dialog>
+					</div>
+				)}
 			</div>
 
 			<div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
@@ -191,7 +196,7 @@ export default function KanbanPage() {
 					<Loader2 className="h-8 w-8 animate-spin text-primary" />
 				</div>
 			) : activeView === "kanban" ? (
-				<ProjectKanbanBoard projects={filteredProjects} onProjectChange={handleProjectChange} onProjectClick={handleProjectClick} />
+				<ProjectKanbanBoard projects={filteredProjects} onProjectChange={handleProjectChange} onProjectClick={handleProjectClick} isViewer={isViewer} />
 			) : (
 				<ProjectsGantt projects={filteredProjects} />
 			)}
