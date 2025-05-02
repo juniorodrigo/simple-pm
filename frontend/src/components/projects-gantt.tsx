@@ -133,7 +133,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 					<div style={{ minWidth: `${chartWidth}px` }} className="relative">
 						{/* Header with dates */}
 						<div className="flex border-b sticky top-0 bg-background z-20">
-							<div className="w-72 min-w-72 p-3 border-r font-medium sticky left-0 z-30 bg-background shadow-sm">Proyecto</div>
+							<div className="w-72 min-w-72 p-3 border-r font-medium sticky left-0 z-30 bg-background shadow-md">Proyecto</div>
 							<div className="flex-1 flex">
 								{dateRange.map((date, index) => (
 									<div
@@ -159,7 +159,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 
 								return (
 									<div key={project.id} className="flex border-b hover:bg-secondary/20">
-										<div className="w-72 min-w-72 p-3 border-r border-l-4 sticky left-0 bg-background z-10" style={{ borderLeftColor: categoryColor }}>
+										<div className="w-72 min-w-72 p-3 border-r border-l-4 sticky left-0 z-20 bg-background shadow-md" style={{ borderLeftColor: categoryColor }}>
 											<div className="font-medium line-clamp-1">{project.name}</div>
 											<div className="flex items-center space-x-2 mt-2">
 												{project.categoryName && (
