@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { addDays, differenceInDays, format, startOfDay } from "date-fns";
@@ -20,6 +20,9 @@ export default function GanttChart({ activities, stages }: GanttChartProps) {
 	const [dateRange, setDateRange] = useState<Date[]>([]);
 	const [chartWidth, setChartWidth] = useState(0);
 	const [showLegend, setShowLegend] = useState(true);
+	const [scrollLeft, setScrollLeft] = useState(0);
+	const contentRef = useRef<HTMLDivElement>(null);
+	const headerScrollRef = useRef<HTMLDivElement>(null);
 
 	// Find the earliest start date and latest end date
 	useEffect(() => {
@@ -87,6 +90,27 @@ export default function GanttChart({ activities, stages }: GanttChartProps) {
 		};
 	}, [dateRange]);
 
+	// Handle scroll synchronization
+	const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+		const container = e.currentTarget;
+		setScrollLeft(container.scrollLeft);
+
+		// Sincronizar el scroll horizontal del header con el contenido
+		if (headerScrollRef.current) {
+			headerScrollRef.current.scrollLeft = container.scrollLeft;
+		}
+	};
+
+	// Sincronizar el scroll del contenido cuando se desplaza el header
+	const handleHeaderScroll = (e: React.UIEvent<HTMLDivElement>) => {
+		const headerContainer = e.currentTarget;
+		if (contentRef.current) {
+			contentRef.current.scrollLeft = headerContainer.scrollLeft;
+		}
+		setScrollLeft(headerContainer.scrollLeft);
+	};
+
+	// Resto de funciones auxiliares sin cambios
 	const getStageColor = (stageId: string): string => {
 		const stage = stages.find((s) => s.id === stageId);
 		console.log("DEBUG - stage encontrado:", stage);
@@ -240,12 +264,15 @@ export default function GanttChart({ activities, stages }: GanttChartProps) {
 					</div>
 				)}
 
-				<div className="overflow-x-auto border rounded-md shadow">
-					<div style={{ minWidth: `${chartWidth}px` }} className="relative">
-						{/* Header with dates */}
-						<div className="flex border-b sticky top-0 bg-background z-20">
-							<div className="w-64 min-w-64 p-3 border-r font-medium sticky left-0 z-30 bg-background shadow-sm">Actividad</div>
-							<div className="flex-1 flex">
+				<div className="border rounded-md shadow relative">
+					{/* Header con fechas (siempre visible tanto en scroll horizontal como vertical) */}
+					<div className="flex sticky top-0 z-50 bg-background border-b" style={{ maxWidth: "100%" }}>
+						{/* Celda esquina superior izquierda - fija */}
+						<div className="w-64 min-w-64 p-3 border-r font-medium bg-background z-50 shadow-sm sticky left-0">Actividad</div>
+
+						{/* Contenedor de fechas - scrolleable horizontalmente pero fijo verticalmente */}
+						<div ref={headerScrollRef} className="flex-1 overflow-x-auto scrollbar-hide" onScroll={handleHeaderScroll} style={{ maxWidth: "calc(100% - 256px)" }}>
+							<div className="flex" style={{ width: `${chartWidth}px` }}>
 								{dateRange.map((date, index) => (
 									<div
 										key={index}
@@ -261,9 +288,11 @@ export default function GanttChart({ activities, stages }: GanttChartProps) {
 								))}
 							</div>
 						</div>
+					</div>
 
-						{/* Activity rows */}
-						<div>
+					{/* Contenido con actividades (scrolleable en ambas direcciones) */}
+					<div ref={contentRef} className="overflow-x-auto overflow-y-auto max-h-[70vh]" style={{ maxWidth: "100%" }} onScroll={handleScroll}>
+						<div style={{ width: `${chartWidth + 256}px` }}>
 							{activities.map((activity) => {
 								const executedBarPos = getExecutedBarPosition(activity);
 								const executionStatus = getExecutionStatus(activity);
@@ -272,7 +301,8 @@ export default function GanttChart({ activities, stages }: GanttChartProps) {
 
 								return (
 									<div key={activity.id} className="flex border-b hover:bg-secondary/20">
-										<div className={`w-64 min-w-64 p-3 border-r border-l-4 border-l-${getStageColor(activity.stageId)}-500 sticky left-0 bg-background z-10`}>
+										{/* Columna de actividades - fija a la izquierda */}
+										<div className={`w-64 min-w-64 p-3 border-r border-l-4 bg-background/100 shadow-sm border-l-${getStageColor(activity.stageId)}-500 sticky left-0 z-20`}>
 											<div className="font-medium">{activity.title}</div>
 											<div className="flex items-center space-x-2 mt-2">
 												<Badge variant="outline" className={`text-xs px-1.5 py-0 font-medium shadow-sm border bg-white ${getPriorityColor(activity.priority)}`}>
@@ -297,7 +327,10 @@ export default function GanttChart({ activities, stages }: GanttChartProps) {
 												</div>
 											)}
 										</div>
+
+										{/* Barras de Gantt */}
 										<div className="flex-1 relative" style={{ height: "120px" }}>
+											{/* Grid lines */}
 											{dateRange.map((date, dateIndex) => (
 												<div
 													key={dateIndex}
@@ -411,22 +444,19 @@ export default function GanttChart({ activities, stages }: GanttChartProps) {
 								);
 							})}
 						</div>
-
-						{/* Today indicator */}
-						{dateRange.length > 0 && (
-							<div
-								className="absolute w-0.5 bg-primary/50 z-10"
-								style={{
-									left: `${(differenceInDays(new Date(), dateRange[0]) + 0.5) * 40}px`,
-									display: differenceInDays(new Date(), dateRange[0]) >= 0 && differenceInDays(new Date(), dateRange[dateRange.length - 1]) <= 0 ? "block" : "none",
-									top: "36px", // Altura del encabezado
-									bottom: "0",
-									backgroundColor: "transparent",
-								}}
-							/>
-						)}
 					</div>
 				</div>
+
+				{/* Agregar CSS para ocultar las barras de desplazamiento en el encabezado */}
+				<style jsx global>{`
+					.scrollbar-hide::-webkit-scrollbar {
+						display: none;
+					}
+					.scrollbar-hide {
+						-ms-overflow-style: none;
+						scrollbar-width: none;
+					}
+				`}</style>
 			</div>
 		</TooltipProvider>
 	);

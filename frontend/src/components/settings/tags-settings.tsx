@@ -45,7 +45,7 @@ export default function TagsSettings() {
 		} else {
 			toast({
 				title: "Error",
-				description: "No se pudieron cargar las etiquetas",
+				description: "No se pudieron cargar las categorías",
 				variant: "destructive",
 			});
 		}
@@ -63,8 +63,8 @@ export default function TagsSettings() {
 			setNewTagName("");
 			setNewTagColor("blue");
 			toast({
-				title: "Etiqueta creada",
-				description: `La etiqueta "${newTagName}" ha sido creada exitosamente.`,
+				title: "Categoría creada",
+				description: `La categoría "${newTagName}" ha sido creada exitosamente.`,
 			});
 		} else {
 			toast({
@@ -83,13 +83,13 @@ export default function TagsSettings() {
 			setTags((prevTags) => prevTags.map((tag) => (tag.id === id ? { ...tag, name, color: color as Colors } : tag)));
 			setEditingTag(null);
 			toast({
-				title: "Etiqueta actualizada",
-				description: `La etiqueta "${name}" ha sido actualizada exitosamente.`,
+				title: "Categoría actualizada",
+				description: `La categoría "${name}" ha sido actualizada exitosamente.`,
 			});
 		} else {
 			toast({
 				title: "Error",
-				description: "No se pudo actualizar la etiqueta",
+				description: "No se pudo actualizar la categoría",
 				variant: "destructive",
 			});
 		}
@@ -103,8 +103,8 @@ export default function TagsSettings() {
 			// Actualizar estado localmente
 			setTags((prevTags) => prevTags.filter((tag) => tag.id !== id));
 			toast({
-				title: "Etiqueta eliminada",
-				description: tagToDelete ? `La etiqueta "${tagToDelete.name}" ha sido eliminada.` : "La etiqueta ha sido eliminada.",
+				title: "Categoría eliminada",
+				description: tagToDelete ? `La categoría "${tagToDelete.name}" ha sido eliminada.` : "La categoría ha sido eliminada.",
 			});
 		} else {
 			toast({
@@ -118,19 +118,19 @@ export default function TagsSettings() {
 	return (
 		<div className="space-y-6">
 			{isLoading ? (
-				<div className="text-center py-6">Cargando etiquetas...</div>
+				<div className="text-center py-6">Cargando categorías...</div>
 			) : (
 				<>
 					<Card>
 						<CardHeader>
-							<CardTitle>Crear Nueva Etiqueta</CardTitle>
-							<CardDescription>Crea etiquetas para categorizar proyectos y actividades</CardDescription>
+							<CardTitle>Crear Nueva Categoría</CardTitle>
+							<CardDescription>Crea categorías para categorizar proyectos y actividades</CardDescription>
 						</CardHeader>
 						<CardContent>
 							<div className="flex flex-col md:flex-row gap-4">
 								<div className="flex-1">
-									<Label htmlFor="tag-name">Nombre de Etiqueta</Label>
-									<Input id="tag-name" value={newTagName} onChange={(e) => setNewTagName(e.target.value)} placeholder="Ingrese nombre de etiqueta" />
+									<Label htmlFor="tag-name">Nombre de Categoría</Label>
+									<Input id="tag-name" value={newTagName} onChange={(e) => setNewTagName(e.target.value)} placeholder="Ingrese nombre de categoría" />
 								</div>
 								<div className="w-full md:w-48">
 									<Label htmlFor="tag-color">Color</Label>
@@ -169,7 +169,7 @@ export default function TagsSettings() {
 								<div className="flex items-end">
 									<Button onClick={handleAddTag}>
 										<Plus className="mr-2 h-4 w-4" />
-										Añadir Etiqueta
+										Añadir Categoría
 									</Button>
 								</div>
 							</div>
@@ -178,8 +178,8 @@ export default function TagsSettings() {
 
 					<Card>
 						<CardHeader>
-							<CardTitle>Gestionar Etiquetas</CardTitle>
-							<CardDescription>Editar o eliminar etiquetas existentes</CardDescription>
+							<CardTitle>Gestionar Categorías</CardTitle>
+							<CardDescription>Editar o eliminar categorías existentes</CardDescription>
 						</CardHeader>
 						<CardContent>
 							<div className="space-y-4">
@@ -261,8 +261,8 @@ export default function TagsSettings() {
 														</DialogTrigger>
 														<DialogContent>
 															<DialogHeader>
-																<DialogTitle>Eliminar Etiqueta</DialogTitle>
-																<DialogDescription>¿Estás seguro de que quieres eliminar la etiqueta &quot;{tag.name}&quot;? Esta acción no se puede deshacer.</DialogDescription>
+																<DialogTitle>Eliminar Categoría</DialogTitle>
+																<DialogDescription>¿Estás seguro de que quieres eliminar la categoría &quot;{tag.name}&quot;? Esta acción no se puede deshacer.</DialogDescription>
 															</DialogHeader>
 															<DialogFooter>
 																<Button variant="outline">Cancelar</Button>
@@ -277,7 +277,7 @@ export default function TagsSettings() {
 										)}
 									</div>
 								))}
-								{tags.length === 0 && <div className="text-center py-6 text-muted-foreground">No se encontraron etiquetas. Crea tu primera etiqueta arriba.</div>}
+								{tags.length === 0 && <div className="text-center py-6 text-muted-foreground">No se encontraron categorías. Crea tu primera categoría arriba.</div>}
 							</div>
 						</CardContent>
 					</Card>

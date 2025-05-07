@@ -29,7 +29,7 @@ export default function SettingsPage() {
 				<TabsList>
 					<TabsTrigger value="general">General</TabsTrigger>
 					<TabsTrigger value="users">Usuarios y Roles</TabsTrigger>
-					<TabsTrigger value="tags">Etiquetas</TabsTrigger>
+					<TabsTrigger value="tags">Categorías de Proyectos</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="general" className="space-y-4">

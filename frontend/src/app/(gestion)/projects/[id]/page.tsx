@@ -18,8 +18,10 @@ import { Badge } from "@/components/ui/badge";
 import { getTagColorClass } from "@/lib/colors";
 import CreateProjectForm from "@/components/create-project-form";
 import { useAuth } from "@/contexts/auth-context";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function ProjectPage({ params }: { params: { id: string } }) {
+	const { toast } = useToast();
 	const { user } = useAuth();
 	const isViewer = user?.role === "viewer";
 
@@ -34,7 +36,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [project, setProject] = useState<ExtendedProject | null>(null);
-	const [statsVisible, setStatsVisible] = useState(true);
+	const [statsVisible, setStatsVisible] = useState(false);
 	const [selectedStageId, setSelectedStageId] = useState<string | null>("all");
 	const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false);
 
@@ -172,6 +174,15 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 	};
 
 	const handleProjectUpdated = async () => {
+		// Cerrar el modal primero
+		setIsEditProjectModalOpen(false);
+
+		// Mostrar el mensaje de confirmación inmediatamente
+		toast({
+			title: "Proyecto actualizado con éxito",
+			variant: "default",
+		});
+
 		// Recargar los datos del proyecto
 		try {
 			const response = await ProjectsService.getSingleProject(id);
@@ -180,6 +191,11 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 			}
 		} catch (error) {
 			console.error("Error al recargar el proyecto", error);
+			toast({
+				title: "Error al cargar los datos actualizados",
+				description: "El proyecto se actualizó pero no se pudieron cargar los nuevos datos",
+				variant: "destructive",
+			});
 		}
 	};
 

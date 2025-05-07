@@ -122,36 +122,63 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 			const manager = users.find((u) => u.id === values.managerUserId);
 			const teamMembers = users.filter((u) => values.teamMembers.includes(u.id || ""));
 
-			const projectData = {
-				...values,
-				startDate: values.startDate || null,
-				endDate: values.endDate || null,
-				managerUserName: manager?.name,
-				team: teamMembers,
-			};
+			// Aseguramos que las fechas siempre sean Date válidos (nunca null)
+			const startDate = values.startDate || new Date();
+			const endDate = values.endDate || addDays(new Date(), 30);
 
 			let response;
-			// @ts-expect-error: test
 
-			if (isEditing && projectData?.id) {
+			if (isEditing && projectData) {
 				// Actualizar proyecto existente
-				// @ts-expect-error: test
-				response = await ProjectsService.updateProject(projectData.id, projectData as BaseProject);
+				const projectToUpdate: BaseProject = {
+					id: projectData.id,
+					name: values.name,
+					description: values.description,
+					startDate: startDate,
+					endDate: endDate,
+					managerUserId: values.managerUserId,
+					managerUserName: manager?.name || "",
+					team: teamMembers,
+					progressPercentage: projectData.progressPercentage || 0,
+					categoryId: values.categoryId,
+					// Mantener otros campos existentes del proyecto original
+					status: projectData.status,
+					categoryName: projectData.categoryName,
+					categoryColor: projectData.categoryColor,
+					activitiesCount: projectData.activitiesCount,
+					manager: projectData.manager,
+				};
+
+				response = await ProjectsService.updateProject(String(projectData.id), projectToUpdate);
 
 				if (response.success) {
-					toast({
-						title: "Proyecto actualizado con éxito",
-						variant: "default",
-					});
-
-					// Llamar al callback de éxito si existe
+					// Simplificamos esta parte - si hay una función onSuccess, la llamamos directamente
 					if (onSuccess) {
 						onSuccess();
+					} else {
+						// Solo mostramos toast aquí si no hay onSuccess (que ya tiene su propio toast)
+						toast({
+							title: "Proyecto actualizado con éxito",
+							variant: "default",
+						});
 					}
 				}
 			} else {
-				// @ts-expect-error: test
-				response = await ProjectsService.createProject(projectData as BaseProject);
+				// Crear nuevo proyecto
+				const newProject: BaseProject = {
+					id: 0, // El backend asignará el ID real
+					name: values.name,
+					description: values.description,
+					startDate: startDate,
+					endDate: endDate,
+					managerUserId: values.managerUserId,
+					managerUserName: manager?.name || "",
+					team: teamMembers,
+					progressPercentage: 0, // Proyectos nuevos inician en 0%
+					categoryId: values.categoryId,
+				};
+
+				response = await ProjectsService.createProject(newProject);
 
 				if (response.success) {
 					toast({
