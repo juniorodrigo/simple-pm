@@ -1,5 +1,8 @@
 import { ApiResponse } from "@/app/types/api-response.type";
 import { BaseProject } from "../app/types/project.type";
+import { env } from "@/env.mjs";
+
+const HOST = env.NEXT_PUBLIC_HOST || "http://localhost:4141";
 
 const getProjects = async (): Promise<ApiResponse> => {
 	try {
@@ -12,7 +15,9 @@ const getProjects = async (): Promise<ApiResponse> => {
 
 const getSingleProject = async (projectId: string): Promise<ApiResponse> => {
 	try {
-		const petition = await fetch(`/api/is/projects/${projectId}`, { method: "GET" });
+		console.log("JAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", `${HOST}/api/is/projects/${projectId}`);
+		const petition = await fetch(`${HOST}/api/is/projects/${projectId}`, { method: "GET" });
+
 		return await petition.json();
 	} catch (error) {
 		return { success: false };

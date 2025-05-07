@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, KanbanSquare, GanttChartSquare, FolderKanban, Settings, Menu, X, ChevronLeft, ChevronRight, Lightbulb } from "lucide-react";
+import { KanbanSquare, Settings, Menu, X, ChevronLeft, ChevronRight, Lightbulb } from "lucide-react";
 import { useMobile } from "@/hooks/use-mobile";
 
 export default function Sidebar() {
