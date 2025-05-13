@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, eachDayOfInterval } from "date-fns";
@@ -11,6 +11,7 @@ import { es } from "date-fns/locale";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getStageColorValue, getPriorityColor, getStatusColor } from "@/lib/colors";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import React from "react";
 
 type GanttChartProps = {
 	activities: BaseActivity[];
@@ -24,8 +25,13 @@ type ExecutionStatus = {
 	endDiff: number | null;
 };
 
-// Funciones auxiliares
-const getInitials = (name: string) => {
+type BarPosition = {
+	left: number;
+	width: number;
+};
+
+// Funciones auxiliares optimizadas con memoización
+const getInitials = (name: string): string => {
 	return name
 		.split(" ")
 		.map((part) => part[0])
@@ -33,41 +39,36 @@ const getInitials = (name: string) => {
 		.toUpperCase();
 };
 
-const getPriorityIcon = (priority: string) => {
-	switch (priority) {
-		case "critical":
-			return <AlertTriangleIcon className="h-4 w-4" />;
-		case "high":
-			return <AlertTriangleIcon className="h-3 w-3" />;
-		case "medium":
-			return <ArrowRightIcon className="h-3 w-3" />;
-		case "low":
-			return <CheckIcon className="h-3 w-3" />;
-		default:
-			return null;
-	}
+const getPriorityIcon = (priority: string): React.ReactElement | null => {
+	const iconMap: Record<string, React.ReactElement> = {
+		critical: <AlertTriangleIcon className="h-4 w-4" />,
+		high: <AlertTriangleIcon className="h-3 w-3" />,
+		medium: <ArrowRightIcon className="h-3 w-3" />,
+		low: <CheckIcon className="h-3 w-3" />,
+	};
+	return iconMap[priority] || null;
 };
 
 const getStageColor = (stageId: string, stages: BaseStage[]): string => {
-	const stage = stages.find((s) => s.id === stageId);
-	return stage?.color || "base";
+	return stages.find((s) => s.id === stageId)?.color || "base";
 };
 
-const isWeekend = (date: Date) => {
+const isWeekend = (date: Date): boolean => {
 	const day = date.getDay();
 	return day === 0 || day === 6;
 };
 
-const isToday = (date: Date) => {
+const isToday = (date: Date): boolean => {
 	const today = new Date();
 	return date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
 };
 
-const isPast = (date: Date) => {
+const isPast = (date: Date): boolean => {
 	const today = new Date();
 	return date < startOfDay(today);
 };
 
+// Función optimizada para calcular el estado de ejecución
 const getExecutionStatus = (activity: BaseActivity): ExecutionStatus | null => {
 	if (!activity.executedStartDate) return null;
 
@@ -91,57 +92,48 @@ const getExecutionStatus = (activity: BaseActivity): ExecutionStatus | null => {
 	};
 };
 
-// Funciones auxiliares para calcular posiciones
-const WEEK_WIDTH = 100; // ancho reducido para cada semana
+// Funciones de cálculo de posiciones optimizadas
+const WEEK_WIDTH = 100;
+const MIN_WEEKS = 22;
+const DAY_WIDTH = 40;
+const MIN_BAR_WIDTH = 16;
 
-const getBarPosition = (activity: BaseActivity, dateRange: Date[], viewMode: "days" | "weeks") => {
+const getBarPosition = (activity: BaseActivity, dateRange: Date[], viewMode: "days" | "weeks"): BarPosition => {
 	if (dateRange.length === 0) return { left: 0, width: 0 };
 
 	const startDate = new Date(activity.startDate);
 	const dueDate = new Date(activity.endDate);
 	const firstDate = dateRange[0];
+	const widthMultiplier = viewMode === "weeks" ? WEEK_WIDTH / 7 : DAY_WIDTH;
 
-	if (viewMode === "weeks") {
-		const startOffset = differenceInDays(startDate, firstDate);
-		const duration = differenceInDays(dueDate, startDate) + 1;
-		const left = startOffset * (WEEK_WIDTH / 7); // proporcional al nuevo ancho
-		const width = Math.max(duration * (WEEK_WIDTH / 7), 16);
-		return { left, width };
-	} else {
-		const startOffset = differenceInDays(startDate, firstDate);
-		const duration = differenceInDays(dueDate, startDate) + 1;
-		const left = startOffset * 40;
-		const width = Math.max(duration * 40, 16);
-		return { left, width };
-	}
+	const startOffset = differenceInDays(startDate, firstDate);
+	const duration = differenceInDays(dueDate, startDate) + 1;
+
+	return {
+		left: startOffset * widthMultiplier,
+		width: Math.max(duration * widthMultiplier, MIN_BAR_WIDTH),
+	};
 };
 
-const getExecutedBarPosition = (activity: BaseActivity, dateRange: Date[], viewMode: "days" | "weeks") => {
+const getExecutedBarPosition = (activity: BaseActivity, dateRange: Date[], viewMode: "days" | "weeks"): BarPosition | null => {
 	if (dateRange.length === 0 || !activity.executedStartDate) return null;
 
 	const startDate = new Date(activity.executedStartDate);
 	const endDate = activity.executedEndDate ? new Date(activity.executedEndDate) : new Date(activity.executedStartDate);
 	const firstDate = dateRange[0];
+	const widthMultiplier = viewMode === "weeks" ? WEEK_WIDTH / 7 : DAY_WIDTH;
 
-	if (viewMode === "weeks") {
-		const startOffset = differenceInDays(startDate, firstDate);
-		const duration = differenceInDays(endDate, startDate) + 1;
-		const left = startOffset * (WEEK_WIDTH / 7);
-		const width = Math.max(duration * (WEEK_WIDTH / 7), 16);
-		return { left, width };
-	} else {
-		const startOffset = differenceInDays(startDate, firstDate);
-		const duration = differenceInDays(endDate, startDate) + 1;
-		const left = startOffset * 40;
-		const width = Math.max(duration * 40, 16);
-		return { left, width };
-	}
+	const startOffset = differenceInDays(startDate, firstDate);
+	const duration = differenceInDays(endDate, startDate) + 1;
+
+	return {
+		left: startOffset * widthMultiplier,
+		width: Math.max(duration * widthMultiplier, MIN_BAR_WIDTH),
+	};
 };
 
-const MIN_WEEKS = 22;
-
-// Modificar el hook useDateRange para asegurar mínimo de 12 semanas en vista semanal
-const useDateRange = (activities: BaseActivity[], viewMode: "days" | "weeks") => {
+// Hook optimizado para el rango de fechas
+const useDateRange = (activities: BaseActivity[], viewMode: "days" | "weeks"): Date[] => {
 	return useMemo(() => {
 		if (activities.length === 0) return [];
 
@@ -172,7 +164,7 @@ const useDateRange = (activities: BaseActivity[], viewMode: "days" | "weeks") =>
 		if (viewMode === "weeks") {
 			earliestDate = startOfWeek(earliestDate, { weekStartsOn: 1 });
 			latestDate = startOfWeek(latestDate, { weekStartsOn: 1 });
-			// Asegurar mínimo de 12 semanas
+
 			const numWeeks = Math.ceil((latestDate.getTime() - earliestDate.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
 			if (numWeeks < MIN_WEEKS) {
 				latestDate = addDays(earliestDate, (MIN_WEEKS - 1) * 7);
@@ -197,12 +189,13 @@ const useDateRange = (activities: BaseActivity[], viewMode: "days" | "weeks") =>
 	}, [activities, viewMode]);
 };
 
-const useChartDimensions = (dateRange: Date[], viewMode: "days" | "weeks") => {
+// Hook optimizado para dimensiones del gráfico
+const useChartDimensions = (dateRange: Date[], viewMode: "days" | "weeks"): number => {
 	const [chartWidth, setChartWidth] = useState(0);
 
 	useEffect(() => {
 		const updateWidth = () => {
-			const width = Math.max(dateRange.length * (viewMode === "weeks" ? 280 : 40), 800);
+			const width = Math.max(dateRange.length * (viewMode === "weeks" ? WEEK_WIDTH : DAY_WIDTH), 800);
 			setChartWidth(width);
 		};
 
@@ -214,8 +207,8 @@ const useChartDimensions = (dateRange: Date[], viewMode: "days" | "weeks") => {
 	return chartWidth;
 };
 
-// Componentes más pequeños
-const Legend = ({ showLegend, setShowLegend }: { showLegend: boolean; setShowLegend: (show: boolean) => void }) => (
+// Componente Legend optimizado
+const Legend = memo(({ showLegend, setShowLegend }: { showLegend: boolean; setShowLegend: (show: boolean) => void }) => (
 	<div className="flex items-center gap-4 text-sm p-3 bg-muted/20 rounded-md">
 		<h4 className="font-medium">Leyenda:</h4>
 		<div className="flex items-center gap-2">
@@ -234,13 +227,15 @@ const Legend = ({ showLegend, setShowLegend }: { showLegend: boolean; setShowLeg
 			Ocultar
 		</button>
 	</div>
-);
+));
+Legend.displayName = "Legend";
 
-// Agrupa las semanas por mes para el header
-function getMonthGroups(dateRange: Date[]) {
+// Función optimizada para agrupar meses
+const getMonthGroups = (dateRange: Date[]): { month: string; startIdx: number; span: number }[] => {
 	const groups: { month: string; startIdx: number; span: number }[] = [];
 	let currentMonth = format(dateRange[0], "MMMM", { locale: es });
 	let startIdx = 0;
+
 	for (let i = 1; i < dateRange.length; i++) {
 		const month = format(dateRange[i], "MMMM", { locale: es });
 		if (month !== currentMonth) {
@@ -249,16 +244,22 @@ function getMonthGroups(dateRange: Date[]) {
 			startIdx = i;
 		}
 	}
-	groups.push({ month: currentMonth, startIdx, span: dateRange.length - startIdx });
-	return groups;
-}
 
-const DateHeader = ({ dateRange, chartWidth, viewMode }: { dateRange: Date[]; chartWidth: number; viewMode: "days" | "weeks" }) => {
+	groups.push({
+		month: currentMonth,
+		startIdx,
+		span: dateRange.length - startIdx,
+	});
+
+	return groups;
+};
+
+// Componente DateHeader optimizado
+const DateHeader = memo(({ dateRange, chartWidth, viewMode }: { dateRange: Date[]; chartWidth: number; viewMode: "days" | "weeks" }) => {
 	if (viewMode === "weeks") {
 		const monthGroups = getMonthGroups(dateRange);
 		return (
 			<div style={{ width: `${dateRange.length * WEEK_WIDTH}px` }}>
-				{/* Fila de meses */}
 				<div className="flex">
 					{monthGroups.map((group, idx) => (
 						<div key={group.month + idx} className="text-center text-sm font-semibold border-b bg-background" style={{ width: `${group.span * WEEK_WIDTH}px` }}>
@@ -266,12 +267,11 @@ const DateHeader = ({ dateRange, chartWidth, viewMode }: { dateRange: Date[]; ch
 						</div>
 					))}
 				</div>
-				{/* Fila de semanas */}
 				<div className="flex">
 					{dateRange.map((weekStart, index) => {
 						const monday = startOfWeek(weekStart, { weekStartsOn: 1 });
 						return (
-							<div key={index} className={`flex-shrink-0 border-r w-[${WEEK_WIDTH}px]`} style={{ width: `${WEEK_WIDTH}px` }}>
+							<div key={index} className="flex-shrink-0 border-r" style={{ width: `${WEEK_WIDTH}px` }}>
 								<div className="text-center text-xs py-2 bg-secondary/20 font-medium border-b">Semana {format(monday, "w", { locale: es })}</div>
 							</div>
 						);
@@ -280,25 +280,37 @@ const DateHeader = ({ dateRange, chartWidth, viewMode }: { dateRange: Date[]; ch
 			</div>
 		);
 	}
-	// Vista diaria (opcional, pero la dejamos igual)
+
+	const monthGroups = getMonthGroups(dateRange);
 	return (
-		<div className="flex" style={{ width: `${chartWidth}px` }}>
-			{dateRange.map((date, index) => (
-				<div
-					key={index}
-					className={`w-10 flex-shrink-0 text-center text-xs py-2 border-r
-						${isToday(date) ? "bg-primary/20 font-bold" : ""}`}
-				>
-					<div className="font-medium">{format(date, "d")}</div>
-					<div>{format(date, "MMM", { locale: es })}</div>
-					{isToday(date) && <div className="h-1 w-full bg-primary mt-1"></div>}
-				</div>
-			))}
+		<div style={{ width: `${chartWidth}px` }}>
+			<div className="flex">
+				{monthGroups.map((group, idx) => (
+					<div key={group.month + idx} className="text-center text-sm font-semibold border-b bg-background" style={{ width: `${group.span * DAY_WIDTH}px` }}>
+						{group.month.charAt(0).toUpperCase() + group.month.slice(1)}
+					</div>
+				))}
+			</div>
+			<div className="flex">
+				{dateRange.map((date, index) => (
+					<div
+						key={index}
+						className={`w-10 flex-shrink-0 text-center text-xs py-2 border-r
+							${isToday(date) ? "bg-primary/20 font-bold" : ""}`}
+					>
+						<div className="font-medium">{format(date, "d")}</div>
+						<div>{format(date, "MMM", { locale: es })}</div>
+						{isToday(date) && <div className="h-1 w-full bg-primary mt-1"></div>}
+					</div>
+				))}
+			</div>
 		</div>
 	);
-};
+});
+DateHeader.displayName = "DateHeader";
 
-const ActivityTooltipContent = ({ activity, executionStatus }: { activity: BaseActivity; executionStatus: ExecutionStatus | null }) => (
+// Componente ActivityTooltipContent optimizado
+const ActivityTooltipContent = memo(({ activity, executionStatus }: { activity: BaseActivity; executionStatus: ExecutionStatus | null }) => (
 	<div className="text-sm">
 		<p className="font-medium">{activity.title}</p>
 		<p className="text-xs mt-1">Prioridad: {activity.priority}</p>
@@ -330,9 +342,11 @@ const ActivityTooltipContent = ({ activity, executionStatus }: { activity: BaseA
 			)}
 		</div>
 	</div>
-);
+));
+ActivityTooltipContent.displayName = "ActivityTooltipContent";
 
-const ExecutedBarTooltipContent = ({ activity, executionStatus }: { activity: BaseActivity; executionStatus: ExecutionStatus | null }) => (
+// Componente ExecutedBarTooltipContent optimizado
+const ExecutedBarTooltipContent = memo(({ activity, executionStatus }: { activity: BaseActivity; executionStatus: ExecutionStatus | null }) => (
 	<div className="text-sm">
 		<p className="font-medium">Fechas reales de ejecución</p>
 		<p className="text-xs mt-1">Inicio: {format(new Date(activity.executedStartDate!), "dd MMM yyyy", { locale: es })}</p>
@@ -347,9 +361,11 @@ const ExecutedBarTooltipContent = ({ activity, executionStatus }: { activity: Ba
 			</p>
 		)}
 	</div>
-);
+));
+ExecutedBarTooltipContent.displayName = "ExecutedBarTooltipContent";
 
-const ActivityInfo = ({ activity, executionStatus, stages }: { activity: BaseActivity; executionStatus: ExecutionStatus | null; stages: BaseStage[] }) => (
+// Componente ActivityInfo optimizado
+const ActivityInfo = memo(({ activity, executionStatus, stages }: { activity: BaseActivity; executionStatus: ExecutionStatus | null; stages: BaseStage[] }) => (
 	<div className={`w-64 min-w-64 p-3 border-r border-l-4 bg-background/100 shadow-sm border-l-${getStageColor(activity.stageId, stages)}-500 sticky left-0 z-20`}>
 		<div className="font-medium">{activity.title}</div>
 		<div className="flex items-center space-x-2 mt-2">
@@ -375,9 +391,11 @@ const ActivityInfo = ({ activity, executionStatus, stages }: { activity: BaseAct
 			</div>
 		)}
 	</div>
-);
+));
+ActivityInfo.displayName = "ActivityInfo";
 
-const GridLines = ({ dateRange, viewMode }: { dateRange: Date[]; viewMode: "days" | "weeks" }) => {
+// Componente GridLines optimizado
+const GridLines = memo(({ dateRange, viewMode }: { dateRange: Date[]; viewMode: "days" | "weeks" }) => {
 	if (viewMode === "weeks") {
 		return (
 			<>
@@ -387,7 +405,7 @@ const GridLines = ({ dateRange, viewMode }: { dateRange: Date[]; viewMode: "days
 			</>
 		);
 	}
-	// Vista diaria
+
 	return (
 		<>
 			{dateRange.map((date, dateIndex) => (
@@ -395,87 +413,91 @@ const GridLines = ({ dateRange, viewMode }: { dateRange: Date[]; viewMode: "days
 					key={dateIndex}
 					className={`absolute top-0 bottom-0 w-10 border-r
 						${isToday(date) ? "bg-primary/20" : ""}`}
-					style={{ left: dateIndex * 40 }}
+					style={{ left: dateIndex * DAY_WIDTH }}
 				/>
 			))}
 		</>
 	);
-};
+});
+GridLines.displayName = "GridLines";
 
-const ActivityBar = ({
-	activity,
-	barPosition,
-	executedBarPos,
-	executionStatus,
-	stageColor,
-}: {
-	activity: BaseActivity;
-	barPosition: { left: number; width: number };
-	executedBarPos: { left: number; width: number } | null;
-	executionStatus: ExecutionStatus | null;
-	stageColor: string;
-}) => {
-	const isShortBar = barPosition.width < 120;
+// Componente ActivityBar optimizado
+const ActivityBar = memo(
+	({
+		activity,
+		barPosition,
+		executedBarPos,
+		executionStatus,
+		stageColor,
+	}: {
+		activity: BaseActivity;
+		barPosition: BarPosition;
+		executedBarPos: BarPosition | null;
+		executionStatus: ExecutionStatus | null;
+		stageColor: string;
+	}) => {
+		const isShortBar = barPosition.width < 120;
 
-	return (
-		<>
-			<Tooltip>
-				<TooltipTrigger asChild>
-					<div
-						className="absolute top-3 rounded-md shadow-md hover:shadow-lg transition-shadow z-10 cursor-pointer overflow-hidden group"
-						style={{
-							left: `${barPosition.left}px`,
-							width: `${barPosition.width}px`,
-							backgroundColor: stageColor,
-							height: executedBarPos ? "40px" : "60px",
-							border: `1px solid ${isPast(new Date(activity.endDate)) ? "#d1d5db" : "transparent"}`,
-						}}
-					>
-						{!isShortBar && (
-							<div className="h-full p-2 text-white">
-								<div className="flex items-center justify-between">
-									<div className="font-medium truncate text-sm">{activity.title}</div>
-									<div className="ml-1">{getPriorityIcon(activity.priority)}</div>
-								</div>
-								<div className="text-xs mt-1 opacity-90 group-hover:opacity-100">
-									{format(new Date(activity.startDate), "dd MMM", { locale: es })} - {format(new Date(activity.endDate), "dd MMM", { locale: es })}
-								</div>
-							</div>
-						)}
-					</div>
-				</TooltipTrigger>
-				<TooltipContent>
-					<ActivityTooltipContent activity={activity} executionStatus={executionStatus} />
-				</TooltipContent>
-			</Tooltip>
-
-			{executedBarPos && (
+		return (
+			<>
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<div
-							className="absolute rounded-md overflow-hidden cursor-pointer transition-shadow z-9"
+							className="absolute top-3 rounded-md shadow-md hover:shadow-lg transition-shadow z-10 cursor-pointer overflow-hidden group h-[calc(100%-24px)]"
 							style={{
-								left: `${executedBarPos.left}px`,
-								width: `${executedBarPos.width}px`,
-								backgroundColor: executionStatus?.late ? "#f59e0b" : "#16a34a",
-								height: "15px",
-								top: "48px",
-								borderWidth: "2px",
-								borderStyle: "dashed",
-								borderColor: executionStatus?.late ? "#b45309" : "#166534",
+								left: `${barPosition.left}px`,
+								width: `${barPosition.width}px`,
+								backgroundColor: stageColor,
+								border: `1px solid ${isPast(new Date(activity.endDate)) ? "#d1d5db" : "transparent"}`,
 							}}
-						/>
+						>
+							{!isShortBar && (
+								<div className="h-full p-2 text-white">
+									<div className="flex items-center justify-between">
+										<div className="font-medium truncate text-sm">{activity.title}</div>
+										<div className="ml-1">{getPriorityIcon(activity.priority)}</div>
+									</div>
+									<div className="text-xs mt-1 opacity-90 group-hover:opacity-100">
+										{format(new Date(activity.startDate), "dd MMM", { locale: es })} - {format(new Date(activity.endDate), "dd MMM", { locale: es })}
+									</div>
+								</div>
+							)}
+						</div>
 					</TooltipTrigger>
 					<TooltipContent>
-						<ExecutedBarTooltipContent activity={activity} executionStatus={executionStatus} />
+						<ActivityTooltipContent activity={activity} executionStatus={executionStatus} />
 					</TooltipContent>
 				</Tooltip>
-			)}
-		</>
-	);
-};
 
-// Componente principal
+				{executedBarPos && (
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<div
+								className="absolute rounded-md overflow-hidden cursor-pointer transition-shadow z-9"
+								style={{
+									left: `${executedBarPos.left}px`,
+									width: `${executedBarPos.width}px`,
+									backgroundColor: executionStatus?.late ? "#f59e0b" : "#16a34a",
+									height: "15px",
+									top: "calc(100% - 18px)",
+									borderWidth: "2px",
+									borderStyle: "dashed",
+									borderColor: executionStatus?.late ? "#b45309" : "#166534",
+								}}
+							/>
+						</TooltipTrigger>
+						<TooltipContent>
+							<ExecutedBarTooltipContent activity={activity} executionStatus={executionStatus} />
+						</TooltipContent>
+					</Tooltip>
+				)}
+			</>
+		);
+	}
+);
+ActivityBar.displayName = "ActivityBar";
+
+// Componente principal optimizado
 export default function GanttChart({ activities, stages, viewMode }: GanttChartProps) {
 	const [showLegend, setShowLegend] = useState(true);
 	const [scrollLeft, setScrollLeft] = useState(0);
@@ -539,7 +561,7 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 								return (
 									<div key={activity.id} className="flex border-b hover:bg-secondary/20">
 										<ActivityInfo activity={activity} executionStatus={executionStatus} stages={stages} />
-										<div className="flex-1 relative" style={{ height: "120px" }}>
+										<div className="flex-1 relative" style={{ height: "80px" }}>
 											<GridLines dateRange={dateRange} viewMode={viewMode} />
 											<ActivityBar activity={activity} barPosition={barPosition} executedBarPos={executedBarPos} executionStatus={executionStatus} stageColor={stageColor} />
 										</div>
