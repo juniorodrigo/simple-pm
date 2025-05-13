@@ -10,11 +10,11 @@ export const COLORS = [
 
 // Colores para los badges de prioridad
 export const PRIORITY_COLORS = {
-	low: "border-green-500 text-green-600",
-	medium: "border-blue-500 text-blue-600",
-	high: "border-orange-500 text-orange-600",
-	critical: "border-red-500 text-red-600",
-	default: "border-gray-500 text-gray-600",
+	low: "border-green-500 text-green-700 bg-green-50",
+	medium: "border-blue-500 text-blue-700 bg-blue-50",
+	high: "border-orange-500 text-orange-700 bg-orange-50",
+	critical: "border-red-500 text-red-700 bg-red-50",
+	default: "border-gray-500 text-gray-700 bg-gray-50",
 };
 
 // Colores para los fondos de prioridad
@@ -28,10 +28,10 @@ export const PRIORITY_BG_COLORS = {
 
 // Colores para los estados de actividades
 export const STATUS_COLORS = {
-	todo: "border-l-4 border-l-slate-400",
-	in_progress: "border-l-4 border-l-blue-500",
-	review: "border-l-4 border-l-purple-500",
-	done: "border-l-4 border-l-green-500",
+	todo: "border-l-4 border-l-red-500",
+	in_progress: "border-l-4 border-l-orange-500",
+	review: "border-l-4 border-l-yellow-500",
+	completed: "border-l-4 border-l-green-500",
 	default: "",
 };
 

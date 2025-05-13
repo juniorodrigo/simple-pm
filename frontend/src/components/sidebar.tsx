@@ -37,7 +37,7 @@ export default function Sidebar() {
 		// },
 		{
 			name: "Proyectos",
-			href: "/kanban",
+			href: "/projects",
 			icon: KanbanSquare,
 			current: pathname === "/kanban",
 		},

@@ -8,14 +8,16 @@ import { addDays, differenceInDays, format, startOfDay } from "date-fns";
 import { CalendarIcon, Users2Icon } from "lucide-react";
 import { es } from "date-fns/locale";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { getTagColorClass, getStageColorValue } from "@/lib/colors";
+import { getTagColorClass, getStageColorValue, STATUS_COLORS } from "@/lib/colors";
 import { ProjectStatusLabels } from "@/app/types/enums";
+import { useRouter } from "next/navigation";
 
 interface ProjectsGanttProps {
 	projects: BaseProject[];
 }
 
 export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
+	const router = useRouter();
 	const [dateRange, setDateRange] = useState<Date[]>([]);
 	const [chartWidth, setChartWidth] = useState(0);
 
@@ -39,17 +41,17 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 			}
 		});
 
-		// Add some padding days
-		earliestDate = addDays(earliestDate, -5);
-		latestDate = addDays(latestDate, 5);
+		// Add some padding weeks
+		earliestDate = addDays(earliestDate, -7);
+		latestDate = addDays(latestDate, 7);
 
-		// Generate array of dates
+		// Generate array of weeks
 		const range: Date[] = [];
 		let currentDate = startOfDay(earliestDate);
 
 		while (currentDate <= latestDate) {
 			range.push(currentDate);
-			currentDate = addDays(currentDate, 1);
+			currentDate = addDays(currentDate, 7);
 		}
 
 		setDateRange(range);
@@ -58,7 +60,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 	// Update chart width based on window size and date range
 	useEffect(() => {
 		const updateWidth = () => {
-			const width = Math.max(dateRange.length * 40, 800);
+			const width = Math.max(dateRange.length * 100, 800);
 			setChartWidth(width);
 		};
 
@@ -78,11 +80,11 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 		const endDate = new Date(project.endDate);
 		const firstDate = dateRange[0];
 
-		const startOffset = differenceInDays(startDate, firstDate);
-		const duration = differenceInDays(endDate, startDate) + 1;
+		const startOffset = Math.floor(differenceInDays(startDate, firstDate) / 7);
+		const duration = Math.ceil(differenceInDays(endDate, startDate) / 7) + 1;
 
-		const left = startOffset * 40;
-		const width = duration * 40;
+		const left = startOffset * 100;
+		const width = duration * 100;
 
 		return { left, width };
 	};
@@ -92,9 +94,11 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 		return day === 0 || day === 6;
 	};
 
-	const isToday = (date: Date) => {
+	const isCurrentWeek = (date: Date) => {
 		const today = new Date();
-		return date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
+		const weekStart = startOfDay(addDays(today, -today.getDay()));
+		const weekEnd = addDays(weekStart, 6);
+		return date >= weekStart && date <= weekEnd;
 	};
 
 	const isPast = (date: Date) => {
@@ -138,14 +142,14 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 								{dateRange.map((date, index) => (
 									<div
 										key={index}
-										className={`w-10 flex-shrink-0 text-center text-xs py-2 border-r
+										className={`w-[100px] flex-shrink-0 text-center text-xs py-2 border-r
                     ${isWeekend(date) ? "bg-secondary/40" : ""}
                     ${isPast(date) ? "bg-secondary/10" : ""}
-                    ${isToday(date) ? "bg-primary/20 font-bold" : ""}`}
+                    ${isCurrentWeek(date) ? "bg-primary/20 font-bold" : ""}`}
 									>
-										<div className="font-medium">{format(date, "d")}</div>
+										<div className="font-medium">Sem {format(date, "w")}</div>
 										<div>{format(date, "MMM", { locale: es })}</div>
-										{isToday(date) && <div className="h-1 w-full bg-primary mt-1"></div>}
+										{isCurrentWeek(date) && <div className="h-1 w-full bg-primary mt-1"></div>}
 									</div>
 								))}
 							</div>
@@ -162,13 +166,13 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 										<div className="w-72 min-w-72 p-3 border-r border-l-4 sticky left-0 z-20 bg-background shadow-md" style={{ borderLeftColor: categoryColor }}>
 											<div className="font-medium line-clamp-1">{project.name}</div>
 											<div className="flex items-center space-x-2 mt-2">
-												{project.categoryName && (
+												{/* {project.categoryName && (
 													<Badge variant="outline" className="text-xs px-1.5 py-0 font-medium shadow-sm">
 														{project.categoryName}
 													</Badge>
-												)}
+												)} */}
 												{project.status && (
-													<Badge variant="outline" className={`text-xs px-1.5 py-0 font-medium shadow-sm ${getTagColorClass(project.categoryColor || "gray")}`}>
+													<Badge variant="outline" className={`text-xs px-1.5 py-0 font-medium shadow-sm ${STATUS_COLORS[project.status as keyof typeof STATUS_COLORS]}`}>
 														{ProjectStatusLabels[project.status as keyof typeof ProjectStatusLabels] || project.status || ""}
 													</Badge>
 												)}
@@ -186,11 +190,11 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 											{dateRange.map((date, dateIndex) => (
 												<div
 													key={dateIndex}
-													className={`absolute top-0 bottom-0 w-10 border-r
+													className={`absolute top-0 bottom-0 w-[100px] border-r
                           ${isWeekend(date) ? "bg-secondary/40" : ""}
                           ${isPast(date) ? "bg-secondary/10" : ""}
-                          ${isToday(date) ? "bg-primary/20" : ""}`}
-													style={{ left: dateIndex * 40 }}
+                          ${isCurrentWeek(date) ? "bg-primary/20" : ""}`}
+													style={{ left: dateIndex * 100 }}
 												/>
 											))}
 
@@ -206,6 +210,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 															height: "60px",
 															border: `1px solid ${isPast(new Date(project.endDate)) ? "#d1d5db" : "transparent"}`,
 														}}
+														onClick={() => router.push(`/projects/${project.id}`)}
 													>
 														{!isShortBar(project) && (
 															<div className="h-full p-2 text-white">
@@ -219,7 +224,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 																	)}
 																</div>
 																<div className="mt-2 text-xs">
-																	<span className="bg-white/20 px-1.5 py-0.5 rounded-sm">{project.status || "Activo"}</span>
+																	{/* <span className="bg-white/20 px-1.5 py-0.5 rounded-sm">{project.status || "Activo"}</span> */}
 																	{project.activitiesCount !== undefined && <span className="ml-1 bg-white/20 px-1.5 py-0.5 rounded-sm">{project.activitiesCount} actividades</span>}
 																</div>
 															</div>
@@ -254,7 +259,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 							<div
 								className="absolute w-0.5 bg-primary z-10"
 								style={{
-									left: `${(differenceInDays(new Date(), dateRange[0]) + 0.5) * 40}px`,
+									left: `${(Math.floor(differenceInDays(new Date(), dateRange[0]) / 7) + 0.5) * 100}px`,
 									display: differenceInDays(new Date(), dateRange[0]) >= 0 && differenceInDays(new Date(), dateRange[dateRange.length - 1]) <= 0 ? "block" : "none",
 									top: "36px", // Altura del encabezado
 									bottom: "0",

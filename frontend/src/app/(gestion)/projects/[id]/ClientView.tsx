@@ -35,6 +35,7 @@ export default function ClientView({ project: initialProject, activities: initia
 	const [projectActivities, setProjectActivities] = useState<BaseActivity[]>(initialActivities);
 	const [projectStages, setProjectStages] = useState<BaseStage[]>(Array.isArray(initialProject.stages) ? initialProject.stages : []);
 	const [activeView, setActiveView] = useState<"kanban" | "gantt">("kanban");
+	const [ganttViewMode, setGanttViewMode] = useState<"days" | "weeks">("days");
 	const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
 	const [editingActivity, setEditingActivity] = useState<BaseActivity | null>(null);
 	const [isStagesModalOpen, setIsStagesModalOpen] = useState(false);
@@ -70,8 +71,6 @@ export default function ClientView({ project: initialProject, activities: initia
 		setProjectStages(newStages);
 		setProject({ ...project, stages: newStages });
 	};
-
-	const clearFilter = () => setSelectedStageId("all");
 
 	const handleProjectUpdated = async () => {
 		setIsEditProjectModalOpen(false);
@@ -166,6 +165,17 @@ export default function ClientView({ project: initialProject, activities: initia
 			<div className="flex justify-between items-center">
 				<h2 className="text-xl font-bold">Actividades del Proyecto</h2>
 				<div className="flex flex-wrap gap-2 items-center">
+					{activeView === "gantt" && (
+						<Select value={ganttViewMode} onValueChange={(value: "days" | "weeks") => setGanttViewMode(value)}>
+							<SelectTrigger className="w-[180px]">
+								<SelectValue placeholder="Seleccionar vista" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="days">Vista diaria</SelectItem>
+								<SelectItem value="weeks">Vista semanal</SelectItem>
+							</SelectContent>
+						</Select>
+					)}
 					<Select value={selectedStageId} onValueChange={setSelectedStageId}>
 						<SelectTrigger className="w-[180px]">
 							<SelectValue placeholder="Filtrar por etapa" />
@@ -182,7 +192,7 @@ export default function ClientView({ project: initialProject, activities: initia
 						</SelectContent>
 					</Select>
 					{selectedStageId !== "all" && (
-						<Button variant="outline" size="sm" onClick={clearFilter}>
+						<Button variant="outline" size="sm" onClick={() => setSelectedStageId("all")}>
 							<X className="mr-2 h-4 w-4" /> Limpiar filtro
 						</Button>
 					)}
@@ -209,7 +219,7 @@ export default function ClientView({ project: initialProject, activities: initia
 						isViewer={isViewer}
 					/>
 				) : (
-					<GanttChart activities={filteredActivities} stages={projectStages} />
+					<GanttChart activities={filteredActivities} stages={projectStages} viewMode={ganttViewMode} />
 				)}
 			</div>
 		</div>

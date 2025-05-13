@@ -314,9 +314,11 @@ const LaneContainer = memo(
 				<div ref={setNodeRef} className={laneClassName} style={{ transition: "background-color 0.2s ease" }}>
 					{activities.length > 0 ? (
 						<SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-							{activities.map((activity) => (
-								<SortableItem key={activity.id} activity={activity} getPriorityColor={getPriorityColor} stages={stages} onDelete={onDeleteActivity} onClick={onActivityClick} />
-							))}
+							<div className="space-y-3">
+								{activities.map((activity) => (
+									<SortableItem key={activity.id} activity={activity} getPriorityColor={getPriorityColor} stages={stages} onDelete={onDeleteActivity} onClick={onActivityClick} />
+								))}
+							</div>
 						</SortableContext>
 					) : (
 						<div className="text-muted-foreground text-center p-4 border border-dashed rounded-md mt-2 h-32 flex items-center justify-center">Arrastra elementos aquí</div>

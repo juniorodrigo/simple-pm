@@ -88,7 +88,7 @@ const ProjectCard = memo(({ project, onDelete, onClick, isDragging }: ProjectCar
 					<div className="flex justify-between items-center mb-1 text-xs">
 						<span className="text-muted-foreground">Progreso:</span>
 						<div
-							className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${progress >= 75 ? "bg-green-100 text-green-800" : progress >= 25 ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800"}`}
+							className={`px-1.5 py-0.5 rounded-full text-xs font-medium`} //  ${progress >= 75 ? "bg-green-100 text-green-800" : progress >= 25 ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800"}
 						>
 							{progress}%
 						</div>

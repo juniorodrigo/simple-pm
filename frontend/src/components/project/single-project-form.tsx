@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Loader2, KanbanSquare, GanttChart } from "lucide-react";
-import { ProjectsService } from "@/services/project.service";
 import { BaseProject } from "@/app/types/project.type";
 import ProjectKanbanBoard from "@/components/project-kanban-board";
 import { useToast } from "@/hooks/use-toast";
@@ -15,59 +14,22 @@ import { useRouter } from "next/navigation";
 import ProjectsGantt from "@/components/projects-gantt";
 import { useAuth } from "@/contexts/auth-context";
 
-export default function KanbanPage() {
+interface ProjectFormProps {
+	initialProjects: BaseProject[];
+	categories: { id: string; name: string }[];
+	onProjectChange: (projects: BaseProject[]) => void;
+}
+
+export default function ProjectForm({ initialProjects, categories, onProjectChange }: ProjectFormProps) {
 	const { user } = useAuth();
 	const isViewer = user?.role === "viewer";
 	const [selectedCategory, setSelectedCategory] = useState<string>("all");
-	const [projects, setProjects] = useState<BaseProject[]>([]);
-	const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+	const [projects, setProjects] = useState<BaseProject[]>(initialProjects);
 	const [searchTerm, setSearchTerm] = useState("");
-	const [loading, setLoading] = useState(true);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [activeView, setActiveView] = useState<"kanban" | "gantt">("kanban");
 	const { toast } = useToast();
 	const router = useRouter();
-
-	// Cargar proyectos
-	useEffect(() => {
-		async function loadProjects() {
-			setLoading(true);
-			try {
-				const response = await ProjectsService.getProjects();
-				if (response.success && response.data) {
-					setProjects(response.data);
-
-					// Extraer categorías únicas de los proyectos
-					const uniqueCategories = new Map();
-					response.data.forEach((project: BaseProject) => {
-						if (project.categoryId && project.categoryName) {
-							uniqueCategories.set(project.categoryId, {
-								id: project.categoryId,
-								name: project.categoryName,
-							});
-						}
-					});
-					setCategories(Array.from(uniqueCategories.values()));
-				} else {
-					toast({
-						title: "Error",
-						description: "No se recibieron datos de proyectos",
-						variant: "destructive",
-					});
-				}
-			} catch (error) {
-				toast({
-					title: "Error",
-					description: "No se pudieron cargar los proyectos",
-					variant: "destructive",
-				});
-			} finally {
-				setLoading(false);
-			}
-		}
-
-		loadProjects();
-	}, [toast]);
 
 	// Filtrar proyectos por categoría y término de búsqueda
 	const filteredProjects = projects.filter((project) => {
@@ -80,38 +42,7 @@ export default function KanbanPage() {
 	// Manejar cambios en proyectos (después de arrastrar)
 	const handleProjectChange = async (updatedProjects: BaseProject[]) => {
 		setProjects(updatedProjects);
-	};
-
-	// Función para recargar proyectos después de crear uno nuevo
-	const handleProjectCreated = async () => {
-		setIsDialogOpen(false);
-		setLoading(true);
-		try {
-			const response = await ProjectsService.getProjects();
-			if (response.success && response.data) {
-				setProjects(response.data);
-
-				// Extraer categorías únicas de los proyectos
-				const uniqueCategories = new Map();
-				response.data.forEach((project: BaseProject) => {
-					if (project.categoryId && project.categoryName) {
-						uniqueCategories.set(project.categoryId, {
-							id: project.categoryId,
-							name: project.categoryName,
-						});
-					}
-				});
-				setCategories(Array.from(uniqueCategories.values()));
-			}
-		} catch (error) {
-			toast({
-				title: "Error",
-				description: "No se pudieron recargar los proyectos",
-				variant: "destructive",
-			});
-		} finally {
-			setLoading(false);
-		}
+		onProjectChange(updatedProjects);
 	};
 
 	// Función para manejar el clic en un proyecto
@@ -139,7 +70,7 @@ export default function KanbanPage() {
 								<DialogHeader>
 									<DialogTitle>Crear nuevo proyecto</DialogTitle>
 								</DialogHeader>
-								<CreateProjectForm onSuccess={handleProjectCreated} />
+								<CreateProjectForm onSuccess={() => setIsDialogOpen(false)} />
 							</DialogContent>
 						</Dialog>
 					</div>
@@ -167,16 +98,7 @@ export default function KanbanPage() {
 						<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
 						<Input type="search" placeholder="Buscar proyectos..." className="w-full pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
 					</div>
-					<div className="text-sm text-muted-foreground">
-						{loading ? (
-							<span className="flex items-center">
-								<Loader2 className="h-3 w-3 mr-1 animate-spin" />
-								Cargando proyectos...
-							</span>
-						) : (
-							`${filteredProjects.length} proyectos`
-						)}
-					</div>
+					<div className="text-sm text-muted-foreground">{`${filteredProjects.length} proyectos`}</div>
 				</div>
 
 				<div className="flex border rounded-md overflow-hidden">
@@ -191,11 +113,7 @@ export default function KanbanPage() {
 				</div>
 			</div>
 
-			{loading ? (
-				<div className="flex justify-center items-center h-64">
-					<Loader2 className="h-8 w-8 animate-spin text-primary" />
-				</div>
-			) : activeView === "kanban" ? (
+			{activeView === "kanban" ? (
 				<ProjectKanbanBoard projects={filteredProjects} onProjectChange={handleProjectChange} onProjectClick={handleProjectClick} isViewer={isViewer} />
 			) : (
 				<ProjectsGantt projects={filteredProjects} />
