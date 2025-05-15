@@ -3,7 +3,20 @@
 
 import { useState, useEffect, useCallback, memo, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
-import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, KeyboardSensor, PointerSensor, useSensor, useSensors, closestCorners, useDroppable, MeasuringStrategy } from "@dnd-kit/core";
+import {
+	DndContext,
+	DragEndEvent,
+	DragOverlay,
+	DragStartEvent,
+	DragOverEvent,
+	KeyboardSensor,
+	PointerSensor,
+	useSensor,
+	useSensors,
+	closestCenter,
+	useDroppable,
+	MeasuringStrategy,
+} from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { BaseActivity } from "@/app/types/activity.type";
 import { BaseStage } from "@/app/types/stage.type";
@@ -34,6 +47,7 @@ const LANES = Object.values(ActivityStatus).map((statusValue) => ({
 export default function KanbanBoard({ activities: initialActivities, stages, onActivityChange, onActivityClick }: KanbanBoardProps) {
 	const [activities, setActivities] = useState<BaseActivity[]>([]);
 	const [activeId, setActiveId] = useState<string | null>(null);
+	const [overId, setOverId] = useState<string | null>(null);
 	const { toast } = useToast();
 
 	// Estados para el modal de confirmación
@@ -51,10 +65,12 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 		}
 	}, [initialActivities, activities]);
 
-	// Configuración de sensores optimizada
+	// Configuración de sensores simplificada
 	const sensors = useSensors(
 		useSensor(PointerSensor, {
-			activationConstraint: { distance: 5 },
+			activationConstraint: {
+				distance: 5,
+			},
 		}),
 		useSensor(KeyboardSensor, {
 			coordinateGetter: sortableKeyboardCoordinates,
@@ -109,15 +125,17 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 
 	// Callbacks optimizados
 	const handleDragStart = useCallback((event: DragStartEvent) => {
-		setActiveId(event.active.id as string);
+		const { active } = event;
+		setActiveId(active.id as string);
 	}, []);
 
 	const handleDragEnd = useCallback(
-		(event: DragEndEvent) => {
+		async (event: DragEndEvent) => {
 			const { active, over } = event;
 
 			if (!over) {
 				setActiveId(null);
+				setOverId(null);
 				return;
 			}
 
@@ -127,6 +145,7 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 			const activeActivity = activities.find((a) => a.id === activeId);
 			if (!activeActivity) {
 				setActiveId(null);
+				setOverId(null);
 				return;
 			}
 
@@ -135,39 +154,48 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 				const newStatus = overId as ActivityStatus;
 
 				if (newStatus && activeActivity.status !== newStatus) {
-					// Actualizar estado local para una experiencia de usuario inmediata
-					const updatedActivities = activities.map((activity) => (activity.id === activeId ? { ...activity, status: newStatus } : activity));
+					try {
+						// Actualizar estado local para una experiencia de usuario inmediata
+						const updatedActivities = activities.map((activity) => (activity.id === activeId ? { ...activity, status: newStatus } : activity));
 
-					setActivities(updatedActivities);
+						setActivities(updatedActivities);
 
-					// Si el nuevo estado es DONE y viene de un estado diferente, mostrar el modal de fechas de ejecución
-					if (newStatus === ActivityStatus.DONE && activeActivity.status !== ActivityStatus.DONE) {
-						setCompletedActivity(activeActivity);
-						setIsExecutionDateModalOpen(true);
-					}
+						// Si el nuevo estado es IN_PROGRESS y viene de TODO, mostrar el modal para fecha de inicio
+						if (newStatus === ActivityStatus.IN_PROGRESS && activeActivity.status === ActivityStatus.TODO) {
+							setCompletedActivity({ ...activeActivity, status: newStatus });
+							setIsExecutionDateModalOpen(true);
+						}
+						// Si el nuevo estado es DONE, mostrar el modal para fecha de fin
+						else if (newStatus === ActivityStatus.DONE) {
+							setCompletedActivity({ ...activeActivity, status: newStatus });
+							setIsExecutionDateModalOpen(true);
+						}
 
-					// Notificar al componente padre sobre el cambio
-					if (onActivityChange) {
-						onActivityChange(updatedActivities);
-					}
+						// Notificar al componente padre sobre el cambio
+						if (onActivityChange) {
+							onActivityChange(updatedActivities);
+						}
 
-					// Llamar a la API para persistir el cambio en la base de datos
-					ActivitysService.updateActivityStatus(activeId, newStatus)
-						.then((response) => {
-							if (!response.success) {
-								console.error("Error al actualizar el estado de la actividad:", response);
-								// En caso de error se podría revertir el cambio en el estado local
-							}
-						})
-						.catch((error) => {
-							console.error("Falló la llamada a la API:", error);
+						// Llamar a la API para persistir el cambio
+						const response = await ActivitysService.updateActivityStatus(activeId, newStatus);
+						if (!response.success) {
+							throw new Error("Error al actualizar el estado");
+						}
+					} catch (error) {
+						console.error("Error al actualizar el estado:", error);
+						toast({
+							title: "Error",
+							description: "No se pudo actualizar el estado de la actividad",
+							variant: "destructive",
 						});
+					}
 				}
 			}
 
 			setActiveId(null);
+			setOverId(null);
 		},
-		[activities, onActivityChange]
+		[activities, onActivityChange, toast]
 	);
 
 	// Manejar el éxito del registro de fechas de ejecución
@@ -228,9 +256,26 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 		[onActivityClick]
 	);
 
+	// Nuevo manejador para el evento dragOver
+	const handleDragOver = useCallback((event: DragOverEvent) => {
+		const { over } = event;
+		setOverId((over?.id as string) || null);
+	}, []);
+
 	return (
 		<>
-			<DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} collisionDetection={closestCorners} measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}>
+			<DndContext
+				sensors={sensors}
+				onDragStart={handleDragStart}
+				onDragEnd={handleDragEnd}
+				onDragOver={handleDragOver}
+				collisionDetection={closestCenter}
+				measuring={{
+					droppable: {
+						strategy: MeasuringStrategy.Always,
+					},
+				}}
+			>
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 					{LANES.map((lane) => (
 						<LaneContainer
@@ -241,11 +286,12 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 							stages={stages}
 							onDeleteActivity={handleDeleteActivity}
 							onActivityClick={handleActivityClick}
+							isOver={overId === lane.id}
 						/>
 					))}
 				</div>
 
-				<DragOverlay>{dragOverlay}</DragOverlay>
+				<DragOverlay>{activeId ? <ActivityCard activity={activities.find((a) => a.id === activeId)!} stages={stages} /> : null}</DragOverlay>
 			</DndContext>
 
 			{/* Modal de confirmación de eliminación */}
@@ -281,6 +327,7 @@ const LaneContainer = memo(
 		stages,
 		onDeleteActivity,
 		onActivityClick,
+		isOver,
 	}: {
 		lane: { id: string; title: string };
 		activities: BaseActivity[];
@@ -288,8 +335,9 @@ const LaneContainer = memo(
 		stages: BaseStage[];
 		onDeleteActivity: (id: string) => void;
 		onActivityClick?: (activity: BaseActivity) => void;
+		isOver: boolean;
 	}) => {
-		const { setNodeRef, isOver } = useDroppable({
+		const { setNodeRef } = useDroppable({
 			id: lane.id,
 			data: {
 				type: "lane",
@@ -298,11 +346,9 @@ const LaneContainer = memo(
 			},
 		});
 
-		// Memoización eficiente de IDs
 		const itemIds = useMemo(() => activities.map((a) => a.id), [activities]);
 
-		// Optimización: cálculo de clases condicionales
-		const laneClassName = `bg-secondary/50 rounded-lg p-2 flex-1 min-h-[500px] ${isOver ? "ring-2 ring-primary bg-secondary/70" : ""}`;
+		const laneClassName = `bg-secondary/50 rounded-lg p-2 flex-1 min-h-[500px] transition-all duration-200 ${isOver ? "ring-2 ring-primary bg-secondary/70" : ""}`;
 
 		return (
 			<div className="flex flex-col h-full">
@@ -311,7 +357,7 @@ const LaneContainer = memo(
 					<Badge variant="outline">{activities.length}</Badge>
 				</div>
 
-				<div ref={setNodeRef} className={laneClassName} style={{ transition: "background-color 0.2s ease" }}>
+				<div ref={setNodeRef} className={laneClassName}>
 					{activities.length > 0 ? (
 						<SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
 							<div className="space-y-3">
@@ -329,7 +375,7 @@ const LaneContainer = memo(
 	}
 );
 
-// Item sortable optimizado - ahora más ligero
+// Item sortable optimizado
 const SortableItem = memo(
 	({
 		activity,
@@ -358,10 +404,12 @@ const SortableItem = memo(
 			transition,
 			opacity: isDragging ? 0.5 : 1,
 			zIndex: isDragging ? 1 : 0,
+			cursor: "grab",
+			touchAction: "none",
 		};
 
 		return (
-			<div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+			<div ref={setNodeRef} style={style} {...attributes} {...listeners} className="touch-none">
 				<ActivityCard activity={activity} stages={stages} onDelete={onDelete} onClick={onClick} />
 			</div>
 		);

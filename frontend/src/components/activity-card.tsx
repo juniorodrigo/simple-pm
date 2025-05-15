@@ -98,7 +98,7 @@ export const ActivityCard = memo(
 
 		return (
 			<Card
-				className="mb-2 cursor-pointer overflow-hidden shadow-md hover:shadow-lg transition-shadow bg-zinc-900 border-none rounded-xl"
+				className="mb-2 cursor-pointer overflow-hidden shadow-md hover:shadow-lg transition-shadow rounded-xl"
 				style={{ borderLeft: borderColor ? `6px solid ${borderColor}` : undefined }}
 				onClick={handleClick}
 			>
