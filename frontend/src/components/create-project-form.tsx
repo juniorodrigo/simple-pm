@@ -36,6 +36,7 @@ const formSchema = z.object({
 		message: "Debes seleccionar un Project Manager del equipo",
 	}),
 	categoryId: z.string().optional(),
+	previousProjectId: z.string().optional(),
 });
 
 type DateRange = {
@@ -53,6 +54,7 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 	const { toast } = useToast();
 	const [users, setUsers] = useState<User[]>([]);
 	const [availableTags, setAvailableTags] = useState<Tag[]>([]);
+	const [projects, setProjects] = useState<BaseProject[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [dateRange, setDateRange] = useState<DateRange>({
 		from: new Date(),
@@ -70,6 +72,7 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 			managerUserId: isEditing && projectData ? projectData.managerUserId || "" : "",
 			teamMembers: isEditing && projectData && projectData.team ? projectData.team.map((member) => member.id || "") : [],
 			categoryId: isEditing && projectData ? projectData.categoryId || "" : "",
+			previousProjectId: isEditing && projectData ? projectData.previousProjectId || "" : "",
 		},
 	});
 
@@ -90,6 +93,7 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 		const loadData = async () => {
 			const usersResponse = await UsersService.getUsers();
 			const tagsResponse = await TagsService.getTags();
+			const projectsResponse = await ProjectsService.getProjects();
 
 			if (usersResponse.success && usersResponse.data) {
 				setUsers(usersResponse.data);
@@ -97,6 +101,10 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 
 			if (tagsResponse.success && tagsResponse.data) {
 				setAvailableTags(tagsResponse.data);
+			}
+
+			if (projectsResponse.success && projectsResponse.data) {
+				setProjects(projectsResponse.data);
 			}
 		};
 
@@ -350,6 +358,31 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 										{availableTags.map((tag) => (
 											<SelectItem key={tag.id} value={tag.id}>
 												{tag.name}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					<FormField
+						control={form.control}
+						name="previousProjectId"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Proyecto previo</FormLabel>
+								<Select onValueChange={field.onChange} defaultValue={field.value}>
+									<FormControl>
+										<SelectTrigger>
+											<SelectValue placeholder="Seleccionar proyecto previo" />
+										</SelectTrigger>
+									</FormControl>
+									<SelectContent>
+										{projects.map((project) => (
+											<SelectItem key={project.id} value={String(project.id)}>
+												{project.name}
 											</SelectItem>
 										))}
 									</SelectContent>

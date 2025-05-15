@@ -17,6 +17,7 @@ export type BaseProject = {
 	team: BaseUser[];
 	status?: string;
 	manager?: BaseUser;
+	previousProjectId?: string;
 };
 
 export type ExtendedProject = BaseProject & {
