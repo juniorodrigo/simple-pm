@@ -9,8 +9,7 @@ import { BaseStage } from "@/app/types/stage.type";
 import { CalendarIcon, AlertTriangleIcon, CheckIcon, ArrowRightIcon, ClockIcon } from "lucide-react";
 import { es } from "date-fns/locale";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { getStageColorValue, getPriorityColor, getStatusColor } from "@/lib/colors";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getStageColorValue, getPriorityColor } from "@/lib/colors";
 import React from "react";
 
 type GanttChartProps = {
