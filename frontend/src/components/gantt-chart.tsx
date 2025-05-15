@@ -92,7 +92,7 @@ const getExecutionStatus = (activity: BaseActivity): ExecutionStatus | null => {
 };
 
 // Funciones de cálculo de posiciones optimizadas
-const WEEK_WIDTH = 100;
+const WEEK_WIDTH = 60;
 const MIN_WEEKS = 22;
 const DAY_WIDTH = 40;
 const MIN_BAR_WIDTH = 16;
@@ -368,18 +368,19 @@ const ActivityInfo = memo(({ activity, executionStatus, stages }: { activity: Ba
 	<div className={`w-64 min-w-64 p-3 border-r border-l-4 bg-background/100 shadow-sm border-l-${getStageColor(activity.stageId, stages)}-500 sticky left-0 z-20`}>
 		<div className="font-medium">{activity.title}</div>
 		<div className="flex items-center space-x-2 mt-2">
-			<Badge variant="outline" className={`text-xs px-1.5 py-0 font-medium shadow-sm border bg-white ${getPriorityColor(activity.priority)}`}>
+			{/* <Badge variant="outline" className={`text-xs px-1.5 py-0 font-medium shadow-sm border bg-white ${getPriorityColor(activity.priority)}`}>
 				{activity.priority}
-			</Badge>
+			</Badge> */}
+			<div className="text-xs text-muted-foreground mt-2">
+				{format(new Date(activity.startDate), "dd MMM", { locale: es })} - {format(new Date(activity.endDate), "dd MMM", { locale: es })}
+			</div>
 			<div className="flex-grow"></div>
 			<Avatar className="h-6 w-6">
 				<AvatarImage src="/placeholder-user.jpg" alt={activity.assignedToUser.name} />
-				<AvatarFallback>{getInitials(activity.assignedToUser.name)}</AvatarFallback>
+				<AvatarFallback>{getInitials(activity.assignedToUser.name + " " + activity.assignedToUser.lastname)}</AvatarFallback>
 			</Avatar>
 		</div>
-		<div className="text-xs text-muted-foreground mt-2">
-			{format(new Date(activity.startDate), "dd MMM", { locale: es })} - {format(new Date(activity.endDate), "dd MMM", { locale: es })}
-		</div>
+
 		{activity.executedStartDate && (
 			<div className="text-xs flex items-center gap-1 mt-1">
 				<ClockIcon className="h-3 w-3" />
@@ -456,9 +457,9 @@ const ActivityBar = memo(
 										<div className="font-medium truncate text-sm">{activity.title}</div>
 										<div className="ml-1">{getPriorityIcon(activity.priority)}</div>
 									</div>
-									<div className="text-xs mt-1 opacity-90 group-hover:opacity-100">
+									{/* <div className="text-xs mt-1 opacity-90 group-hover:opacity-100">
 										{format(new Date(activity.startDate), "dd MMM", { locale: es })} - {format(new Date(activity.endDate), "dd MMM", { locale: es })}
-									</div>
+									</div> */}
 								</div>
 							)}
 						</div>
@@ -560,9 +561,13 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 								return (
 									<div key={activity.id} className="flex border-b hover:bg-secondary/20">
 										<ActivityInfo activity={activity} executionStatus={executionStatus} stages={stages} />
-										<div className="flex-1 relative" style={{ height: "80px" }}>
-											<GridLines dateRange={dateRange} viewMode={viewMode} />
-											<ActivityBar activity={activity} barPosition={barPosition} executedBarPos={executedBarPos} executionStatus={executionStatus} stageColor={stageColor} />
+										<div className="flex-1 relative">
+											<div className="absolute inset-0">
+												<GridLines dateRange={dateRange} viewMode={viewMode} />
+											</div>
+											<div className="relative z-10 h-20">
+												<ActivityBar activity={activity} barPosition={barPosition} executedBarPos={executedBarPos} executionStatus={executionStatus} stageColor={stageColor} />
+											</div>
 										</div>
 									</div>
 								);

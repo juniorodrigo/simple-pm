@@ -49,7 +49,7 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 		if (JSON.stringify(activities) !== JSON.stringify(initialActivities)) {
 			setActivities(initialActivities);
 		}
-	}, [initialActivities]);
+	}, [initialActivities, activities]);
 
 	// Configuración de sensores optimizada
 	const sensors = useSensors(
@@ -216,7 +216,7 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 	const dragOverlay = useMemo(() => {
 		if (!activeId || !activeActivity) return null;
 		return <ActivityCard activity={activeActivity} stages={stages} />;
-	}, [activeId, activeActivity, getPriorityColor, stages]);
+	}, [activeId, activeActivity, stages]);
 
 	// Manejador para clics de actividad
 	const handleActivityClick = useCallback(
