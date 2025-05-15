@@ -9,7 +9,7 @@ import { BaseStage } from "@/app/types/stage.type";
 import { CalendarIcon, AlertTriangleIcon, CheckIcon, ArrowRightIcon, ClockIcon } from "lucide-react";
 import { es } from "date-fns/locale";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { getStageColorValue, getPriorityColor } from "@/lib/colors";
+import { getStageColorValue, getPriorityColor, getStageColorTailwind } from "@/lib/colors";
 import React from "react";
 
 type GanttChartProps = {
@@ -50,6 +50,15 @@ const getPriorityIcon = (priority: string): React.ReactElement | null => {
 
 const getStageColor = (stageId: string, stages: BaseStage[]): string => {
 	return stages.find((s) => s.id === stageId)?.color || "base";
+};
+
+const getBorderStageColor = (stageId: string, stages: BaseStage[]): string => {
+	const stage = stages.find((s) => s.id === stageId);
+
+	const result = getStageColorTailwind(stage?.color || "base");
+	console.log(`border-l-${result} `);
+
+	return result;
 };
 
 const isWeekend = (date: Date): boolean => {
@@ -211,7 +220,7 @@ const Legend = memo(({ showLegend, setShowLegend }: { showLegend: boolean; setSh
 	<div className="flex items-center gap-4 text-sm p-3 bg-muted/20 rounded-md">
 		<h4 className="font-medium">Leyenda:</h4>
 		<div className="flex items-center gap-2">
-			<div className="h-3 w-8 rounded bg-blue-500"></div>
+			<div className="h-3 w-8 rounded bg-accent-foreground"></div>
 			<span>Fechas planificadas</span>
 		</div>
 		<div className="flex items-center gap-2">
@@ -365,7 +374,7 @@ ExecutedBarTooltipContent.displayName = "ExecutedBarTooltipContent";
 
 // Componente ActivityInfo optimizado
 const ActivityInfo = memo(({ activity, executionStatus, stages }: { activity: BaseActivity; executionStatus: ExecutionStatus | null; stages: BaseStage[] }) => (
-	<div className={`w-64 min-w-64 p-3 border-r border-l-4 bg-background/100 shadow-sm border-l-${getStageColor(activity.stageId, stages)}-500 sticky left-0 z-20`}>
+	<div className={`w-64 min-w-64 p-3 border-r border-l-1 bg-background/100 shadow-sm border-l-${getBorderStageColor(activity.stageId, stages)} sticky left-0 z-20`}>
 		<div className="font-medium">{activity.title}</div>
 		<div className="flex items-center space-x-2 mt-2">
 			{/* <Badge variant="outline" className={`text-xs px-1.5 py-0 font-medium shadow-sm border bg-white ${getPriorityColor(activity.priority)}`}>
@@ -429,14 +438,18 @@ const ActivityBar = memo(
 		executedBarPos,
 		executionStatus,
 		stageColor,
+		stageOriginalColor,
 	}: {
 		activity: BaseActivity;
 		barPosition: BarPosition;
 		executedBarPos: BarPosition | null;
 		executionStatus: ExecutionStatus | null;
 		stageColor: string;
+		stageOriginalColor: string;
 	}) => {
 		const isShortBar = barPosition.width < 120;
+
+		console.log(stageOriginalColor);
 
 		return (
 			<>
@@ -449,6 +462,8 @@ const ActivityBar = memo(
 								width: `${barPosition.width}px`,
 								backgroundColor: stageColor,
 								border: `1px solid ${isPast(new Date(activity.endDate)) ? "#d1d5db" : "transparent"}`,
+								borderStyle: `${isPast(new Date(activity.endDate)) ? "dashed" : ""}`,
+								borderWidth: "2px",
 							}}
 						>
 							{!isShortBar && (
@@ -477,12 +492,12 @@ const ActivityBar = memo(
 								style={{
 									left: `${executedBarPos.left}px`,
 									width: `${executedBarPos.width}px`,
-									backgroundColor: executionStatus?.late ? "#f59e0b" : "#16a34a",
+									backgroundColor: executionStatus?.late ? "rgba(251, 191, 36, 0.8)" : "rgba(34, 197, 94, 0.8)",
 									height: "15px",
 									top: "calc(100% - 18px)",
 									borderWidth: "2px",
 									borderStyle: "dashed",
-									borderColor: executionStatus?.late ? "#b45309" : "#166534",
+									borderColor: executionStatus?.late ? "rgb(180, 83, 9)" : "#15803d",
 								}}
 							/>
 						</TooltipTrigger>
@@ -557,6 +572,7 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 								const executionStatus = getExecutionStatus(activity);
 								const barPosition = getBarPosition(activity, dateRange, viewMode);
 								const stageColor = getStageColorValue(getStageColor(activity.stageId, stages));
+								const stageOriginalColor = getStageColor(activity.stageId, stages);
 
 								return (
 									<div key={activity.id} className="flex border-b hover:bg-secondary/20">
@@ -566,7 +582,14 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 												<GridLines dateRange={dateRange} viewMode={viewMode} />
 											</div>
 											<div className="relative z-10 h-20">
-												<ActivityBar activity={activity} barPosition={barPosition} executedBarPos={executedBarPos} executionStatus={executionStatus} stageColor={stageColor} />
+												<ActivityBar
+													activity={activity}
+													barPosition={barPosition}
+													executedBarPos={executedBarPos}
+													executionStatus={executionStatus}
+													stageColor={stageColor}
+													stageOriginalColor={stageOriginalColor}
+												/>
 											</div>
 										</div>
 									</div>
