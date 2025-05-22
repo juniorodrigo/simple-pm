@@ -224,7 +224,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 																	)}
 																</div>
 																<div className="mt-2 text-xs">
-																	{/* <span className="bg-white/20 px-1.5 py-0.5 rounded-sm">{project.status || "Activo"}</span> */}
+																	<span className="bg-white/20 px-1.5 py-0.5 rounded-sm">{project.progressPercentage}%</span>
 																	{project.activitiesCount !== undefined && <span className="ml-1 bg-white/20 px-1.5 py-0.5 rounded-sm">{project.activitiesCount} actividades</span>}
 																</div>
 															</div>
@@ -238,6 +238,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 														<p className="text-xs mt-2">Categoría: {project.categoryName || "Sin categoría"}</p>
 														<p className="text-xs">Estado: {project.status || "No definido"}</p>
 														<p className="text-xs">Responsable: {project.managerUserName}</p>
+														<p className="text-xs">Avance: {project.progressPercentage}%</p>
 														{project.team && <p className="text-xs">Equipo: {project.team.length} miembros</p>}
 														{project.activitiesCount !== undefined && <p className="text-xs">Actividades: {project.activitiesCount}</p>}
 														<div className="border-t border-border mt-2 pt-1">
