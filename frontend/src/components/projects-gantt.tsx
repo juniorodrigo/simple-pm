@@ -1,6 +1,6 @@
 "use client";
 
-import { BaseProject } from "@/app/types/project.type";
+import { BaseProject } from "@/types/project.type";
 import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,7 +9,7 @@ import { CalendarIcon, Users2Icon } from "lucide-react";
 import { es } from "date-fns/locale";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getTagColorClass, getStageColorValue, STATUS_COLORS } from "@/lib/colors";
-import { ProjectStatusLabels } from "@/app/types/enums";
+import { ProjectStatusLabels } from "@/types/enums";
 import { useRouter } from "next/navigation";
 
 interface ProjectsGanttProps {

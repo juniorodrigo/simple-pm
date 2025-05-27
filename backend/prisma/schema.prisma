@@ -20,13 +20,15 @@ model MainSettings {
 }
 
 model User {
-  id              String            @id @default(cuid())
-  username        String            @unique
-  email           String            @unique
-  password        String
-  name            String
-  lastname        String
-  role            Role              @default(editor)
+  id       String  @id @default(cuid())
+  username String  @unique
+  email    String  @unique
+  password String
+  name     String
+  lastname String
+  areaId   String?
+  role     Role    @default(editor)
+
   createdAt       DateTime?         @default(now()) @db.Timestamp(6)
   updatedAt       DateTime?         @default(now()) @db.Timestamp(6)
   isActive        Boolean?          @default(true)
@@ -35,6 +37,7 @@ model User {
   Project         Project[]
   ProjectMember   ProjectMember[]
   ProjectActivity ProjectActivity[]
+  area            Area?             @relation(fields: [areaId], references: [id])
 }
 
 model UserAction {
@@ -74,6 +77,8 @@ model Project {
   category      ProjectCategory @relation(fields: [categoryId], references: [id])
   manager       User            @relation(fields: [managerUserId], references: [id])
   ProjectMember ProjectMember[]
+  Area          Area?           @relation(fields: [areaId], references: [id])
+  areaId        String?
 }
 
 model ProjectMember {
@@ -122,12 +127,24 @@ model ProjectStage {
   ProjectActivity ProjectActivity[]
 }
 
+model Area {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  isActive  Boolean?  @default(true)
+  createdAt DateTime? @default(now()) @db.Timestamp(6)
+  updatedAt DateTime? @default(now()) @db.Timestamp(6)
+  deletedAt DateTime? @db.Timestamp(6)
+  Project   Project[]
+  User      User[]
+}
+
+// Enums
+
 enum ProjectRole {
   manager
   member
 }
 
-// Enums
 enum ActivityStatus {
   pending
   in_progress

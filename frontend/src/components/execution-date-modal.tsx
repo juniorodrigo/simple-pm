@@ -11,8 +11,8 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { ActivitysService } from "@/services/activity.service";
-import { BaseActivity } from "@/app/types/activity.type";
-import { ActivityStatus } from "@/app/types/enums";
+import { BaseActivity } from "@/types/activity.type";
+import { ActivityStatus } from "@/types/enums";
 
 type DateRange = {
 	from: Date;

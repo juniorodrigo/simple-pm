@@ -3,11 +3,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CalendarClock, Trash2 } from "lucide-react";
-import { BaseActivity } from "@/app/types/activity.type";
-import { BaseStage } from "@/app/types/stage.type";
+import { BaseActivity } from "@/types/activity.type";
+import { BaseStage } from "@/types/stage.type";
 import { getStageColorValue, getPriorityColor } from "@/lib/colors";
 import { useAuth } from "@/contexts/auth-context";
-import { ActivityPriorityLabels } from "@/app/types/enums";
+import { ActivityPriorityLabels } from "@/types/enums";
 
 // Utilidades
 const getInitials = (name: string): string =>

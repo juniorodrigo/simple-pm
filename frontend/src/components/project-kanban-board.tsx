@@ -17,12 +17,12 @@ import {
 	AutoScrollActivator,
 } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { BaseProject } from "@/app/types/project.type";
+import { BaseProject } from "@/types/project.type";
 import { ProjectsService } from "@/services/project.service";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ProjectStatus, ProjectStatusLabels } from "@/app/types/enums";
+import { ProjectStatus, ProjectStatusLabels } from "@/types/enums";
 import ProjectCard from "@/components/project-card";
 
 // Definir las columnas del kanban a partir del enum

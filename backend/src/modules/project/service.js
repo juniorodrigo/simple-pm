@@ -151,6 +151,8 @@ const getProjectById = async (projectId) => {
 const createProject = async (projectData) => {
 	const { name, description, startDate, endDate, status, managerUserId, categoryId, teamMembers } = projectData;
 
+	console.log(projectData, 'projectData');
+
 	const project = await prisma.project.create({
 		data: {
 			name,

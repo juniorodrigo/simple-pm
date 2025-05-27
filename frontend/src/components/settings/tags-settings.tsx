@@ -11,8 +11,8 @@ import { Edit, Plus, Save, Trash, X } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { TagsService } from "@/services/tags.service";
-import { Tag } from "@/app/types/tag.type";
-import { Colors } from "@/app/types/enums";
+import { Tag } from "@/types/tag.type";
+import { Colors } from "@/types/enums";
 import { COLORS, getTagColorClass } from "@/lib/colors";
 
 interface TagWithCount extends Tag {

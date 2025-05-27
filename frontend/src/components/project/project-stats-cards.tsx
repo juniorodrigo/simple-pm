@@ -1,6 +1,6 @@
-import { ExtendedProject } from "@/app/types/project.type";
-import { BaseActivity } from "@/app/types/activity.type";
-import { ActivityStatus } from "@/app/types/enums";
+import { ExtendedProject } from "@/types/project.type";
+import { BaseActivity } from "@/types/activity.type";
+import { ActivityStatus } from "@/types/enums";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarRange, Clock, Users, TrendingUp } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";

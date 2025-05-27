@@ -9,13 +9,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import type { BaseStage } from "@/app/types/stage.type";
+import type { BaseStage } from "@/types/stage.type";
 import { Edit, Plus, Save, Trash, X } from "lucide-react";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { StagesService } from "@/services/stages.service";
 import { Badge } from "@/components/ui/badge";
 import { COLORS, getTagColorClass } from "@/lib/colors";
-import { Colors } from "@/app/types/enums";
+import { Colors } from "@/types/enums";
 
 const newStageSchema = z.object({
 	name: z.string().min(1, "Name is required"),

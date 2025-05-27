@@ -1,5 +1,5 @@
-import { ApiResponse } from "@/app/types/api-response.type";
-import { BaseStage } from "../app/types/stage.type";
+import { ApiResponse } from "@/types/api-response.type";
+import { BaseStage } from "../types/stage.type";
 
 export type ToggleStageBehavior = "up" | "down";
 

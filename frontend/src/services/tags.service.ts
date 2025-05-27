@@ -1,6 +1,6 @@
-import { ApiResponse } from "@/app/types/api-response.type";
-import { Tag } from "../app/types/tag.type";
-import { Role } from "@/app/types/enums";
+import { ApiResponse } from "@/types/api-response.type";
+import { Tag } from "../types/tag.type";
+import { Role } from "@/types/enums";
 
 const getTags = async (): Promise<ApiResponse> => {
 	try {

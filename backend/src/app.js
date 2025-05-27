@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import router from './router.js';
 import responseMiddleware from './middlewares/response.js';
+import { errorHandler } from '#middlewares/error-handler';
 
 const app = express();
 
@@ -30,5 +31,7 @@ app.use((err, req, res, next) => {
 });
 
 app.use(router);
+
+app.use(errorHandler);
 
 export default app;

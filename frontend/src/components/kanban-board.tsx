@@ -18,9 +18,9 @@ import {
 	MeasuringStrategy,
 } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { BaseActivity } from "@/app/types/activity.type";
-import { BaseStage } from "@/app/types/stage.type";
-import { ActivityStatus, ActivitiesLabels } from "@/app/types/enums";
+import { BaseActivity } from "@/types/activity.type";
+import { BaseStage } from "@/types/stage.type";
+import { ActivityStatus, ActivitiesLabels } from "@/types/enums";
 import { ActivitysService } from "@/services/activity.service";
 import { useToast } from "@/hooks/use-toast";
 import { ActivityCard } from "@/components/activity-card";

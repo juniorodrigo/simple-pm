@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { OrganizationService } from "@/services/organization.service";
-import { Organization } from "@/app/types/organization.type";
+import { Organization } from "@/types/organization.type";
 
 export default function GeneralSettings() {
 	const { toast } = useToast();

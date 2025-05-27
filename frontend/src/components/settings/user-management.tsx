@@ -1,22 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { User } from "@/app/types/user.type";
+import { User } from "@/types/user.type";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Edit, Check, UserPlus } from "lucide-react";
+import { Search, Edit, UserPlus } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { UsersService } from "@/services/users.service";
 import { useToast } from "@/hooks/use-toast";
-import { Role } from "@/app/types/enums";
-import { RoleManagement } from "./role-management";
+import { Role } from "@/types/enums";
 import { UserFormModal } from "./modals/user-form-modal";
 
 // Define user type
@@ -398,18 +395,6 @@ export default function UserManagement() {
 					</div>
 				</CardContent>
 			</Card>
-
-			<RoleManagement
-				roles={roles}
-				userCounts={Object.values(Role).reduce(
-					(acc, role) => ({
-						...acc,
-						[role]: users.filter((user) => user.role === role).length,
-					}),
-					{} as Record<Role, number>
-				)}
-				getRoleBadgeColor={getRoleBadgeColor}
-			/>
 
 			<Dialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
 				<DialogContent>

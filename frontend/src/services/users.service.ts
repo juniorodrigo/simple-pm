@@ -1,6 +1,6 @@
-import { ApiResponse } from "@/app/types/api-response.type";
-import { User } from "../app/types/user.type";
-import { Role } from "@/app/types/enums";
+import { ApiResponse } from "@/types/api-response.type";
+import { User } from "../types/user.type";
+import { Role } from "@/types/enums";
 
 const getUsers = async (): Promise<ApiResponse> => {
 	try {

@@ -18,9 +18,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { UsersService } from "@/services/users.service";
 import { TagsService } from "@/services/tags.service";
 import { ProjectsService } from "@/services/project.service";
-import { User } from "@/app/types/user.type";
-import { Tag } from "@/app/types/tag.type";
-import { BaseProject, ExtendedProject } from "@/app/types/project.type";
+import { User } from "@/types/user.type";
+import { Tag } from "@/types/tag.type";
+import { BaseProject, ExtendedProject } from "@/types/project.type";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useToast } from "@/components/ui/use-toast";
 

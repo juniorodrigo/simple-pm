@@ -3,8 +3,9 @@ const responseMiddleware = (req, res, next) => {
 		// console.log(`Success in ${req.method} ---- URL: ${req.url} ---- Data: ${JSON.stringify(data)}`);
 		const responsePayload = {
 			success: true,
-			data: data,
 		};
+
+		if (data) responsePayload.data = data;
 
 		if (message) responsePayload.message = message;
 

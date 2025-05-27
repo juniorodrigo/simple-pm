@@ -1,5 +1,5 @@
-import { ApiResponse } from "@/app/types/api-response.type";
-import { BaseActivity } from "../app/types/activity.type";
+import { ApiResponse } from "@/types/api-response.type";
+import { BaseActivity } from "../types/activity.type";
 
 export type ToggleActivityBehavior = "up" | "down";
 

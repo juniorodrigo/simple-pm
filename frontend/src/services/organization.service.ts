@@ -1,5 +1,5 @@
-import { ApiResponse } from "@/app/types/api-response.type";
-import { Organization } from "@/app/types/organization.type";
+import { ApiResponse } from "@/types/api-response.type";
+import { Organization } from "@/types/organization.type";
 
 const getOrganizationInfo = async (): Promise<ApiResponse> => {
 	try {

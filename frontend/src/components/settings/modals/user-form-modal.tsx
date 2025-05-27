@@ -4,7 +4,7 @@ import { DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTit
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Role } from "@/app/types/enums";
+import { Role } from "@/types/enums";
 
 interface RoleDefinition {
 	id: Role;

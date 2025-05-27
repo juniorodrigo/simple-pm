@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Loader2, KanbanSquare, GanttChart } from "lucide-react";
 import { ProjectsService } from "@/services/project.service";
-import { BaseProject } from "@/app/types/project.type";
+import { BaseProject } from "@/types/project.type";
 import ProjectKanbanBoard from "@/components/project-kanban-board";
 import { useToast } from "@/hooks/use-toast";
 import CreateProjectForm from "@/components/create-project-form";

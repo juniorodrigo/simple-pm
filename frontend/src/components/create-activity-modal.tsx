@@ -17,11 +17,11 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import type { BaseStage } from "@/app/types/stage.type";
-import { BaseActivity } from "@/app/types/activity.type";
-import { ActivityPriority, ActivityStatus, ActivitiesLabels, ActivityPriorityLabels } from "@/app/types/enums";
+import type { BaseStage } from "@/types/stage.type";
+import { BaseActivity } from "@/types/activity.type";
+import { ActivityPriority, ActivityStatus, ActivitiesLabels, ActivityPriorityLabels } from "@/types/enums";
 import { UsersService } from "@/services/users.service";
-import type { BaseUser } from "@/app/types/user.type";
+import type { BaseUser } from "@/types/user.type";
 import { ActivitysService } from "@/services/activity.service";
 import { getTagColorClass } from "@/lib/colors";
 
