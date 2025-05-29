@@ -21,7 +21,7 @@ import type { BaseStage } from "@/types/stage.type";
 import { BaseActivity } from "@/types/activity.type";
 import { ActivityPriority, ActivityStatus, ActivitiesLabels, ActivityPriorityLabels } from "@/types/enums";
 import { UsersService } from "@/services/users.service";
-import type { BaseUser } from "@/types/user.type";
+import type { BaseUser } from "@/types/user1.type";
 import { ActivitysService } from "@/services/activity.service";
 import { getTagColorClass } from "@/lib/colors";
 

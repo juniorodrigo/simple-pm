@@ -11,6 +11,8 @@ const getUsers = async () => {
 };
 
 const createUser = async (userData) => {
+	console.log('Creating user with data:', userData);
+
 	const existUser = await prisma.user.findFirst({
 		where: {
 			OR: [{ username: userData.username }, { email: userData.email }],

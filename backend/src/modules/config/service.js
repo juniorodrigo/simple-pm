@@ -8,7 +8,6 @@ async function getAreas() {
 
 	return { data: areas, message: 'Areas retrieved successfully' };
 }
-
 async function createArea(name) {
 	const existingArea = await prisma.area.findFirst({
 		where: {
@@ -30,8 +29,7 @@ async function createArea(name) {
 
 	return { data: newArea, message: 'Area created successfully' };
 }
-
-async function updateArea(id, name) {
+async function updateArea(id, name, isActive) {
 	const existingArea = await prisma.area.findUnique({
 		where: { id: id },
 	});
@@ -39,7 +37,7 @@ async function updateArea(id, name) {
 
 	const updatedArea = await prisma.area.update({
 		where: { id: id },
-		data: { name: name },
+		data: { name: name, isActive: isActive },
 		select: {
 			id: true,
 			name: true,
@@ -49,7 +47,6 @@ async function updateArea(id, name) {
 
 	return { data: updatedArea, message: 'Area updated successfully' };
 }
-
 async function deleteArea(id) {
 	const existingArea = await prisma.area.findUnique({
 		where: { id: id },
@@ -62,5 +59,83 @@ async function deleteArea(id) {
 
 	return { data: null, message: 'Area deleted successfully' };
 }
+export const AreasService = { getAreas, createArea, updateArea, deleteArea };
 
-export const ConfigService = { getAreas, createArea, updateArea, deleteArea };
+async function getUsers() {
+	const users = await prisma.user.findMany({
+		select: {
+			id: true,
+			email: true,
+			name: true,
+			lastname: true,
+			area: {
+				select: {
+					id: true,
+					name: true,
+				},
+			},
+			role: true,
+			isActive: true,
+		},
+	});
+
+	if (!users || users.length === 0) throw new AppError('No users found');
+
+	return { data: users, message: 'Users retrieved successfully' };
+}
+
+async function createUser(data) {
+	const existingUser = await prisma.user.findFirst({
+		where: {
+			email: data.email,
+		},
+	});
+	if (existingUser) throw new AppError('User already exists');
+
+	const newUser = await prisma.user.create({
+		data,
+		select: {
+			id: true,
+			name: true,
+			email: true,
+			isActive: true,
+		},
+	});
+
+	return { data: newUser, message: 'User created successfully' };
+}
+
+async function updateUser(id, name, lastname, email, areaId, role, isActive) {
+	const existingUser = await prisma.user.findUnique({
+		where: { id: id },
+	});
+	if (!existingUser) throw new AppError('User not found');
+
+	const updatedUser = await prisma.user.update({
+		where: { id: id },
+		data: { name: name, email: email, isActive: isActive },
+		select: {
+			id: true,
+			name: true,
+			email: true,
+			isActive: true,
+		},
+	});
+
+	return { data: updatedUser, message: 'User updated successfully' };
+}
+
+async function deleteUser(id) {
+	const existingUser = await prisma.user.findUnique({
+		where: { id: id },
+	});
+	if (!existingUser) throw new AppError('User not found');
+
+	await prisma.user.delete({
+		where: { id: id },
+	});
+
+	return { data: null, message: 'User deleted successfully' };
+}
+
+export const UserService = { getUsers, createUser, updateUser, deleteUser };

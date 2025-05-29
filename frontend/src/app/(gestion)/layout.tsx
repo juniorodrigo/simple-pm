@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import Sidebar from "@/components/sidebar";
-import Header from "@/components/header";
+import Sidebar from "@/components/layout/sidebar";
+import Header from "@/components/layout/header";
 
 export default function GestionLayout({ children }: { children: React.ReactNode }) {
 	return (

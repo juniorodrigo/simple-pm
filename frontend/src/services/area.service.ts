@@ -4,8 +4,11 @@ import { SResponse } from "@/types/common";
 
 export class AreaService {
 	static async create(area: AreaCreate): Promise<SResponse<Area>> {
-		const response = await fetch(HOST + "/areas", {
+		const response = await fetch(HOST + "/config/areas", {
 			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
 			body: JSON.stringify(area),
 		});
 		if (!response.ok && response.status >= 500) throw new Error("Algo ocurrió mal al crear el área");
@@ -17,8 +20,11 @@ export class AreaService {
 	}
 
 	static async update(area: AreaUpdate): Promise<SResponse<Area>> {
-		const response = await fetch(HOST + "/areas", {
+		const response = await fetch(HOST + `/config/areas/${area.id}`, {
 			method: "PUT",
+			headers: {
+				"Content-Type": "application/json",
+			},
 			body: JSON.stringify(area),
 		});
 
@@ -31,7 +37,7 @@ export class AreaService {
 	}
 
 	static async getAll(): Promise<SResponse<Area[]>> {
-		const response = await fetch(HOST + "/areas");
+		const response = await fetch(HOST + "/config/areas");
 		if (!response.ok && response.status >= 500) throw new Error("Algo ocurrió mal al obtener los áreas");
 
 		const payload = await response.json();
@@ -41,7 +47,7 @@ export class AreaService {
 	}
 
 	static async delete(id: string): Promise<SResponse<any>> {
-		const response = await fetch(HOST + `/areas/${id}`, {
+		const response = await fetch(HOST + `/config/areas/${id}`, {
 			method: "DELETE",
 		});
 

@@ -1,12 +1,18 @@
 import express from 'express';
-import { getAreas, createArea, updateArea, deleteArea } from './controller.js';
+import { AreaController, UserController } from './controller.js';
 
 const router = express.Router();
 
 // Areas
-router.get('/areas', getAreas);
-router.post('/areas', createArea);
-router.put('/areas/:id', updateArea);
-router.delete('/areas/:id', deleteArea);
+router.get('/areas', AreaController.getAreas);
+router.post('/areas', AreaController.createArea);
+router.put('/areas/:id', AreaController.updateArea);
+router.delete('/areas/:id', AreaController.deleteArea);
+
+// Usuarios
+router.get('/users', UserController.getUsers);
+router.post('/users', UserController.createUser);
+router.put('/users/:id', UserController.updateUser);
+router.delete('/users/:id', UserController.deleteUser);
 
 export default router;

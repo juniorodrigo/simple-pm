@@ -14,7 +14,10 @@ export type Area = z.infer<typeof AreaSchema>;
 /**
  * Esquema para crear un área nueva
  */
-export const AreaCreateSchema = AreaSchema.pick({ name: true });
+export const AreaCreateSchema = z.object({
+	name: z.string().min(1).max(100),
+	isActive: z.boolean().default(true),
+});
 export type AreaCreate = z.infer<typeof AreaCreateSchema>;
 
 /**

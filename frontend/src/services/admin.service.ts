@@ -1,8 +1,8 @@
 class AdminService {
-	static async getUsers() {
-		const response = await fetch("/api/users");
-		return response.json();
-	}
+	static async getUsers() {}
+	static async createUser() {}
+	static async updateUser() {}
+	static async deleteUser() {}
 }
 
 export default AdminService;

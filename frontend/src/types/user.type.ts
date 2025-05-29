@@ -1,35 +1,28 @@
 import { z } from "zod";
-import { Role } from "./enums";
+import { Role } from "./base";
 
-export type BaseUser = {
-	id?: string;
-	name: string;
-	lastname: string;
-	projectRole?: string;
-};
+const UserAreaSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+});
 
 export const UserSchema = z.object({
-	id: z.string().cuid(),
-	username: z.string(),
-	email: z.string().email(),
-	password: z.string().optional(),
+	id: z.string(),
+	email: z.string(),
+	// password: z.string(),
 	name: z.string(),
 	lastname: z.string(),
-	role: z.nativeEnum(Role).default(Role.EDITOR),
-	createdAt: z
-		.date()
-		.nullable()
-		.default(() => new Date()),
-	updatedAt: z
-		.date()
-		.nullable()
-		.default(() => new Date()),
-	isActive: z.boolean().nullable().default(true),
-	deletedAt: z.date().nullable(),
-	UserAction: z.array(z.any()).optional(),
-	Project: z.array(z.any()).optional(),
-	ProjectMember: z.array(z.any()).optional(),
-	lastActive: z.date().nullable(),
+	area: UserAreaSchema,
+	role: z.nativeEnum(Role),
+	isActive: z.boolean(),
 });
 
 export type User = z.infer<typeof UserSchema>;
+
+export const UserCreateSchema = UserSchema.omit({ id: true, area: true }).extend({
+	areaId: z.string(),
+});
+export type UserCreate = z.infer<typeof UserCreateSchema>;
+
+export const UserUpdateSchema = UserSchema.omit({ id: true }).partial();
+export type UserUpdate = z.infer<typeof UserUpdateSchema>;

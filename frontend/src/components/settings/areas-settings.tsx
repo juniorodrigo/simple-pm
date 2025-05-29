@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AreaService } from "@/services/area.service";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function AreasSettings() {
 	const [areas, setAreas] = useState<Area[]>([]);
@@ -18,8 +20,9 @@ export default function AreasSettings() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [areaToDelete, setAreaToDelete] = useState<Area | null>(null);
 	const [editingArea, setEditingArea] = useState<Area | null>(null);
-	const [newArea, setNewArea] = useState({ name: "" });
-	const [isAddingArea, setIsAddingArea] = useState(false);
+	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [areaName, setAreaName] = useState("");
+	const [areaStatus, setAreaStatus] = useState<boolean>(true);
 	const [searchQuery, setSearchQuery] = useState("");
 
 	useEffect(() => {
@@ -47,8 +50,28 @@ export default function AreasSettings() {
 
 	const filteredAreas = areas.filter((area) => area.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-	const handleAddArea = async () => {
-		if (!newArea.name.trim()) {
+	const handleOpenModal = (area?: Area) => {
+		if (area) {
+			setEditingArea(area);
+			setAreaName(area.name);
+			setAreaStatus(area.isActive);
+		} else {
+			setEditingArea(null);
+			setAreaName("");
+			setAreaStatus(true);
+		}
+		setIsModalOpen(true);
+	};
+
+	const handleCloseModal = () => {
+		setIsModalOpen(false);
+		setEditingArea(null);
+		setAreaName("");
+		setAreaStatus(true);
+	};
+
+	const handleSubmit = async () => {
+		if (!areaName.trim()) {
 			toast({
 				variant: "destructive",
 				description: "Por favor ingrese un nombre para el área",
@@ -58,57 +81,49 @@ export default function AreasSettings() {
 
 		setIsLoading(true);
 		try {
-			const response = await AreaService.create({ name: newArea.name });
-			if (response.success && response.data) {
-				setAreas([...areas, response.data]);
-				setNewArea({ name: "" });
-				setIsAddingArea(false);
-				toast({ description: "Área creada correctamente" });
-			} else {
-				toast({
-					variant: "destructive",
-					description: response.message || "Error al crear el área",
+			if (editingArea) {
+				// Actualizar área
+				const response = await AreaService.update({
+					id: editingArea.id,
+					name: areaName,
+					isActive: areaStatus,
 				});
+				if (response.success && response.data) {
+					const updatedArea: Area = {
+						id: response.data.id,
+						name: response.data.name,
+						isActive: response.data.isActive,
+					};
+					setAreas(areas.map((area) => (area.id === editingArea.id ? updatedArea : area)));
+					toast({ description: "Área actualizada correctamente" });
+					handleCloseModal();
+				} else {
+					toast({
+						variant: "destructive",
+						description: response.message || "Error al actualizar el área",
+					});
+				}
+			} else {
+				// Crear nueva área
+				const response = await AreaService.create({
+					name: areaName,
+					isActive: areaStatus,
+				});
+				if (response.success && response.data) {
+					setAreas([...areas, response.data]);
+					toast({ description: "Área creada correctamente" });
+					handleCloseModal();
+				} else {
+					toast({
+						variant: "destructive",
+						description: response.message || "Error al crear el área",
+					});
+				}
 			}
 		} catch (error) {
 			toast({
 				variant: "destructive",
-				description: "Error al crear el área",
-			});
-		} finally {
-			setIsLoading(false);
-		}
-	};
-
-	const handleUpdateArea = async () => {
-		if (!editingArea) return;
-
-		setIsLoading(true);
-		try {
-			const response = await AreaService.update({
-				id: editingArea.id,
-				name: editingArea.name,
-			});
-			if (response.success && response.data) {
-				const updatedArea: Area = {
-					id: response.data.id,
-					name: response.data.name,
-					isActive: response.data.isActive,
-				};
-
-				setAreas(areas.map((area) => (area.id === editingArea.id ? updatedArea : area)));
-				setEditingArea(null);
-				toast({ description: "Área actualizada correctamente" });
-			} else {
-				toast({
-					variant: "destructive",
-					description: response.message || "Error al actualizar el área",
-				});
-			}
-		} catch (error) {
-			toast({
-				variant: "destructive",
-				description: "Error al actualizar el área",
+				description: editingArea ? "Error al actualizar el área" : "Error al crear el área",
 			});
 		} finally {
 			setIsLoading(false);
@@ -140,6 +155,15 @@ export default function AreasSettings() {
 		return isActive ? "bg-green-100 text-green-800 border-green-200" : "bg-gray-100 text-gray-800 border-gray-200";
 	};
 
+	const getInitials = (name: string) => {
+		return name
+			.split(" ")
+			.map((word) => word[0])
+			.join("")
+			.toUpperCase()
+			.slice(0, 2); // Limitamos a 2 caracteres
+	};
+
 	return (
 		<div className="space-y-6">
 			<Card>
@@ -153,34 +177,10 @@ export default function AreasSettings() {
 							<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
 							<Input type="search" placeholder="Buscar áreas..." className="w-full pl-8" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
 						</div>
-						<Dialog open={isAddingArea} onOpenChange={setIsAddingArea}>
-							<DialogTrigger asChild>
-								<Button>
-									<Plus className="mr-2 h-4 w-4" />
-									Añadir Área
-								</Button>
-							</DialogTrigger>
-							<DialogContent>
-								<DialogHeader>
-									<DialogTitle>Crear Nueva Área</DialogTitle>
-									<DialogDescription>Ingrese los detalles de la nueva área</DialogDescription>
-								</DialogHeader>
-								<div className="grid gap-4 py-4">
-									<div className="grid gap-2">
-										<label htmlFor="name">Nombre del Área</label>
-										<Input id="name" value={newArea.name} onChange={(e) => setNewArea({ name: e.target.value })} />
-									</div>
-								</div>
-								<DialogFooter>
-									<Button variant="outline" onClick={() => setIsAddingArea(false)}>
-										Cancelar
-									</Button>
-									<Button onClick={handleAddArea} disabled={isLoading}>
-										{isLoading ? "Creando..." : "Crear"}
-									</Button>
-								</DialogFooter>
-							</DialogContent>
-						</Dialog>
+						<Button onClick={() => handleOpenModal()}>
+							<Plus className="mr-2 h-4 w-4" />
+							Añadir Área
+						</Button>
 					</div>
 
 					<div className="rounded-md border">
@@ -195,53 +195,23 @@ export default function AreasSettings() {
 							<TableBody>
 								{filteredAreas.map((area) => (
 									<TableRow key={area.id}>
-										<TableCell className="font-medium">{area.name}</TableCell>
+										<TableCell>
+											<div className="flex items-center gap-3">
+												<Avatar className="h-8 w-8 bg-primary">
+													<AvatarFallback className="text-foreground">{getInitials(area.name)}</AvatarFallback>
+												</Avatar>
+												<span className="font-medium">{area.name}</span>
+											</div>
+										</TableCell>
 										<TableCell>
 											<Badge variant="outline" className={getStatusBadgeColor(area.isActive)}>
 												{area.isActive ? "Activo" : "Inactivo"}
 											</Badge>
 										</TableCell>
 										<TableCell className="text-right">
-											<Dialog>
-												<DialogTrigger asChild>
-													<Button variant="ghost" size="icon" onClick={() => setEditingArea(area)}>
-														<Edit className="h-4 w-4" />
-													</Button>
-												</DialogTrigger>
-												<DialogContent>
-													<DialogHeader>
-														<DialogTitle>Editar Área</DialogTitle>
-														<DialogDescription>Modifique los detalles del área</DialogDescription>
-													</DialogHeader>
-													<div className="grid gap-4 py-4">
-														<div className="grid gap-2">
-															<label htmlFor="edit-name">Nombre del Área</label>
-															<Input
-																id="edit-name"
-																value={editingArea?.name}
-																onChange={(e) =>
-																	setEditingArea(
-																		editingArea
-																			? {
-																					...editingArea,
-																					name: e.target.value,
-																			  }
-																			: null
-																	)
-																}
-															/>
-														</div>
-													</div>
-													<DialogFooter>
-														<Button variant="outline" onClick={() => setEditingArea(null)}>
-															Cancelar
-														</Button>
-														<Button onClick={handleUpdateArea} disabled={isLoading}>
-															{isLoading ? "Guardando..." : "Guardar"}
-														</Button>
-													</DialogFooter>
-												</DialogContent>
-											</Dialog>
+											<Button variant="ghost" size="icon" onClick={() => handleOpenModal(area)}>
+												<Edit className="h-4 w-4" />
+											</Button>
 											<Button variant="ghost" size="icon" onClick={() => setAreaToDelete(area)}>
 												<Trash2 className="h-4 w-4" />
 											</Button>
@@ -261,6 +231,43 @@ export default function AreasSettings() {
 				</CardContent>
 			</Card>
 
+			{/* Modal para crear/editar área */}
+			<Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>{editingArea ? "Editar Área" : "Crear Nueva Área"}</DialogTitle>
+						<DialogDescription>{editingArea ? "Modifique los detalles del área" : "Ingrese los detalles de la nueva área"}</DialogDescription>
+					</DialogHeader>
+					<div className="grid gap-4 py-4">
+						<div className="grid gap-2">
+							<label htmlFor="name">Nombre del Área</label>
+							<Input id="name" value={areaName} onChange={(e) => setAreaName(e.target.value)} />
+						</div>
+						<div className="grid gap-2">
+							<label htmlFor="status">Estado</label>
+							<Select value={areaStatus ? "active" : "inactive"} onValueChange={(value) => setAreaStatus(value === "active")}>
+								<SelectTrigger>
+									<SelectValue placeholder="Seleccione el estado" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="active">Activo</SelectItem>
+									<SelectItem value="inactive">Inactivo</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+					</div>
+					<DialogFooter>
+						<Button variant="outline" onClick={handleCloseModal}>
+							Cancelar
+						</Button>
+						<Button onClick={handleSubmit} disabled={isLoading}>
+							{isLoading ? (editingArea ? "Guardando..." : "Creando...") : editingArea ? "Guardar" : "Crear"}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Modal de confirmación de eliminación */}
 			<Dialog open={!!areaToDelete} onOpenChange={(open) => !open && setAreaToDelete(null)}>
 				<DialogContent>
 					<DialogHeader>

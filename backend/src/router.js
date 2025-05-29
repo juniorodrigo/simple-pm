@@ -7,6 +7,7 @@ import stagesRouter from './modules/stages/router.js';
 import activitiesRouter from './modules/activities/router.js';
 
 import configRouter from './modules/config/router.js';
+import helpersRouter from './modules/helpers/router.js';
 
 const router = express.Router();
 
@@ -18,5 +19,6 @@ router.use('/stages', stagesRouter);
 router.use('/activities', activitiesRouter);
 
 router.use('/config', configRouter);
+router.use('/helpers', helpersRouter);
 
 export default router;

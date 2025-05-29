@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { User } from "@/types/user.type";
+import { User, UserCreate } from "@/types/user.type";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,30 +11,32 @@ import { Search, Edit, UserPlus } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { UsersService } from "@/services/users.service";
+import { UserService } from "@/services/user.service";
 import { useToast } from "@/hooks/use-toast";
-import { Role } from "@/types/enums";
-import { UserFormModal } from "./modals/user-form-modal";
+import { Role } from "@/types/base";
+import { UserFormModal } from "./modals/user";
+import type { UserFormData } from "./modals/user";
 
-// Define user type
-type DisplayUser = {
+interface DisplayUser {
 	id: string;
 	name: string;
 	lastname: string;
-	username: string;
 	email: string;
 	role: Role;
-	status: "active" | "inactive";
+	isActive: boolean;
+	area: {
+		id: string;
+		name: string;
+	};
 	lastActive?: Date;
-};
+}
 
-// Define role type with descriptions
-type RoleDefinition = {
+interface RoleDefinition {
 	id: Role;
 	name: string;
 	description: string;
 	permissions: string[];
-};
+}
 
 export default function UserManagement() {
 	const [users, setUsers] = useState<DisplayUser[]>([]);
@@ -44,22 +46,29 @@ export default function UserManagement() {
 
 	useEffect(() => {
 		const fetchUsers = async () => {
-			const response = await UsersService.getUsers();
-			const mappedUsers: DisplayUser[] = response.data.map((user: User) => ({
-				id: user.id,
-				name: user.name,
-				lastname: user.lastname,
-				username: user.username,
-				email: user.email,
-				role: user.role.toLowerCase() as Role,
-				status: user.isActive ? "active" : "inactive",
-				lastActive: user.lastActive || undefined,
-			}));
-			setUsers(mappedUsers);
+			const response = await UserService.getAll();
+			if (response.success && response.data) {
+				const mappedUsers: DisplayUser[] = response.data.map((user: User) => ({
+					id: user.id,
+					name: user.name,
+					lastname: user.lastname,
+					email: user.email,
+					role: user.role,
+					isActive: user.isActive,
+					area: user.area,
+					lastActive: undefined,
+				}));
+				setUsers(mappedUsers);
+			} else {
+				toast({
+					variant: "destructive",
+					description: "Error al cargar usuarios",
+				});
+			}
 		};
 
 		fetchUsers();
-	}, []);
+	}, [toast]);
 
 	// Role definitions with permissions
 	const roles: RoleDefinition[] = [
@@ -83,8 +92,8 @@ export default function UserManagement() {
 			permissions: ["Crear y gestionar proyectos", "Crear y gestionar actividades", "Ver todos los proyectos y actividades", "Gestionar etiquetas"],
 		},
 		{
-			id: Role.VIEWER,
-			name: "Visualizador",
+			id: Role.USER,
+			name: "Usuario",
 			description: "Acceso de solo lectura a proyectos y actividades",
 			permissions: ["Ver todos los proyectos y actividades"],
 		},
@@ -92,13 +101,17 @@ export default function UserManagement() {
 
 	const [searchQuery, setSearchQuery] = useState("");
 	const [editingUser, setEditingUser] = useState<DisplayUser | null>(null);
-	const [newUser, setNewUser] = useState({
+	const [newUser, setNewUser] = useState<UserFormData>({
 		name: "",
 		lastname: "",
-		username: "",
 		email: "",
-		role: Role.EDITOR,
-		status: "active" as "active" | "inactive",
+		role: Role.USER,
+		isActive: true,
+		areaId: "",
+		area: {
+			id: "",
+			name: "",
+		},
 	});
 	const [isAddingUser, setIsAddingUser] = useState(false);
 
@@ -130,28 +143,41 @@ export default function UserManagement() {
 		setIsLoading(true);
 
 		try {
-			const response = await UsersService.createUser(newUser.username, newUser.name, newUser.lastname, newUser.email, newUser.role, newUser.status === "active");
+			const userCreateData: UserCreate = {
+				name: newUser.name,
+				lastname: newUser.lastname,
+				email: newUser.email,
+				role: newUser.role,
+				isActive: newUser.isActive,
+				areaId: newUser.areaId,
+			};
 
-			if (response.success) {
+			const response = await UserService.createUser(userCreateData);
+
+			if (response.success && response.data) {
 				const createdUser: DisplayUser = {
 					id: response.data.id,
-					name: `${response.data.name}`,
+					name: response.data.name,
 					lastname: response.data.lastname,
-					username: response.data.username,
 					email: response.data.email,
-					role: response.data.role.toLowerCase() as Role,
-					status: response.data.isActive ? "active" : "inactive",
-					lastActive: new Date(),
+					role: response.data.role,
+					isActive: response.data.isActive,
+					area: response.data.area,
+					lastActive: undefined,
 				};
 
 				setUsers([...users, createdUser]);
 				setNewUser({
 					name: "",
-					email: "",
 					lastname: "",
-					username: "",
-					role: Role.VIEWER,
-					status: "active",
+					email: "",
+					role: Role.USER,
+					isActive: true,
+					areaId: "",
+					area: {
+						id: "",
+						name: "",
+					},
 				});
 				setIsAddingUser(false);
 				toast({ description: "Usuario creado correctamente" });
@@ -159,7 +185,7 @@ export default function UserManagement() {
 				toast({
 					variant: "destructive",
 					title: "Error al crear usuario",
-					description: response.error,
+					description: response.message,
 				});
 			}
 		} catch (error) {
@@ -179,41 +205,41 @@ export default function UserManagement() {
 
 		setIsLoading(true);
 		try {
-			const userToUpdate = {
-				id: editingUser.id,
+			const userUpdateData: UserCreate = {
 				name: editingUser.name,
 				lastname: editingUser.lastname,
-				username: editingUser.username,
 				email: editingUser.email,
 				role: editingUser.role,
-				isActive: editingUser.status === "active",
-				createdAt: null,
-				updatedAt: null,
-				deletedAt: null,
-				lastActive: null,
-				ProjectMember: undefined,
+				isActive: editingUser.isActive,
+				areaId: editingUser.area.id,
 			};
 
-			const response = await UsersService.updateUser(editingUser.id, userToUpdate);
+			const response = await UserService.updateUser(editingUser.id, userUpdateData);
 
-			if (response.success) {
+			if (response.success && response.data) {
 				setUsers(
 					users.map((user) =>
 						user.id === editingUser.id
 							? {
-									...editingUser,
-									lastActive: new Date(),
+									id: editingUser.id,
+									name: editingUser.name,
+									lastname: editingUser.lastname,
+									email: editingUser.email,
+									role: editingUser.role,
+									isActive: editingUser.isActive,
+									area: editingUser.area,
+									lastActive: undefined,
 							  }
 							: user
 					)
 				);
-				setEditingUser(null); // Esto cerrará automáticamente el modal debido al onOpenChange
+				setEditingUser(null);
 				toast({ description: "Usuario actualizado correctamente" });
 			} else {
 				toast({
 					variant: "destructive",
 					title: "Error al actualizar usuario",
-					description: response.error || "No se pudo actualizar el usuario",
+					description: response.message || "No se pudo actualizar el usuario",
 				});
 			}
 		} catch (error) {
@@ -229,7 +255,7 @@ export default function UserManagement() {
 
 	// Handle deleting a user
 	const handleDeleteUser = async (user: DisplayUser) => {
-		const response = await UsersService.deleteUser(user.id);
+		const response = await UserService.deleteUser(user.id);
 		if (response.success) {
 			setUsers(users.filter((u) => u.id !== user.id));
 			toast({ description: "Usuario eliminado correctamente" });
@@ -238,19 +264,19 @@ export default function UserManagement() {
 			toast({
 				variant: "destructive",
 				title: "Error al eliminar usuario",
-				description: response.error,
+				description: response.message,
 			});
 		}
 	};
 
 	// Get role badge color
-	const getRoleBadgeColor = (role: string) => {
+	const getRoleBadgeColor = (role: Role) => {
 		switch (role) {
-			case "admin":
+			case Role.ADMIN:
 				return "bg-purple-100 text-purple-800 border-purple-200";
-			case "editor":
+			case Role.EDITOR:
 				return "bg-blue-100 text-blue-800 border-blue-200";
-			case "viewer":
+			case Role.USER:
 				return "bg-green-100 text-green-800 border-green-200";
 			default:
 				return "bg-gray-100 text-gray-800 border-gray-200";
@@ -258,15 +284,8 @@ export default function UserManagement() {
 	};
 
 	// Get status badge color
-	const getStatusBadgeColor = (status: string) => {
-		switch (status) {
-			case "active":
-				return "bg-green-100 text-green-800 border-green-200";
-			case "inactive":
-				return "bg-gray-100 text-gray-800 border-gray-200";
-			default:
-				return "bg-gray-100 text-gray-800 border-gray-200";
-		}
+	const getStatusBadgeColor = (isActive: boolean) => {
+		return isActive ? "bg-green-100 text-green-800 border-green-200" : "bg-gray-100 text-gray-800 border-gray-200";
 	};
 
 	// Get initials from name
@@ -334,8 +353,8 @@ export default function UserManagement() {
 											</Badge>
 										</TableCell>
 										<TableCell>
-											<Badge variant="outline" className={getStatusBadgeColor(user.status)}>
-												{user.status}
+											<Badge variant="outline" className={getStatusBadgeColor(user.isActive)}>
+												{user.isActive ? "Activo" : "Inactivo"}
 											</Badge>
 										</TableCell>
 										<TableCell>{user.lastActive ? new Date(user.lastActive).toLocaleDateString() : "Nunca"}</TableCell>
@@ -353,12 +372,7 @@ export default function UserManagement() {
 														<DialogTrigger asChild>
 															<DropdownMenuItem
 																onClick={() => {
-																	setEditingUser({
-																		...user,
-																		name: user.name,
-																		lastname: user.lastname,
-																		username: user.username,
-																	});
+																	setEditingUser(user);
 																}}
 															>
 																Editar Usuario
@@ -373,8 +387,29 @@ export default function UserManagement() {
 													open={!!editingUser}
 													onOpenChange={(open) => !open && setEditingUser(null)}
 													roles={roles}
-													user={editingUser || newUser}
-													onUserChange={setEditingUser}
+													user={{
+														name: editingUser?.name || "",
+														lastname: editingUser?.lastname || "",
+														email: editingUser?.email || "",
+														role: editingUser?.role || Role.USER,
+														isActive: editingUser?.isActive || true,
+														areaId: editingUser?.area.id || "",
+														area: editingUser?.area || { id: "", name: "" },
+													}}
+													onUserChange={(user: UserFormData) => {
+														if (editingUser) {
+															setEditingUser({
+																id: editingUser.id,
+																name: user.name,
+																lastname: user.lastname,
+																email: user.email,
+																role: user.role,
+																isActive: user.isActive,
+																area: user.area,
+																lastActive: editingUser.lastActive,
+															});
+														}
+													}}
 													onSubmit={handleUpdateUser}
 													isLoading={isLoading}
 													mode="edit"

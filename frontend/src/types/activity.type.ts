@@ -1,5 +1,5 @@
 import { ActivityPriority, ActivityStatus } from "./enums";
-import { BaseUser } from "./user.type";
+import { BaseUser } from "./user1.type";
 
 export type BaseActivity = {
 	id: string;

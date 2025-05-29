@@ -12,14 +12,14 @@ const getUsers = async (req, res) => {
 
 const createUser = async (req, res) => {
 	try {
-		const { name, lastname, username, email, isActive, role } = req.body;
-		const requiredFields = { name, lastname, username, email };
+		const { name, lastname, email, isActive, role } = req.body;
+		const requiredFields = { name, lastname, email };
 
 		if (Object.values(requiredFields).some((field) => !field)) {
 			res.error('Faltan algunos datos del usuario');
 		}
 
-		const password = await bcrypt.hash(username, saltRounds);
+		const password = bcrypt.hash('user', saltRounds);
 		const user = { ...req.body, password };
 
 		const { data, success } = await Service.createUser(user);
