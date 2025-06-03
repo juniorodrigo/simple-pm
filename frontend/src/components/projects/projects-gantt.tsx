@@ -8,7 +8,7 @@ import { addDays, differenceInDays, format, startOfDay } from "date-fns";
 import { CalendarIcon, Users2Icon } from "lucide-react";
 import { es } from "date-fns/locale";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { getTagColorClass, getStageColorValue, STATUS_COLORS } from "@/lib/colors";
+import { getStageColorValue, STATUS_COLORS } from "@/lib/colors";
 import { ProjectStatusLabels } from "@/types/enums";
 import { useRouter } from "next/navigation";
 

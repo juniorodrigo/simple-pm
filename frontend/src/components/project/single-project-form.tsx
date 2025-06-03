@@ -11,7 +11,7 @@ import ProjectKanbanBoard from "@/components/projects/project-kanban-board";
 import { useToast } from "@/hooks/use-toast";
 import CreateProjectForm from "@/components/projects/create-project-form";
 import { useRouter } from "next/navigation";
-import ProjectsGantt from "@/components/project/projects-gantt";
+import ProjectsGantt from "@/components/projects/projects-gantt";
 import { useAuth } from "@/contexts/auth-context";
 
 interface ProjectFormProps {

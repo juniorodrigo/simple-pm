@@ -4,7 +4,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Bell, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/auth-context";
@@ -37,21 +37,7 @@ export default function Header() {
 				</h1> */}
 			</div>
 
-			<div className="flex items-center space-x-2">
-				{isSearchOpen ? (
-					<div className="relative w-64">
-						<Input type="text" placeholder="Search..." className="pr-8" autoFocus onBlur={() => setIsSearchOpen(false)} />
-						<Search className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
-					</div>
-				) : (
-					<Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)}>
-						<Search className="h-5 w-5" />
-					</Button>
-				)}
-				<Button variant="ghost" size="icon">
-					<Bell className="h-5 w-5" />
-				</Button>
-
+			<div className="">
 				{user && (
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
