@@ -1,4 +1,4 @@
-import { ExtendedProject } from "@/types/project.type";
+import { ExtendedProject } from "@/types/new/project.type";
 import { BaseActivity } from "@/types/activity.type";
 import { ActivityStatus } from "@/types/enums";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

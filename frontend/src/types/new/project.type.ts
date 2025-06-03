@@ -1,5 +1,5 @@
-import { BaseStage } from "./stage.type";
-import { BaseUser } from "./user1.type";
+import { BaseStage } from "../stage.type";
+import { BaseUser } from "../user1.type";
 
 export type BaseProject = {
 	id: number;

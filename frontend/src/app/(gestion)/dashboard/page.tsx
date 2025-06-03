@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ProjectsService } from "@/services/project.service";
 import { getTagColorClass } from "@/lib/colors";
-import type { ExtendedProject } from "@/types/project.type";
+import type { ExtendedProject } from "@/types/new/project.type";
 import { Activity, AlertCircle, ArrowRight, CalendarClock, CheckCircle2, Clock, ListChecks, PieChart, Plus, Tag, Timer, Hourglass, Users } from "lucide-react";
 
 // Componente para mostrar datos de ejemplo en gráficos

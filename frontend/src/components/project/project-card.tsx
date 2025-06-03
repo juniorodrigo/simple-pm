@@ -2,7 +2,7 @@ import { memo } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CalendarIcon, Trash2, CheckSquare } from "lucide-react";
-import { BaseProject } from "@/types/project.type";
+import { BaseProject } from "@/types/new/project.type";
 import { ProjectStatus, ProjectStatusLabels } from "@/types/enums";
 import { getStageColorValue } from "@/lib/colors";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";

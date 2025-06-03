@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, memo, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
-import { BaseProject } from "@/types/project.type";
+import { BaseProject } from "@/types/new/project.type";
 import { ProjectsService } from "@/services/project.service";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";

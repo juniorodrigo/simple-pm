@@ -1,7 +1,7 @@
 // app/projects/[id]/page.tsx
 import { Suspense } from "react";
 import { ProjectsService } from "@/services/project.service";
-import { ExtendedProject } from "@/types/project.type";
+import { ExtendedProject } from "@/types/new/project.type";
 import { BaseActivity } from "@/types/activity.type";
 import ProjectSkeleton from "@/components/projects/project-skeleton";
 import ClientView from "./ClientView";

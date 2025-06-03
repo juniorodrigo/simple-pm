@@ -1,6 +1,6 @@
 "use client";
 
-import { BaseProject } from "@/types/project.type";
+import { BaseProject } from "@/types/new/project.type";
 import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

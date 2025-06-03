@@ -20,7 +20,7 @@ import { CategoriaService } from "@/services/new/categoria.service";
 import { ProjectsService } from "@/services/project.service";
 import { User } from "@/types/user1.type";
 import { Tag } from "@/types/new/tag.type";
-import { BaseProject, ExtendedProject } from "@/types/project.type";
+import { BaseProject, ExtendedProject } from "@/types/new/project.type";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useToast } from "@/components/ui/use-toast";
 

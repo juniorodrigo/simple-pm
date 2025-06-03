@@ -1,5 +1,5 @@
 import { ApiResponse } from "@/types/api-response.type";
-import { BaseProject } from "../types/project.type";
+import { BaseProject } from "../types/new/project.type";
 import { env } from "@/env.mjs";
 
 const HOST = env.NEXT_PUBLIC_HOST || "http://localhost:4141";
