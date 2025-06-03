@@ -30,7 +30,19 @@ const createProject = async (req, res) => {
 			return res.error('Faltan campos requeridos para crear el proyecto');
 		}
 
-		const projectData = { ...req.body };
+		// Extraer solo los campos permitidos, excluyendo 'id' para evitar conflictos con autoincrement
+		const { startDate, endDate, status, teamMembers, ...otherFields } = req.body;
+		const projectData = {
+			name,
+			description,
+			managerUserId,
+			categoryId,
+			...(startDate && { startDate }),
+			...(endDate && { endDate }),
+			...(status && { status }),
+			...(teamMembers && { teamMembers }),
+		};
+
 		const { success, data } = await Service.createProject(projectData);
 
 		if (success) res.success(data, 'Proyecto creado correctamente');

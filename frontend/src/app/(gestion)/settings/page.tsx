@@ -3,10 +3,10 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import UserManagement from "@/components/settings/user-settings";
-import GeneralSettings from "@/components/settings/general-settings";
-import TagsSettings from "@/components/settings/tags-settings";
-import AreasSettings from "@/components/settings/areas-settings";
+import UserManagement from "@/components/settings/usuarios";
+import GeneralSettings from "@/components/settings/general";
+import TagsSettings from "@/components/settings/categorias";
+import AreasSettings from "@/components/settings/areas";
 
 export default function SettingsPage() {
 	const searchParams = useSearchParams();

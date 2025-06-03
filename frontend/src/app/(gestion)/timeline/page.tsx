@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search } from "lucide-react";
-import { ProjectCard } from "@/components/project-bystage-card";
+import { ProjectCard } from "@/components/project/project-bystage-card";
 
 export default function GanttPage() {
 	const [selectedProject, setSelectedProject] = useState<string>("all");

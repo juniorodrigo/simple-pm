@@ -1,6 +1,6 @@
-import { Area, AreaCreate, AreaUpdate } from "@/types/area.type";
+import { Area, AreaCreate, AreaUpdate } from "@/types/new/area.type";
 import HOST from "@/lib/host";
-import { SResponse } from "@/types/common";
+import { SResponse } from "@/types/new/common";
 
 export class AreaService {
 	static async create(area: AreaCreate): Promise<SResponse<Area>> {

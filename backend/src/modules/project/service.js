@@ -46,7 +46,7 @@ const getProjects = async () => {
 					id: true,
 					name: true,
 					lastname: true,
-					username: true,
+					// username: true,
 					email: true,
 					role: true,
 					isActive: true,
@@ -59,7 +59,7 @@ const getProjects = async () => {
 							id: true,
 							name: true,
 							lastname: true,
-							username: true,
+							// username: true,
 							email: true,
 							role: true,
 							isActive: true,
@@ -149,63 +149,73 @@ const getProjectById = async (projectId) => {
 };
 
 const createProject = async (projectData) => {
+	// Extraer los campos necesarios y excluir el 'id' si viene en los datos
 	const { name, description, startDate, endDate, status, managerUserId, categoryId, teamMembers } = projectData;
 
-	console.log(projectData, 'projectData');
+	console.log('Creando proyecto con datos:', { name, description, managerUserId, categoryId });
 
-	const project = await prisma.project.create({
-		data: {
-			name,
-			description,
-			startDate: startDate ? new Date(startDate) : null,
-			endDate: endDate ? new Date(endDate) : null,
-			status,
-			managerUserId,
-			categoryId,
-		},
-		include: {
-			category: true,
-			manager: {
-				select: {
-					id: true,
-					name: true,
-					lastname: true,
-					username: true,
-					email: true,
-					role: true,
-					isActive: true,
+	// Construir el objeto data explícitamente sin incluir 'id'
+	const projectCreateData = {
+		name,
+		description,
+		startDate: startDate ? new Date(startDate) : null,
+		endDate: endDate ? new Date(endDate) : null,
+		status: status || 'in_progress', // valor por defecto
+		managerUserId,
+		categoryId,
+	};
+
+	try {
+		const project = await prisma.project.create({
+			data: projectCreateData,
+			include: {
+				category: true,
+				manager: {
+					select: {
+						id: true,
+						name: true,
+						lastname: true,
+						email: true,
+						role: true,
+						isActive: true,
+					},
 				},
 			},
-		},
-	});
+		});
 
-	const members = teamMembers.map((member) => {
-		const newMemberObject = { userId: member, projectId: project.id, role: 'member' };
-		if (member == managerUserId) newMemberObject.role = 'manager';
-		return newMemberObject;
-	});
+		const members =
+			teamMembers?.map((member) => {
+				const newMemberObject = { userId: member, projectId: project.id, role: 'member' };
+				if (member == managerUserId) newMemberObject.role = 'manager';
+				return newMemberObject;
+			}) || [];
+		if (members.length > 0) {
+			await prisma.projectMember.createMany({
+				data: members,
+			});
+		}
 
-	const membersCreated = await prisma.projectMember.createMany({
-		data: members,
-	});
+		const stage = await prisma.projectStage.create({
+			data: {
+				name: 'Inicio',
+				description: 'Etapa inicial del proyecto',
+				status: 'pending',
+				color: 'blue',
+				ordinalNumber: 1,
+				projectId: project.id,
+			},
+		});
 
-	const stage = await prisma.projectStage.create({
-		data: {
-			name: 'Inicio',
-			description: 'Etapa inicial del proyecto',
-			status: 'pending',
-			color: 'blue',
-			ordinalNumber: 1,
-			projectId: project.id,
-		},
-	});
+		if (!stage) throw new Error('Error al crear el stage inicial del proyecto');
 
-	if (!stage) throw new Error('Error al crear el stage inicial del proyecto');
+		// Enriquecer el proyecto con métricas adicionales
+		const enhancedProject = await enhanceProject(project);
 
-	// Enriquecer el proyecto con métricas adicionales
-	const enhancedProject = await enhanceProject(project);
-
-	return { success: true, data: enhancedProject };
+		return { success: true, data: enhancedProject };
+	} catch (error) {
+		console.error('Error creating project:', error);
+		throw new Error(`Error al crear el proyecto: ${error.message}`);
+	}
 };
 
 const updateProject = async (projectId, projectData) => {
@@ -254,7 +264,7 @@ const updateProject = async (projectId, projectData) => {
 					id: true,
 					name: true,
 					lastname: true,
-					username: true,
+					// username: true,
 					email: true,
 					role: true,
 					isActive: true,

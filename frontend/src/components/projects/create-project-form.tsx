@@ -16,10 +16,10 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UsersService } from "@/services/users.service";
-import { TagsService } from "@/services/tags.service";
+import { CategoriaService } from "@/services/new/categoria.service";
 import { ProjectsService } from "@/services/project.service";
 import { User } from "@/types/user1.type";
-import { Tag } from "@/types/tag.type";
+import { Tag } from "@/types/new/tag.type";
 import { BaseProject, ExtendedProject } from "@/types/project.type";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useToast } from "@/components/ui/use-toast";
@@ -92,7 +92,7 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 	useEffect(() => {
 		const loadData = async () => {
 			const usersResponse = await UsersService.getUsers();
-			const tagsResponse = await TagsService.getTags();
+			const tagsResponse = await CategoriaService.getAll();
 			const projectsResponse = await ProjectsService.getProjects();
 
 			if (usersResponse.success && usersResponse.data) {

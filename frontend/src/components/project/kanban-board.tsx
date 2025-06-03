@@ -23,11 +23,11 @@ import { BaseStage } from "@/types/stage.type";
 import { ActivityStatus, ActivitiesLabels } from "@/types/enums";
 import { ActivitysService } from "@/services/activity.service";
 import { useToast } from "@/hooks/use-toast";
-import { ActivityCard } from "@/components/activity-card";
+import { ActivityCard } from "@/components/project/activity-card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { getPriorityColor } from "@/lib/colors";
-import ExecutionDateModal from "@/components/execution-date-modal";
+import ExecutionDateModal from "@/components/project/execution-date-modal";
 
 interface KanbanBoardProps {
 	activities: BaseActivity[];
@@ -43,6 +43,9 @@ const LANES = Object.values(ActivityStatus).map((statusValue) => ({
 	title: ActivitiesLabels[statusValue],
 }));
 
+// Definir el orden de los estados
+const STATUS_ORDER = [ActivityStatus.TODO, ActivityStatus.IN_PROGRESS, ActivityStatus.REVIEW, ActivityStatus.DONE];
+
 // Componente principal optimizado
 export default function KanbanBoard({ activities: initialActivities, stages, onActivityChange, onActivityClick }: KanbanBoardProps) {
 	const [activities, setActivities] = useState<BaseActivity[]>([]);
@@ -57,6 +60,9 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 	// Nuevos estados para el modal de fechas de ejecución
 	const [isExecutionDateModalOpen, setIsExecutionDateModalOpen] = useState(false);
 	const [completedActivity, setCompletedActivity] = useState<BaseActivity | null>(null);
+
+	// Nuevo estado para cambios pendientes
+	const [pendingStatusChange, setPendingStatusChange] = useState<null | { activity: BaseActivity; newStatus: ActivityStatus }>(null);
 
 	// Actualizar actividades solo cuando cambian
 	useEffect(() => {
@@ -132,66 +138,56 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 	const handleDragEnd = useCallback(
 		async (event: DragEndEvent) => {
 			const { active, over } = event;
-
 			if (!over) {
 				setActiveId(null);
 				setOverId(null);
 				return;
 			}
-
 			const activeId = active.id as string;
 			const overId = over.id as string;
-
 			const activeActivity = activities.find((a) => a.id === activeId);
 			if (!activeActivity) {
 				setActiveId(null);
 				setOverId(null);
 				return;
 			}
-
-			// Verificar si se está soltando en una lane (columna)
 			if (LANES.some((lane) => lane.id === overId)) {
 				const newStatus = overId as ActivityStatus;
-
 				if (newStatus && activeActivity.status !== newStatus) {
-					try {
-						// Actualizar estado local para una experiencia de usuario inmediata
-						const updatedActivities = activities.map((activity) => (activity.id === activeId ? { ...activity, status: newStatus } : activity));
-
-						setActivities(updatedActivities);
-
-						// Si el nuevo estado es IN_PROGRESS y viene de TODO, mostrar el modal para fecha de inicio
-						if (newStatus === ActivityStatus.IN_PROGRESS && activeActivity.status === ActivityStatus.TODO) {
-							setCompletedActivity({ ...activeActivity, status: newStatus });
-							setIsExecutionDateModalOpen(true);
-						}
-						// Si el nuevo estado es DONE, mostrar el modal para fecha de fin
-						else if (newStatus === ActivityStatus.DONE) {
-							setCompletedActivity({ ...activeActivity, status: newStatus });
-							setIsExecutionDateModalOpen(true);
-						}
-
-						// Notificar al componente padre sobre el cambio
-						if (onActivityChange) {
-							onActivityChange(updatedActivities);
-						}
-
-						// Llamar a la API para persistir el cambio
-						const response = await ActivitysService.updateActivityStatus(activeId, newStatus);
-						if (!response.success) {
-							throw new Error("Error al actualizar el estado");
-						}
-					} catch (error) {
-						console.error("Error al actualizar el estado:", error);
+					// Validar que el cambio de estado no salte más de un estado
+					const currentIdx = STATUS_ORDER.indexOf(activeActivity.status);
+					const newIdx = STATUS_ORDER.indexOf(newStatus);
+					if (currentIdx === -1 || newIdx === -1 || Math.abs(newIdx - currentIdx) > 1) {
 						toast({
-							title: "Error",
-							description: "No se pudo actualizar el estado de la actividad",
+							title: "Cambio de estado no permitido",
+							description: "No puedes saltar etapas. El flujo es: Pendiente → En Progreso → Revisión → Completado.",
 							variant: "destructive",
 						});
+						setActiveId(null);
+						setOverId(null);
+						return;
+					}
+					if ((newStatus === ActivityStatus.IN_PROGRESS && activeActivity.status === ActivityStatus.TODO) || newStatus === ActivityStatus.DONE) {
+						setPendingStatusChange({ activity: activeActivity, newStatus });
+						setCompletedActivity({ ...activeActivity, status: newStatus });
+						setIsExecutionDateModalOpen(true);
+					} else {
+						// Cambio normal, sin fecha de ejecución
+						try {
+							const updatedActivities = activities.map((activity) => (activity.id === activeId ? { ...activity, status: newStatus } : activity));
+							setActivities(updatedActivities);
+							if (onActivityChange) {
+								onActivityChange(updatedActivities);
+							}
+							const response = await ActivitysService.updateActivityStatus(activeId, newStatus);
+							if (!response.success) throw new Error("Error al actualizar el estado");
+						} catch (error) {
+							console.error("Error al actualizar el estado:", error);
+							toast({ title: "Error", description: "No se pudo actualizar el estado de la actividad", variant: "destructive" });
+						}
 					}
 				}
 			}
-
 			setActiveId(null);
 			setOverId(null);
 		},
@@ -201,21 +197,27 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 	// Manejar el éxito del registro de fechas de ejecución
 	const handleExecutionDateSuccess = useCallback(
 		(updatedActivity: BaseActivity) => {
-			// Actualizar la actividad en el estado local
-			const updatedActivities = activities.map((activity) => (activity.id === updatedActivity.id ? updatedActivity : activity));
-
-			setActivities(updatedActivities);
-
-			// Notificar al componente padre sobre el cambio
-			if (onActivityChange) {
-				onActivityChange(updatedActivities);
+			if (pendingStatusChange) {
+				const updatedActivities = activities.map((activity) => (activity.id === updatedActivity.id ? { ...updatedActivity, status: pendingStatusChange.newStatus } : activity));
+				setActivities(updatedActivities);
+				if (onActivityChange) {
+					onActivityChange(updatedActivities);
+				}
+				setPendingStatusChange(null);
+				setIsExecutionDateModalOpen(false);
+				setCompletedActivity(null);
+			} else {
+				// Fallback por si acaso
+				const updatedActivities = activities.map((activity) => (activity.id === updatedActivity.id ? updatedActivity : activity));
+				setActivities(updatedActivities);
+				if (onActivityChange) {
+					onActivityChange(updatedActivities);
+				}
+				setIsExecutionDateModalOpen(false);
+				setCompletedActivity(null);
 			}
-
-			// Cerrar el modal
-			setIsExecutionDateModalOpen(false);
-			setCompletedActivity(null);
 		},
-		[activities, onActivityChange]
+		[activities, onActivityChange, pendingStatusChange]
 	);
 
 	// Actividad activa memoizada eficientemente
@@ -313,7 +315,23 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 			</Dialog>
 
 			{/* Nuevo modal para fechas de ejecución */}
-			<ExecutionDateModal activity={completedActivity} isOpen={isExecutionDateModalOpen} onClose={() => setIsExecutionDateModalOpen(false)} onSuccess={handleExecutionDateSuccess} />
+			<ExecutionDateModal
+				activity={completedActivity}
+				isOpen={isExecutionDateModalOpen}
+				onClose={() => {
+					if (pendingStatusChange) {
+						toast({
+							title: "Debes ingresar la fecha",
+							description: "Para continuar, primero debes guardar la fecha de ejecución.",
+							variant: "destructive",
+						});
+						return;
+					}
+					setIsExecutionDateModalOpen(false);
+					setCompletedActivity(null);
+				}}
+				onSuccess={handleExecutionDateSuccess}
+			/>
 		</>
 	);
 }

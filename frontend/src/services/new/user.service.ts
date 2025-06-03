@@ -1,6 +1,6 @@
 import HOST from "@/lib/host";
-import { SResponse } from "@/types/common";
-import { User, UserCreate, UserUpdate } from "@/types/user.type";
+import { SResponse } from "@/types/new/common";
+import { User, UserCreate, UserUpdate } from "@/types/new/usuario.type";
 
 export class UserService {
 	static async createUser(userData: UserCreate): Promise<SResponse<User>> {

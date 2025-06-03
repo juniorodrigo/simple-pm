@@ -1,8 +1,8 @@
 export const COLORS = [
 	{ name: "Rojo", value: "red" },
-	{ name: "Verde", value: "green" },
+	// { name: "Verde", value: "green" },
 	{ name: "Azul", value: "blue" },
-	{ name: "Ámbar", value: "amber" },
+	// { name: "Ámbar", value: "amber" },
 	{ name: "Violeta", value: "violet" },
 	{ name: "Rosa", value: "rose" },
 	{ name: "Gris", value: "gray" },

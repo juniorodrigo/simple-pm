@@ -3,7 +3,7 @@ type SelectItem = {
 	name: string;
 };
 import HOST from "@/lib/host";
-import { SResponse } from "@/types/common";
+import { SResponse } from "@/types/new/common";
 
 export class SelectService {
 	static async getAreas(): Promise<SResponse<SelectItem[]>> {

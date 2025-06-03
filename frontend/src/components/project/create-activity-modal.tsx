@@ -316,31 +316,32 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 					/>
 
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<FormField
-							control={form.control}
-							name="status"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Estado</FormLabel>
-									<Select onValueChange={field.onChange} defaultValue={field.value}>
-										<FormControl>
-											<SelectTrigger>
-												<SelectValue placeholder="Seleccionar estado" />
-											</SelectTrigger>
-										</FormControl>
-										<SelectContent>
-											{statusOptions.map(({ label, value }) => (
-												<SelectItem key={value} value={value}>
-													{label}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-
+						{isEditMode && (
+							<FormField
+								control={form.control}
+								name="status"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Estado</FormLabel>
+										<Select onValueChange={field.onChange} defaultValue={field.value}>
+											<FormControl>
+												<SelectTrigger>
+													<SelectValue placeholder="Seleccionar estado" />
+												</SelectTrigger>
+											</FormControl>
+											<SelectContent>
+												{statusOptions.map(({ label, value }) => (
+													<SelectItem key={value} value={value}>
+														{label}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						)}
 						<FormField
 							control={form.control}
 							name="priority"

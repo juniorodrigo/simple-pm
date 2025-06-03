@@ -25,16 +25,16 @@ export default function Header() {
 	};
 
 	return (
-		<header className="border-b bg-background p-4 flex items-center justify-between">
+		<header className="border-b bg-background py-2 px-4 flex items-center justify-between">
 			<div className="flex items-center">
-				<h1 className="text-xl font-semibold hidden md:block">
+				{/* <h1 className="text-xl font-semibold hidden md:block">
 					{pathname === "/" && "Dashboard"}
 					{pathname === "/projects" && "Proyectos"}
 					{pathname === "/kanban" && "Kanban General"}
 					{pathname === "/timeline" && "Proyectos por Etapas"}
 					{pathname === "/settings" && "Configuración"}
 					{pathname.startsWith("/projects/") && "Detalles del Proyecto"}
-				</h1>
+				</h1> */}
 			</div>
 
 			<div className="flex items-center space-x-2">

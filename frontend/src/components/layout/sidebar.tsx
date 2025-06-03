@@ -39,7 +39,7 @@ export default function Sidebar() {
 			name: "Proyectos",
 			href: "/projects",
 			icon: KanbanSquare,
-			current: pathname === "/kanban",
+			current: pathname === "/projects" || pathname.startsWith("/projects/"),
 		},
 		// {
 		// 	name: "Línea de Tiempo",

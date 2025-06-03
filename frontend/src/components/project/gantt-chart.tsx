@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { addDays, differenceInDays, format, startOfDay, startOfWeek, endOfWeek, eachDayOfInterval } from "date-fns";
 import { BaseActivity } from "@/types/activity.type";
@@ -127,7 +126,7 @@ const getExecutedBarPosition = (activity: BaseActivity, dateRange: Date[], viewM
 	if (dateRange.length === 0 || !activity.executedStartDate) return null;
 
 	const startDate = new Date(activity.executedStartDate);
-	const endDate = activity.executedEndDate ? new Date(activity.executedEndDate) : new Date(activity.executedStartDate);
+	const endDate = activity.executedEndDate ? new Date(activity.executedEndDate) : new Date();
 	const firstDate = dateRange[0];
 	const widthMultiplier = viewMode === "weeks" ? WEEK_WIDTH / 7 : DAY_WIDTH;
 
@@ -225,11 +224,11 @@ const Legend = memo(({ showLegend, setShowLegend }: { showLegend: boolean; setSh
 		</div>
 		<div className="flex items-center gap-2">
 			<div className="h-3 w-8 rounded bg-green-600 border-2 border-dashed border-green-800"></div>
-			<span>Fechas ejecutadas (a tiempo)</span>
+			<span>Fechas reales a tiempo</span>
 		</div>
 		<div className="flex items-center gap-2">
 			<div className="h-3 w-8 rounded bg-amber-500 border-2 border-dashed border-amber-700"></div>
-			<span>Fechas ejecutadas (con retraso)</span>
+			<span>Fechas reales con retraso</span>
 		</div>
 		<button onClick={() => setShowLegend(false)} className="ml-auto text-xs text-muted-foreground hover:text-foreground">
 			Ocultar
@@ -374,14 +373,17 @@ ExecutedBarTooltipContent.displayName = "ExecutedBarTooltipContent";
 
 // Componente ActivityInfo optimizado
 const ActivityInfo = memo(({ activity, executionStatus, stages }: { activity: BaseActivity; executionStatus: ExecutionStatus | null; stages: BaseStage[] }) => (
-	<div className={`w-64 min-w-64 p-3 border-r border-l-1 bg-background/100 shadow-sm border-l-${getBorderStageColor(activity.stageId, stages)} sticky left-0 z-20`}>
+	<div className={`w-64 min-w-64 p-3 border-r border-l-1 bg-background/100 shadow-sm  sticky left-0 z-20`}>
+		{/*border-l-${getBorderStageColor(activity.stageId, stages)} */}
 		<div className="font-medium">{activity.title}</div>
 		<div className="flex items-center space-x-2 mt-2">
 			{/* <Badge variant="outline" className={`text-xs px-1.5 py-0 font-medium shadow-sm border bg-white ${getPriorityColor(activity.priority)}`}>
 				{activity.priority}
 			</Badge> */}
-			<div className="text-xs text-muted-foreground mt-2">
-				{format(new Date(activity.startDate), "dd MMM", { locale: es })} - {format(new Date(activity.endDate), "dd MMM", { locale: es })}
+
+			<div className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+				<ClockIcon className="h-3 w-3" />
+				Plan: {format(new Date(activity.startDate), "dd MMM", { locale: es })} - {format(new Date(activity.endDate), "dd MMM", { locale: es })}
 			</div>
 			<div className="flex-grow"></div>
 			<Avatar className="h-6 w-6">
@@ -394,7 +396,7 @@ const ActivityInfo = memo(({ activity, executionStatus, stages }: { activity: Ba
 			<div className="text-xs flex items-center gap-1 mt-1">
 				<ClockIcon className="h-3 w-3" />
 				<span className={executionStatus?.late ? "text-amber-600" : "text-green-600"}>
-					Ejecutada: {format(new Date(activity.executedStartDate), "dd MMM", { locale: es })}
+					Real: {format(new Date(activity.executedStartDate), "dd MMM", { locale: es })}
 					{activity.executedEndDate && ` - ${format(new Date(activity.executedEndDate), "dd MMM", { locale: es })}`}
 				</span>
 			</div>
@@ -456,25 +458,23 @@ const ActivityBar = memo(
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<div
-							className="absolute top-3 rounded-md shadow-md hover:shadow-lg transition-shadow z-10 cursor-pointer overflow-hidden group h-[calc(100%-24px)]"
+							className={`
+								absolute top-0 rounded-md shadow-md hover:shadow-lg transition-shadow z-10 cursor-pointer overflow-hidden group
+								${isPast(new Date(activity.endDate)) ? "border-2 border-dashed border-muted" : "border-2 border-transparent"}
+								bg-accent-foreground dark:bg-accent
+							`}
 							style={{
 								left: `${barPosition.left}px`,
 								width: `${barPosition.width}px`,
-								backgroundColor: stageColor,
-								border: `1px solid ${isPast(new Date(activity.endDate)) ? "#d1d5db" : "transparent"}`,
-								borderStyle: `${isPast(new Date(activity.endDate)) ? "dashed" : ""}`,
-								borderWidth: "2px",
+								height: "50%",
 							}}
 						>
 							{!isShortBar && (
-								<div className="h-full p-2 text-white">
+								<div className="h-full p-2 text-foreground">
 									<div className="flex items-center justify-between">
 										<div className="font-medium truncate text-sm">{activity.title}</div>
 										<div className="ml-1">{getPriorityIcon(activity.priority)}</div>
 									</div>
-									{/* <div className="text-xs mt-1 opacity-90 group-hover:opacity-100">
-										{format(new Date(activity.startDate), "dd MMM", { locale: es })} - {format(new Date(activity.endDate), "dd MMM", { locale: es })}
-									</div> */}
 								</div>
 							)}
 						</div>
@@ -493,8 +493,8 @@ const ActivityBar = memo(
 									left: `${executedBarPos.left}px`,
 									width: `${executedBarPos.width}px`,
 									backgroundColor: executionStatus?.late ? "rgba(251, 191, 36, 0.8)" : "rgba(34, 197, 94, 0.8)",
-									height: "15px",
-									top: "calc(100% - 18px)",
+									height: "50%",
+									top: "50%",
 									borderWidth: "2px",
 									borderStyle: "dashed",
 									borderColor: executionStatus?.late ? "rgb(180, 83, 9)" : "#15803d",
