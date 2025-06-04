@@ -66,21 +66,24 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 								const stageOriginalColor = getStageColor(activity.stageId, stages);
 
 								return (
-									<div key={activity.id} className="flex border-b hover:bg-secondary/20">
+									<div key={activity.id} className="flex border-b hover:bg-secondary/20 items-center relative">
+										<div className="absolute inset-0 left-64">
+											<GridLines dateRange={dateRange} viewMode={viewMode} />
+										</div>
+
 										<ActivityInfo activity={activity} executionStatus={executionStatus} stages={stages} />
-										<div className="flex-1 relative">
-											<div className="absolute inset-0">
-												<GridLines dateRange={dateRange} viewMode={viewMode} />
-											</div>
-											<div className="relative z-10 h-20 flex items-center">
-												<ActivityBar
-													activity={activity}
-													barPosition={barPosition}
-													executedBarPos={executedBarPos}
-													executionStatus={executionStatus}
-													stageColor={stageColor}
-													stageOriginalColor={stageOriginalColor}
-												/>
+										<div className="flex-1 relative ">
+											<div className="relative z-10 h-20 flex items-center justify-center">
+												<div className="flex items-center w-full h-full">
+													<ActivityBar
+														activity={activity}
+														barPosition={barPosition}
+														executedBarPos={executedBarPos}
+														executionStatus={executionStatus}
+														stageColor={stageColor}
+														stageOriginalColor={stageOriginalColor}
+													/>
+												</div>
 											</div>
 										</div>
 									</div>

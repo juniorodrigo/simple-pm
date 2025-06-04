@@ -9,7 +9,7 @@ export const Legend = memo(({ showLegend, setShowLegend }: LegendProps) => (
 	<div className="flex items-center gap-4 text-sm p-3 bg-muted/20 rounded-md">
 		<h4 className="font-medium">Leyenda:</h4>
 		<div className="flex items-center gap-2">
-			<div className="h-3 w-8 rounded bg-blue-600"></div>
+			<div className="h-3 w-8 rounded bg-blue-500"></div>
 			<span>Fechas planificadas</span>
 		</div>
 		<div className="flex items-center gap-2">

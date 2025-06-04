@@ -54,7 +54,7 @@ export const ActivityBar = memo(({ activity, barPosition, executedBarPos, execut
 
 	return (
 		<div
-			className="absolute flex flex-col"
+			className="relative flex flex-col justify-center gap-1"
 			style={{
 				left: `${barPosition.left}px`,
 				width: `${barPosition.width}px`,
@@ -66,7 +66,7 @@ export const ActivityBar = memo(({ activity, barPosition, executedBarPos, execut
 				<TooltipTrigger asChild>
 					<div
 						className={`
-							rounded-md shadow-md hover:shadow-lg transition-shadow cursor-pointer overflow-hidden group mb-1 relative
+							rounded-md shadow-md hover:shadow-lg transition-shadow cursor-pointer overflow-hidden group relative
 							${isPast(new Date(activity.endDate)) ? "border-2 border-dashed border-muted" : "border-2 border-transparent"}
 							bg-blue-500 hover:bg-blue-600
 						`}
