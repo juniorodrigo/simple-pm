@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ProjectStatus, ProjectStatusLabels } from "@/types/enums";
-import ProjectCard from "@/components/project/project-card";
+import ProjectCard from "@/components/projects/project-card";
 
 // Definir las columnas del kanban a partir del enum
 const LANES = Object.values(ProjectStatus).map((statusValue) => ({
