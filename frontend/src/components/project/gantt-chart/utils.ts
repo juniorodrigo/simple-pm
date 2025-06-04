@@ -124,3 +124,34 @@ export const getMonthGroups = (dateRange: Date[]): MonthGroup[] => {
 
 	return groups;
 };
+
+// Función para calcular la posición del día actual en la vista de semanas
+export const getTodayPositionInWeeks = (dateRange: Date[]): number | null => {
+	const today = new Date();
+	const todayStart = startOfDay(today);
+
+	for (let i = 0; i < dateRange.length; i++) {
+		const weekStart = startOfWeek(dateRange[i], { weekStartsOn: 1 });
+		const weekEnd = addDays(weekStart, 6);
+
+		if (todayStart >= weekStart && todayStart <= weekEnd) {
+			// Calcular la posición exacta dentro de la semana
+			const dayOfWeek = differenceInDays(todayStart, weekStart);
+			const weekPosition = i * WEEK_WIDTH;
+			const dayPosition = (dayOfWeek / 7) * WEEK_WIDTH;
+			return weekPosition + dayPosition;
+		}
+	}
+
+	return null;
+};
+
+// Función para verificar si el día actual está dentro del rango de una semana
+export const isTodayInWeek = (weekStart: Date): boolean => {
+	const today = new Date();
+	const todayStart = startOfDay(today);
+	const monday = startOfWeek(weekStart, { weekStartsOn: 1 });
+	const sunday = addDays(monday, 6);
+
+	return todayStart >= monday && todayStart <= sunday;
+};

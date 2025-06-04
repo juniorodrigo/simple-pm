@@ -162,7 +162,7 @@ export default function ClientView({ project: initialProject, activities: initia
 
 			{/* Filtros y vistas */}
 			<div className="flex justify-between items-center">
-				<h2 className="text-xl font-bold">Actividades del Proyecto</h2>
+				<h2 className="text-xl font-bold"></h2>
 				<div className="flex flex-wrap gap-2 items-center">
 					{activeView === "gantt" && (
 						<Select value={ganttViewMode} onValueChange={(value: "days" | "weeks") => setGanttViewMode(value)}>
