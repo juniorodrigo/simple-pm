@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { Edit, Plus, ListPlus, ChevronDown, ChevronUp, X } from "lucide-react";
+import { Edit, Plus, ListPlus, ChevronDown, ChevronUp, X, BarChart3 } from "lucide-react";
 import KanbanBoard from "@/components/project/kanban-board";
 import GanttChart from "@/components/project/gantt-chart";
 import CreateActivityModal from "@/components/project/activity-modal";
@@ -89,6 +89,12 @@ export default function ClientView({ project: initialProject, activities: initia
 				</div>
 				{!isViewer && (
 					<div className="flex gap-2">
+						{/* Mostrar/Ocultar resumen */}
+						<Button variant="outline" onClick={() => setStatsVisible(!statsVisible)}>
+							<BarChart3 className="mr-2 h-4 w-4" />
+							{statsVisible ? "Ocultar resumen" : "Mostrar resumen"}
+						</Button>
+
 						{/* Editar proyecto */}
 						<Dialog open={isEditProjectModalOpen} onOpenChange={setIsEditProjectModalOpen}>
 							<Button variant="outline" onClick={() => setIsEditProjectModalOpen(true)}>
@@ -146,20 +152,13 @@ export default function ClientView({ project: initialProject, activities: initia
 				)}
 			</div>
 
-			{/* Resumen ocultable */}
-			<div className="border rounded-lg overflow-hidden">
-				<div className="flex justify-between px-4 py-3 bg-muted/40 cursor-pointer" onClick={() => setStatsVisible(!statsVisible)}>
-					<h3 className="text-lg font-medium">Resumen del Proyecto</h3>
-					<Button variant="ghost" size="sm">
-						{statsVisible ? <ChevronUp /> : <ChevronDown />}
-					</Button>
+			{/* Resumen del proyecto - mostrar cuando statsVisible es true */}
+			{statsVisible && (
+				<div className="border rounded-lg p-4">
+					<h3 className="text-lg font-medium mb-4">Resumen del Proyecto</h3>
+					<ProjectStatsCards project={project} activities={projectActivities} />
 				</div>
-				{statsVisible && (
-					<div className="p-4">
-						<ProjectStatsCards project={project} activities={projectActivities} />
-					</div>
-				)}
-			</div>
+			)}
 
 			{/* Filtros y vistas */}
 			<div className="flex justify-between items-center">
