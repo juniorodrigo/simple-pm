@@ -1,3 +1,4 @@
+import { ActivityStatus } from '@prisma/client';
 import prisma from '../../services/prisma.service.js';
 
 const getActivities = async () => {};
@@ -67,13 +68,21 @@ const deleteActivity = async (activityId) => {
 };
 
 const changeStatus = async (activityId, newStatus) => {
-	// console.log(newStatus, 'THIS IS THE NEW STATUS');
+	const newDates = {};
+	if (newStatus === ActivityStatus.pending) {
+		newDates.executedStartDate = null;
+	}
+	if (newStatus === ActivityStatus.review) {
+		newDates.executedEndDate = null;
+	}
+
 	const data = await prisma.projectActivity.update({
 		where: {
 			id: activityId,
 		},
 		data: {
 			status: newStatus,
+			...newDates,
 		},
 	});
 

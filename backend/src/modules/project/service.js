@@ -246,6 +246,8 @@ const updateProject = async (projectId, projectData) => {
 		if (!existingManager) throw new Error('El usuario manager no existe');
 	}
 
+	console.log(projectData);
+
 	const updatedProject = await prisma.project.update({
 		where: { id: parseInt(projectId) },
 		data: {
