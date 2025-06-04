@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, memo, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
-import { BaseProject } from "@/types/new/project.type";
+import { Project } from "@/types/new/project.type";
 import { ProjectsService } from "@/services/project.service";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -17,14 +17,14 @@ const LANES = Object.values(ProjectStatus).map((statusValue) => ({
 }));
 
 interface ProjectKanbanBoardProps {
-	projects: BaseProject[];
-	onProjectChange: (updatedProjects: BaseProject[]) => Promise<void>;
-	onProjectClick: (project: BaseProject) => void;
+	initialProjects: Project[];
+	onProjectChange: (updatedProjects: Project[]) => Promise<void>;
+	onProjectClick: (project: Project) => void;
 	isViewer?: boolean;
 }
 
-export default function ProjectKanbanBoard({ projects: initialProjects, onProjectChange, onProjectClick, isViewer }: ProjectKanbanBoardProps) {
-	const [projects, setProjects] = useState<BaseProject[]>([]);
+export default function ProjectKanbanBoard({ initialProjects, onProjectChange, onProjectClick, isViewer }: ProjectKanbanBoardProps) {
+	const [projects, setProjects] = useState<Project[]>([]);
 	const { toast } = useToast();
 
 	// Estados para el modal de confirmación de eliminación
@@ -81,7 +81,7 @@ export default function ProjectKanbanBoard({ projects: initialProjects, onProjec
 
 	// Organizar proyectos por lane (status)
 	const laneProjects = useMemo(() => {
-		const result: Record<string, BaseProject[]> = {};
+		const result: Record<string, Project[]> = {};
 
 		// Inicializar lanes con arrays vacíos
 		LANES.forEach((lane) => {
@@ -104,7 +104,7 @@ export default function ProjectKanbanBoard({ projects: initialProjects, onProjec
 
 	// Manejador para clics en proyectos
 	const handleProjectClick = useCallback(
-		(project: BaseProject) => {
+		(project: Project) => {
 			if (onProjectClick) {
 				onProjectClick(project);
 			}
@@ -151,9 +151,9 @@ const LaneContainer = memo(
 		isViewer,
 	}: {
 		lane: { id: string; title: string };
-		projects: BaseProject[];
+		projects: Project[];
 		onDeleteProject: (id: string) => void;
-		onProjectClick?: (project: BaseProject) => void;
+		onProjectClick?: (project: Project) => void;
 		isViewer?: boolean;
 	}) => {
 		// Manejar el evento de rueda para prevenir la propagación

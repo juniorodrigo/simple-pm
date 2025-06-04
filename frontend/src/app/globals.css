@@ -120,3 +120,37 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Tooltip z-index override para que aparezca encima del header del gantt */
+[data-radix-tooltip-content] {
+  z-index: 100 !important;
+}
+
+/* Alternativamente, para todos los tooltips */
+.tooltip-high-z {
+  z-index: 100 !important;
+}
+
+/* Modal (Dialog) z-index override para que aparezca encima del header del gantt */
+[data-radix-dialog-overlay] {
+  z-index: 200 !important;
+}
+
+[data-radix-dialog-content] {
+  z-index: 201 !important;
+}
+
+/* Popover z-index override para que aparezca encima del header del gantt */
+[data-radix-popover-content] {
+  z-index: 150 !important;
+}
+
+/* Select dropdown z-index override */
+[data-radix-select-content] {
+  z-index: 150 !important;
+}
+
+/* Calendar dentro de popovers */
+[data-radix-popover-content] .rdp {
+  z-index: 151 !important;
+}

@@ -18,9 +18,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { UsersService } from "@/services/users.service";
 import { CategoriaService } from "@/services/new/categoria.service";
 import { ProjectsService } from "@/services/project.service";
-import { User } from "@/types/user1.type";
+import { User } from "@/types/new/usuario.type";
 import { Tag } from "@/types/new/tag.type";
-import { BaseProject, ExtendedProject } from "@/types/new/project.type";
+import { Project, ProjectCreate, ProjectUpdate, ExtendedProject } from "@/types/new/project.type";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -54,7 +54,7 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 	const { toast } = useToast();
 	const [users, setUsers] = useState<User[]>([]);
 	const [availableTags, setAvailableTags] = useState<Tag[]>([]);
-	const [projects, setProjects] = useState<BaseProject[]>([]);
+	const [projects, setProjects] = useState<Project[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [dateRange, setDateRange] = useState<DateRange>({
 		from: new Date(),
@@ -138,7 +138,7 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 
 			if (isEditing && projectData) {
 				// Actualizar proyecto existente
-				const projectToUpdate: BaseProject = {
+				const projectToUpdate: ProjectUpdate = {
 					id: projectData.id,
 					name: values.name,
 					description: values.description,
@@ -173,8 +173,7 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 				}
 			} else {
 				// Crear nuevo proyecto
-				const newProject: BaseProject = {
-					id: 0, // El backend asignará el ID real
+				const newProject: ProjectCreate = {
 					name: values.name,
 					description: values.description,
 					startDate: startDate,

@@ -21,9 +21,10 @@ import type { BaseStage } from "@/types/stage.type";
 import { BaseActivity } from "@/types/activity.type";
 import { ActivityPriority, ActivityStatus, ActivitiesLabels, ActivityPriorityLabels } from "@/types/enums";
 import { UsersService } from "@/services/users.service";
-import type { BaseUser } from "@/types/user1.type";
+import type { User } from "@/types/new/usuario.type";
 import { ActivitysService } from "@/services/activity.service";
 import { getTagColorClass } from "@/lib/colors";
+import type { ActivityUser } from "@/types/activity.type";
 
 const formSchema = z.object({
 	title: z.string().min(2, {
@@ -67,7 +68,7 @@ type DateRange = {
 
 export default function CreateActivityModal({ projectId, stages: providedStages, activity, onClose, onSuccess }: CreateActivityModalProps) {
 	const { toast } = useToast();
-	const [users, setUsers] = useState<BaseUser[]>([]);
+	const [users, setUsers] = useState<User[]>([]);
 	const isEditMode = !!activity;
 	const [dateRange, setDateRange] = useState<DateRange>({
 		from: new Date(),
@@ -181,6 +182,14 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 			clearExecutedDates();
 		}
 	}, [form.watch("status")]);
+
+	// Función para convertir User a ActivityUser
+	const convertToActivityUser = (user: User): ActivityUser => ({
+		id: user.id,
+		name: user.name,
+		lastname: user.lastname,
+		projectRole: undefined, // Se puede asignar más tarde si es necesario
+	});
 
 	const onSubmit = async (values: z.infer<typeof formSchema>) => {
 		if (isEditMode && activity) {
@@ -378,12 +387,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 									onValueChange={(value) => {
 										const selectedUser = users.find((user) => user.id === value);
 										if (selectedUser) {
-											field.onChange({
-												id: selectedUser.id || "",
-												name: selectedUser.name,
-												lastname: selectedUser.lastname,
-												projectRole: selectedUser.projectRole,
-											});
+											field.onChange(convertToActivityUser(selectedUser));
 										}
 									}}
 									value={field.value.id}

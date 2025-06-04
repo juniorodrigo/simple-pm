@@ -1,15 +1,18 @@
 import { memo } from "react";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, Trash2, CheckSquare } from "lucide-react";
-import { BaseProject } from "@/types/new/project.type";
+import { CalendarIcon, Trash2, CheckSquare, Edit3, Users } from "lucide-react";
+import { Project } from "@/types/new/project.type";
 import { ProjectStatus, ProjectStatusLabels } from "@/types/enums";
 import { getStageColorValue } from "@/lib/colors";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/auth-context";
+import { Progress } from "@/components/ui/progress";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface ProjectCardProps {
-	project: BaseProject;
+	project: Project;
 	onDelete?: () => void;
 	onClick?: () => void;
 	isDragging?: boolean;

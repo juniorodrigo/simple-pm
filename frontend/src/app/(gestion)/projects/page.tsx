@@ -1,25 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Loader2, KanbanSquare, GanttChart } from "lucide-react";
 import { ProjectsService } from "@/services/project.service";
-import { BaseProject } from "@/types/new/project.type";
+import { Project } from "@/types/new/project.type";
 import ProjectKanbanBoard from "@/components/projects/project-kanban-board";
 import { useToast } from "@/hooks/use-toast";
 import CreateProjectForm from "@/components/projects/create-project-form";
 import { useRouter } from "next/navigation";
 import ProjectsGantt from "@/components/projects/projects-gantt";
 import { useAuth } from "@/contexts/auth-context";
+import { ApiResponse } from "@/types/api-response.type";
 
 export default function KanbanPage() {
 	const { user } = useAuth();
 	const isViewer = user?.role === "viewer";
 	const [selectedCategory, setSelectedCategory] = useState<string>("all");
-	const [projects, setProjects] = useState<BaseProject[]>([]);
+	const [projects, setProjects] = useState<Project[]>([]);
 	const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [loading, setLoading] = useState(true);
@@ -30,16 +31,29 @@ export default function KanbanPage() {
 
 	// Cargar proyectos
 	useEffect(() => {
-		async function loadProjects() {
+		const loadData = async () => {
 			setLoading(true);
+
 			try {
-				const response = await ProjectsService.getProjects();
-				if (response.success && response.data) {
-					setProjects(response.data);
+				// Cargar proyectos
+				const projectResponse: ApiResponse = await ProjectsService.getProjects();
+
+				if (projectResponse.success && projectResponse.data) {
+					const projectsData = Array.isArray(projectResponse.data) ? projectResponse.data : [projectResponse.data];
+
+					// Validar y convertir cada proyecto
+					const validProjects: Project[] = [];
+					projectsData.forEach((project: Project) => {
+						if (project.categoryId && project.categoryName) {
+							validProjects.push(project);
+						}
+					});
+
+					setProjects(validProjects);
 
 					// Extraer categorías únicas de los proyectos
 					const uniqueCategories = new Map();
-					response.data.forEach((project: BaseProject) => {
+					validProjects.forEach((project: Project) => {
 						if (project.categoryId && project.categoryName) {
 							uniqueCategories.set(project.categoryId, {
 								id: project.categoryId,
@@ -64,9 +78,9 @@ export default function KanbanPage() {
 			} finally {
 				setLoading(false);
 			}
-		}
+		};
 
-		loadProjects();
+		loadData();
 	}, [toast]);
 
 	// Filtrar proyectos por categoría y término de búsqueda
@@ -78,8 +92,39 @@ export default function KanbanPage() {
 	});
 
 	// Manejar cambios en proyectos (después de arrastrar)
-	const handleProjectChange = async (updatedProjects: BaseProject[]) => {
+	const handleProjectChange = async (updatedProjects: Project[]) => {
 		setProjects(updatedProjects);
+
+		try {
+			const projectResponse: ApiResponse = await ProjectsService.getProjects();
+
+			if (projectResponse.success && projectResponse.data) {
+				const projectsData = Array.isArray(projectResponse.data) ? projectResponse.data : [projectResponse.data];
+
+				const validProjects: Project[] = [];
+				projectsData.forEach((project: Project) => {
+					if (project.categoryId && project.categoryName) {
+						validProjects.push(project);
+					}
+				});
+
+				setProjects(validProjects);
+
+				// Extraer categorías únicas de los proyectos
+				const uniqueCategories = new Map();
+				validProjects.forEach((project: Project) => {
+					if (project.categoryId && project.categoryName) {
+						uniqueCategories.set(project.categoryId, {
+							id: project.categoryId,
+							name: project.categoryName,
+						});
+					}
+				});
+				setCategories(Array.from(uniqueCategories.values()));
+			}
+		} catch (error) {
+			console.error("Error refreshing projects:", error);
+		}
 	};
 
 	// Función para recargar proyectos después de crear uno nuevo
@@ -93,7 +138,7 @@ export default function KanbanPage() {
 
 				// Extraer categorías únicas de los proyectos
 				const uniqueCategories = new Map();
-				response.data.forEach((project: BaseProject) => {
+				response.data.forEach((project: Project) => {
 					if (project.categoryId && project.categoryName) {
 						uniqueCategories.set(project.categoryId, {
 							id: project.categoryId,
@@ -115,7 +160,7 @@ export default function KanbanPage() {
 	};
 
 	// Función para manejar el clic en un proyecto
-	const handleProjectClick = (project: BaseProject) => {
+	const handleProjectClick = (project: Project) => {
 		router.push(`/projects/${project.id}`);
 	};
 
@@ -196,7 +241,7 @@ export default function KanbanPage() {
 					<Loader2 className="h-8 w-8 animate-spin text-primary" />
 				</div>
 			) : activeView === "kanban" ? (
-				<ProjectKanbanBoard projects={filteredProjects} onProjectChange={handleProjectChange} onProjectClick={handleProjectClick} isViewer={isViewer} />
+				<ProjectKanbanBoard initialProjects={filteredProjects} onProjectChange={handleProjectChange} onProjectClick={handleProjectClick} isViewer={isViewer} />
 			) : (
 				<ProjectsGantt projects={filteredProjects} />
 			)}

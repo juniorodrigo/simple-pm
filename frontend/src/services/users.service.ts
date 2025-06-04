@@ -1,5 +1,5 @@
 import { ApiResponse } from "@/types/api-response.type";
-import { User } from "../types/user1.type";
+import { User } from "../types/new/usuario.type";
 import { Role } from "@/types/enums";
 
 const getUsers = async (): Promise<ApiResponse> => {

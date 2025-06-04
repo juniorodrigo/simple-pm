@@ -1,5 +1,10 @@
 import { ActivityPriority, ActivityStatus } from "./enums";
-import { BaseUser } from "./user1.type";
+import { User } from "./new/usuario.type";
+
+// Tipo específico para usuarios asignados a actividades
+export type ActivityUser = Pick<User, "id" | "name" | "lastname"> & {
+	projectRole?: string;
+};
 
 export type BaseActivity = {
 	id: string;
@@ -9,7 +14,7 @@ export type BaseActivity = {
 	// projectId: number;
 	status: ActivityStatus;
 	priority: ActivityPriority;
-	assignedToUser: BaseUser;
+	assignedToUser: ActivityUser;
 	startDate: Date;
 	endDate: Date;
 	executedStartDate?: Date | undefined;

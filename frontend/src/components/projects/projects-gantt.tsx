@@ -1,6 +1,6 @@
 "use client";
 
-import { BaseProject } from "@/types/new/project.type";
+import { Project } from "@/types/new/project.type";
 import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -13,7 +13,7 @@ import { ProjectStatusLabels } from "@/types/enums";
 import { useRouter } from "next/navigation";
 
 interface ProjectsGanttProps {
-	projects: BaseProject[];
+	projects: Project[];
 }
 
 export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
@@ -73,7 +73,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 	}, [dateRange]);
 
 	// Función para calcular posición y ancho de las barras de proyecto
-	const getBarPosition = (project: BaseProject) => {
+	const getBarPosition = (project: Project) => {
 		if (dateRange.length === 0) return { left: 0, width: 0 };
 
 		const startDate = new Date(project.startDate);
@@ -114,7 +114,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 			.toUpperCase();
 	};
 
-	const isShortBar = (project: BaseProject): boolean => {
+	const isShortBar = (project: Project): boolean => {
 		// Si la barra es menor a 120px (aproximadamente 3 días), considerarla corta
 		const { width } = getBarPosition(project);
 		return width < 120;
@@ -136,8 +136,8 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 				<div className="overflow-x-auto border rounded-md shadow">
 					<div style={{ minWidth: `${chartWidth}px` }} className="relative">
 						{/* Header with dates */}
-						<div className="flex border-b sticky top-0 bg-background z-20">
-							<div className="w-72 min-w-72 p-3 border-r font-medium sticky left-0 z-30 bg-background shadow-md">Proyecto</div>
+						<div className="flex border-b sticky top-0 bg-background z-10">
+							<div className="w-72 min-w-72 p-3 border-r font-medium sticky left-0 z-15 bg-background shadow-md">Proyecto</div>
 							<div className="flex-1 flex">
 								{dateRange.map((date, index) => (
 									<div
@@ -163,7 +163,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 
 								return (
 									<div key={project.id} className="flex border-b hover:bg-secondary/20">
-										<div className="w-72 min-w-72 p-3 border-r border-l-4 sticky left-0 z-20 bg-background shadow-md" style={{ borderLeftColor: categoryColor }}>
+										<div className="w-72 min-w-72 p-3 border-r border-l-4 sticky left-0 z-5 bg-background shadow-md" style={{ borderLeftColor: categoryColor }}>
 											<div className="font-medium line-clamp-1">{project.name}</div>
 											<div className="flex items-center space-x-2 mt-2">
 												{/* {project.categoryName && (

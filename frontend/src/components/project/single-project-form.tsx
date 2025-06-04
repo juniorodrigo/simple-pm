@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Loader2, KanbanSquare, GanttChart } from "lucide-react";
-import { BaseProject } from "@/types/new/project.type";
+import { Project } from "@/types/new/project.type";
 import ProjectKanbanBoard from "@/components/projects/project-kanban-board";
 import { useToast } from "@/hooks/use-toast";
 import CreateProjectForm from "@/components/projects/create-project-form";
@@ -15,16 +15,16 @@ import ProjectsGantt from "@/components/projects/projects-gantt";
 import { useAuth } from "@/contexts/auth-context";
 
 interface ProjectFormProps {
-	initialProjects: BaseProject[];
+	initialProjects: Project[];
 	categories: { id: string; name: string }[];
-	onProjectChange: (projects: BaseProject[]) => void;
+	onProjectChange: (projects: Project[]) => void;
 }
 
 export default function ProjectForm({ initialProjects, categories, onProjectChange }: ProjectFormProps) {
 	const { user } = useAuth();
 	const isViewer = user?.role === "viewer";
 	const [selectedCategory, setSelectedCategory] = useState<string>("all");
-	const [projects, setProjects] = useState<BaseProject[]>(initialProjects);
+	const [projects, setProjects] = useState<Project[]>(initialProjects);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [activeView, setActiveView] = useState<"kanban" | "gantt">("kanban");
@@ -40,13 +40,13 @@ export default function ProjectForm({ initialProjects, categories, onProjectChan
 	});
 
 	// Manejar cambios en proyectos (después de arrastrar)
-	const handleProjectChange = async (updatedProjects: BaseProject[]) => {
+	const handleProjectChange = async (updatedProjects: Project[]) => {
 		setProjects(updatedProjects);
 		onProjectChange(updatedProjects);
 	};
 
 	// Función para manejar el clic en un proyecto
-	const handleProjectClick = (project: BaseProject) => {
+	const handleProjectClick = (project: Project) => {
 		router.push(`/projects/${project.id}`);
 	};
 
@@ -114,7 +114,7 @@ export default function ProjectForm({ initialProjects, categories, onProjectChan
 			</div>
 
 			{activeView === "kanban" ? (
-				<ProjectKanbanBoard projects={filteredProjects} onProjectChange={handleProjectChange} onProjectClick={handleProjectClick} isViewer={isViewer} />
+				<ProjectKanbanBoard initialProjects={filteredProjects} onProjectChange={handleProjectChange} onProjectClick={handleProjectClick} isViewer={isViewer} />
 			) : (
 				<ProjectsGantt projects={filteredProjects} />
 			)}

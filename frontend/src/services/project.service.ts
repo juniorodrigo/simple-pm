@@ -1,5 +1,5 @@
 import { ApiResponse } from "@/types/api-response.type";
-import { BaseProject } from "../types/new/project.type";
+import { Project, ProjectCreate, ProjectUpdate } from "../types/new/project.type";
 import { env } from "@/env.mjs";
 
 const HOST = env.NEXT_PUBLIC_HOST || "http://localhost:4141";
@@ -38,7 +38,7 @@ const deleteProject = async (projectId: string): Promise<ApiResponse> => {
 	}
 };
 
-const createProject = async (project: BaseProject): Promise<ApiResponse> => {
+const createProject = async (project: ProjectCreate): Promise<ApiResponse> => {
 	try {
 		const petition = await fetch(`/api/is/projects`, {
 			method: "POST",
@@ -54,7 +54,7 @@ const createProject = async (project: BaseProject): Promise<ApiResponse> => {
 	}
 };
 
-const updateProject = async (projectId: string, project: BaseProject): Promise<ApiResponse> => {
+const updateProject = async (projectId: string, project: ProjectUpdate): Promise<ApiResponse> => {
 	try {
 		const petition = await fetch(`/api/is/projects/${projectId}`, {
 			method: "PUT",
