@@ -144,24 +144,26 @@ const updateProjectStatusByActivityId = async (activityId) => {
 		0
 	);
 
-	let newStatus;
 	const updatedData = {};
 
 	console.log(`Completed activities: ${completedActivities}`);
 	console.log(`Total activities: ${totalActivities}`);
 
 	if (completedActivities === totalActivities && totalActivities > 0) {
-		newStatus = 'review';
+		updatedData.newStatus = 'review';
+		updatedData.realEndDate = new Date();
 	} else if (totalActivities > completedActivities && inProgressActivities > 0) {
-		newStatus = 'in_progress';
+		updatedData.newStatus = 'in_progress';
+		updatedData.realEndDate = null;
+		updatedData.realStartDate = new Date();
 	} else {
-		newStatus = 'pending';
+		updatedData.newStatus = 'pending';
 	}
 
-	console.log('________________Updating project status to:', newStatus);
+	console.log('________________Updating project status to:', updatedData);
 
 	await prisma.project.update({
 		where: { id: parseInt(projectId) },
-		data: { status: newStatus },
+		data: updatedData,
 	});
 };
