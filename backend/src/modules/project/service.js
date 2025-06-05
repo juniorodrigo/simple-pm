@@ -152,7 +152,7 @@ const createProject = async (projectData) => {
 	// Extraer los campos necesarios y excluir el 'id' si viene en los datos
 	const { name, description, startDate, endDate, status, managerUserId, categoryId, teamMembers } = projectData;
 
-	console.log('Creando proyecto con datos:', { name, description, managerUserId, categoryId });
+	// console.log('Creando proyecto con datos:', { name, description, managerUserId, categoryId });
 
 	// Construir el objeto data explícitamente sin incluir 'id'
 	const projectCreateData = {
@@ -160,7 +160,7 @@ const createProject = async (projectData) => {
 		description,
 		startDate: startDate ? new Date(startDate) : null,
 		endDate: endDate ? new Date(endDate) : null,
-		status: status || 'in_progress', // valor por defecto
+		status: status || 'pending', // valor por defecto
 		managerUserId,
 		categoryId,
 	};

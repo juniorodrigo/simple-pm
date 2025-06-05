@@ -79,7 +79,7 @@ async function getUsers() {
 		},
 	});
 
-	if (!users || users.length === 0) throw new AppError('No users found');
+	if (!users) throw new AppError('No users found');
 
 	return { data: users, message: 'Users retrieved successfully' };
 }
@@ -97,8 +97,16 @@ async function createUser(data) {
 		select: {
 			id: true,
 			name: true,
+			lastname: true,
 			email: true,
 			isActive: true,
+			role: true,
+			area: {
+				select: {
+					id: true,
+					name: true,
+				},
+			},
 		},
 	});
 

@@ -4,7 +4,7 @@ import prisma from '../../services/prisma.service.js';
 const getActivities = async () => {};
 
 const createActivity = async (stageId, activityData) => {
-	console.log('activityData', activityData);
+	// console.log('activityData', activityData);
 
 	const data = await prisma.projectActivity.create({
 		data: {
@@ -28,12 +28,12 @@ const createActivity = async (stageId, activityData) => {
 			executedEndDate: activityData.executedEndDate,
 		},
 	});
+
+	await updateProjectStatusByActivityId(data.id);
 	return { success: true, data };
 };
 
 const updateActivity = async (activityId, activityData) => {
-	console.log('activityData', activityData);
-
 	const data = await prisma.projectActivity.update({
 		where: {
 			id: activityId,
@@ -55,6 +55,8 @@ const updateActivity = async (activityId, activityData) => {
 		},
 	});
 
+	await updateProjectStatusByActivityId(activityId);
+
 	return { success: true, data };
 };
 
@@ -64,6 +66,9 @@ const deleteActivity = async (activityId) => {
 			id: activityId,
 		},
 	});
+
+	await updateProjectStatusByActivityId(activityId);
+
 	return { success: true, data };
 };
 
@@ -86,7 +91,7 @@ const changeStatus = async (activityId, newStatus) => {
 		},
 	});
 
-	// console.log('data', data);
+	await updateProjectStatusByActivityId(activityId);
 
 	return { success: true, data };
 };
@@ -97,4 +102,66 @@ export const Service = {
 	updateActivity,
 	deleteActivity,
 	changeStatus,
+};
+
+const updateProjectStatusByActivityId = async (activityId) => {
+	const payload = await prisma.projectActivity.findFirst({
+		where: {
+			id: activityId,
+		},
+		select: {
+			stage: {
+				select: {
+					projectId: true,
+				},
+			},
+		},
+	});
+
+	const projectId = payload.stage.projectId;
+
+	const stages = await prisma.projectStage.findMany({
+		where: {
+			projectId: parseInt(projectId),
+		},
+		include: {
+			ProjectActivity: true,
+		},
+	});
+
+	const totalActivities = stages.reduce((acc, stage) => acc + stage.ProjectActivity.length, 0);
+	const completedActivities = stages.reduce(
+		(acc, stage) =>
+			acc + stage.ProjectActivity.filter((activity) => activity.status === ActivityStatus.completed).length,
+		0
+	);
+	const inProgressActivities = stages.reduce(
+		(acc, stage) =>
+			acc +
+			stage.ProjectActivity.filter(
+				(activity) => activity.status === ActivityStatus.in_progress || ActivityStatus.review
+			).length,
+		0
+	);
+
+	let newStatus;
+	const updatedData = {};
+
+	console.log(`Completed activities: ${completedActivities}`);
+	console.log(`Total activities: ${totalActivities}`);
+
+	if (completedActivities === totalActivities && totalActivities > 0) {
+		newStatus = 'review';
+	} else if (totalActivities > completedActivities && inProgressActivities > 0) {
+		newStatus = 'in_progress';
+	} else {
+		newStatus = 'pending';
+	}
+
+	console.log('________________Updating project status to:', newStatus);
+
+	await prisma.project.update({
+		where: { id: parseInt(projectId) },
+		data: { status: newStatus },
+	});
 };

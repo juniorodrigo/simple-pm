@@ -1,20 +1,23 @@
 -- CreateEnum
-CREATE TYPE "ActivityStatus" AS ENUM ('pending', 'in_progress', 'review', 'completed', 'cancelled');
+CREATE TYPE "ProjectRole" AS ENUM ('manager', 'member');
 
 -- CreateEnum
-CREATE TYPE "ActivityPriority" AS ENUM ('low', 'medium', 'high');
+CREATE TYPE "ActivityStatus" AS ENUM ('pending', 'in_progress', 'review', 'completed');
 
 -- CreateEnum
-CREATE TYPE "Role" AS ENUM ('user', 'admin', 'viewer');
+CREATE TYPE "ActivityPriority" AS ENUM ('low', 'medium', 'high', 'critical');
+
+-- CreateEnum
+CREATE TYPE "Role" AS ENUM ('editor', 'admin', 'viewer');
 
 -- CreateEnum
 CREATE TYPE "UserActionTipe" AS ENUM ('login', 'logout', 'create_project');
 
 -- CreateEnum
-CREATE TYPE "Colors" AS ENUM ('red', 'green', 'blue', 'yellow', 'purple', 'orange', 'pink', 'brown', 'gray', 'white', 'cyan', 'coral');
+CREATE TYPE "Colors" AS ENUM ('red', 'green', 'blue', 'amber', 'violet', 'rose', 'gray');
 
 -- CreateEnum
-CREATE TYPE "ProjectStatus" AS ENUM ('active', 'completed', 'on_hold', 'cancelled');
+CREATE TYPE "ProjectStatus" AS ENUM ('pending', 'in_progress', 'review', 'completed');
 
 -- CreateTable
 CREATE TABLE "MainSettings" (
@@ -26,16 +29,16 @@ CREATE TABLE "MainSettings" (
 
 -- CreateTable
 CREATE TABLE "User" (
-    "id" SERIAL NOT NULL,
-    "username" TEXT NOT NULL,
+    "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "lastName" TEXT NOT NULL,
-    "role" "Role" NOT NULL DEFAULT 'user',
+    "lastname" TEXT NOT NULL,
+    "areaId" TEXT,
+    "role" "Role" NOT NULL DEFAULT 'editor',
     "createdAt" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "isActive" BOOLEAN DEFAULT true,
     "deletedAt" TIMESTAMP(6),
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
@@ -44,7 +47,7 @@ CREATE TABLE "User" (
 -- CreateTable
 CREATE TABLE "UserAction" (
     "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
     "deletedAt" TIMESTAMP(6),
@@ -72,21 +75,23 @@ CREATE TABLE "Project" (
     "description" TEXT NOT NULL,
     "startDate" TIMESTAMP(6),
     "endDate" TIMESTAMP(6),
-    "status" "ProjectStatus" NOT NULL DEFAULT 'active',
+    "status" "ProjectStatus" NOT NULL DEFAULT 'pending',
     "createdAt" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
     "completedAt" TIMESTAMP(6),
     "updatedAt" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
     "deletedAt" TIMESTAMP(6),
-    "manageruserId" INTEGER NOT NULL,
+    "managerUserId" TEXT NOT NULL,
     "categoryId" TEXT NOT NULL,
+    "areaId" TEXT,
 
     CONSTRAINT "Project_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "ProjectMember" (
-    "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "role" "ProjectRole" NOT NULL DEFAULT 'member',
     "projectId" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
@@ -98,15 +103,16 @@ CREATE TABLE "ProjectMember" (
 -- CreateTable
 CREATE TABLE "ProjectActivity" (
     "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "stageId" TEXT NOT NULL,
-    "projectId" INTEGER NOT NULL,
     "status" "ActivityStatus" NOT NULL DEFAULT 'pending',
     "priority" "ActivityPriority" NOT NULL DEFAULT 'medium',
-    "assignedTo" INTEGER NOT NULL,
+    "assignedToUserId" TEXT NOT NULL,
     "startDate" TIMESTAMP(6),
     "endDate" TIMESTAMP(6),
+    "executedStartDate" TIMESTAMP(6),
+    "executedEndDate" TIMESTAMP(6),
     "createdAt" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
     "deletedAt" TIMESTAMP(6),
@@ -121,19 +127,35 @@ CREATE TABLE "ProjectStage" (
     "description" TEXT NOT NULL,
     "color" TEXT NOT NULL,
     "ordinalNumber" INTEGER NOT NULL,
+    "projectId" INTEGER NOT NULL,
     "status" "ActivityStatus" NOT NULL DEFAULT 'pending',
 
     CONSTRAINT "ProjectStage_pkey" PRIMARY KEY ("id")
 );
 
--- CreateIndex
-CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
+-- CreateTable
+CREATE TABLE "Area" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "isActive" BOOLEAN DEFAULT true,
+    "createdAt" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
+    "deletedAt" TIMESTAMP(6),
+
+    CONSTRAINT "Area_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ProjectCategory_name_key" ON "ProjectCategory"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Area_name_key" ON "Area"("name");
+
+-- AddForeignKey
+ALTER TABLE "User" ADD CONSTRAINT "User_areaId_fkey" FOREIGN KEY ("areaId") REFERENCES "Area"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "UserAction" ADD CONSTRAINT "UserAction_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -142,10 +164,19 @@ ALTER TABLE "UserAction" ADD CONSTRAINT "UserAction_userId_fkey" FOREIGN KEY ("u
 ALTER TABLE "Project" ADD CONSTRAINT "Project_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "ProjectCategory"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Project" ADD CONSTRAINT "Project_manageruserId_fkey" FOREIGN KEY ("manageruserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Project" ADD CONSTRAINT "Project_managerUserId_fkey" FOREIGN KEY ("managerUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Project" ADD CONSTRAINT "Project_areaId_fkey" FOREIGN KEY ("areaId") REFERENCES "Area"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ProjectMember" ADD CONSTRAINT "ProjectMember_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ProjectMember" ADD CONSTRAINT "ProjectMember_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ProjectActivity" ADD CONSTRAINT "ProjectActivity_stageId_fkey" FOREIGN KEY ("stageId") REFERENCES "ProjectStage"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ProjectActivity" ADD CONSTRAINT "ProjectActivity_assignedToUserId_fkey" FOREIGN KEY ("assignedToUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

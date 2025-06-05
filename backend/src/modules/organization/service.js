@@ -14,7 +14,7 @@ const createOrganization = async (organization) => {
 
 const getOrganizationInfo = async () => {
 	const organization = await prisma.mainSettings.findFirst({});
-	if (!organization) throw new Error('No se encontró la organización');
+	if (!organization) await createOrganization({ organizationName: 'Default Organization' });
 	return { success: true, data: organization };
 };
 

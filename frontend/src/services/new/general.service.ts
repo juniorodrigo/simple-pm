@@ -5,7 +5,7 @@ import { Organization } from "@/types/organization.type";
 export class OrganizationService {
 	static async getOrganizationInfo(): Promise<SResponse<Organization>> {
 		try {
-			const response = await fetch(HOST + "/is/organization", {
+			const response = await fetch(HOST + "/organization", {
 				method: "GET",
 			});
 
@@ -23,7 +23,7 @@ export class OrganizationService {
 
 	static async updateOrganizationInfo(organization: Organization): Promise<SResponse<Organization>> {
 		try {
-			const response = await fetch(HOST + "/is/organization", {
+			const response = await fetch(HOST + "/organization", {
 				method: "PUT",
 				headers: {
 					"Content-Type": "application/json",

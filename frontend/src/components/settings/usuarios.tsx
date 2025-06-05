@@ -330,7 +330,9 @@ export default function UserManagement() {
 	};
 
 	const getInitials = (name: string, lastname: string) => {
-		return `${name[0]}${lastname[0]}`.toUpperCase();
+		console.log(name, lastname);
+		const initials = `${name[0]}${lastname[0]}`.toUpperCase();
+		return initials;
 	};
 
 	const filteredUsers = users.filter(

@@ -61,23 +61,27 @@ model ProjectCategory {
 }
 
 model Project {
-  id            Int             @id @default(autoincrement())
-  name          String
-  description   String
-  startDate     DateTime?       @db.Timestamp(6)
-  endDate       DateTime?       @db.Timestamp(6)
-  status        ProjectStatus   @default(in_progress)
-  createdAt     DateTime?       @default(now()) @db.Timestamp(6)
-  completedAt   DateTime?       @db.Timestamp(6)
-  updatedAt     DateTime?       @default(now()) @db.Timestamp(6)
-  deletedAt     DateTime?       @db.Timestamp(6)
-  managerUserId String
-  categoryId    String
-  category      ProjectCategory @relation(fields: [categoryId], references: [id])
-  manager       User            @relation(fields: [managerUserId], references: [id])
-  ProjectMember ProjectMember[]
-  Area          Area?           @relation(fields: [areaId], references: [id])
-  areaId        String?
+  id                 Int             @id @default(autoincrement())
+  name               String
+  description        String
+  startDate          DateTime?       @db.Timestamp(6)
+  endDate            DateTime?       @db.Timestamp(6)
+  realStartDate      DateTime?       @db.Timestamp(6)
+  realEndDate        DateTime?       @db.Timestamp(6)
+  progressPercentage Int?            @default(0)
+  status             ProjectStatus   @default(pending)
+  archived           Boolean?        @default(false)
+  createdAt          DateTime?       @default(now()) @db.Timestamp(6)
+  completedAt        DateTime?       @db.Timestamp(6)
+  updatedAt          DateTime?       @default(now()) @db.Timestamp(6)
+  deletedAt          DateTime?       @db.Timestamp(6)
+  managerUserId      String
+  categoryId         String
+  category           ProjectCategory @relation(fields: [categoryId], references: [id])
+  manager            User            @relation(fields: [managerUserId], references: [id])
+  ProjectMember      ProjectMember[]
+  Area               Area?           @relation(fields: [areaId], references: [id])
+  areaId             String?
 }
 
 model ProjectMember {
@@ -181,6 +185,7 @@ enum Colors {
 }
 
 enum ProjectStatus {
+  pending
   in_progress
   review
   completed
