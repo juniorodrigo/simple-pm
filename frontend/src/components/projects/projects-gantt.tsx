@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { addDays, differenceInDays, format, startOfDay } from "date-fns";
-import { CalendarIcon, Users2Icon, ClockIcon } from "lucide-react";
+import { CalendarIcon, Users2Icon, ClockIcon, AlertTriangleIcon } from "lucide-react";
 import { es } from "date-fns/locale";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getStageColorValue, STATUS_COLORS } from "@/lib/colors";
@@ -95,11 +95,15 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 		const endDate = new Date(project.endDate);
 		const firstDate = dateRange[0];
 
-		const startOffset = Math.floor(differenceInDays(startDate, firstDate) / 7);
-		const duration = Math.ceil(differenceInDays(endDate, startDate) / 7) + 1;
+		// Calcular días desde el inicio del rango
+		const startDays = differenceInDays(startDate, firstDate);
+		const endDays = differenceInDays(endDate, firstDate);
 
-		const left = startOffset * 100;
-		const width = duration * 100;
+		// Cada día ocupa 100px/7 ≈ 14.29px
+		const pixelsPerDay = 100 / 7;
+
+		const left = startDays * pixelsPerDay;
+		const width = Math.max((endDays - startDays + 1) * pixelsPerDay, pixelsPerDay); // Mínimo 1 día
 
 		return { left, width };
 	};
@@ -112,11 +116,15 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 		const realEndDate = project.realEndDate ? new Date(project.realEndDate) : new Date(); // Si no tiene fecha de fin, usar hoy
 		const firstDate = dateRange[0];
 
-		const startOffset = Math.floor(differenceInDays(realStartDate, firstDate) / 7);
-		const duration = Math.ceil(differenceInDays(realEndDate, realStartDate) / 7) + 1;
+		// Calcular días desde el inicio del rango
+		const startDays = differenceInDays(realStartDate, firstDate);
+		const endDays = differenceInDays(realEndDate, firstDate);
 
-		const left = startOffset * 100;
-		const width = duration * 100;
+		// Cada día ocupa 100px/7 ≈ 14.29px
+		const pixelsPerDay = 100 / 7;
+
+		const left = startDays * pixelsPerDay;
+		const width = Math.max((endDays - startDays + 1) * pixelsPerDay, pixelsPerDay); // Mínimo 1 día
 
 		return { left, width };
 	};
@@ -150,6 +158,40 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 		// Si la barra es menor a 120px (aproximadamente 3 días), considerarla corta
 		const { width } = getBarPosition(project);
 		return width < 120;
+	};
+
+	// Función para determinar si mostrar alerta de retraso en inicio
+	const shouldShowDelayIcon = (project: Project): boolean => {
+		const now = new Date();
+		const startDate = new Date(project.startDate);
+
+		// Mostrar ícono de retraso en barra planificada si:
+		// 1. Ya pasó la fecha de inicio planificada
+		// 2. No tiene fecha de inicio real
+		return now > startDate && !project.realStartDate;
+	};
+
+	// Función para determinar si mostrar alerta de retraso en finalización
+	const shouldShowExecutionDelayIcon = (project: Project): boolean => {
+		const now = new Date();
+		const endDate = new Date(project.endDate);
+
+		// Mostrar ícono de retraso en barra ejecutada si:
+		// 1. Ya pasó la fecha de fin planificada
+		// 2. Tiene fecha de inicio real (está en progreso)
+		// 3. No tiene fecha de fin real
+		return now > endDate && !!project.realStartDate && !project.realEndDate;
+	};
+
+	// Función para determinar si se terminó tarde
+	const isLateCompletion = (project: Project): boolean => {
+		// Verificar si se terminó tarde (la fecha de fin real es posterior a la planificada)
+		if (!project.realEndDate) return false;
+
+		const plannedEndDate = new Date(project.endDate);
+		const actualEndDate = new Date(project.realEndDate);
+
+		return actualEndDate > plannedEndDate;
 	};
 
 	if (projects.length === 0) {
@@ -235,6 +277,11 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 								const realBarPosition = getRealBarPosition(project);
 								const categoryColor = project.categoryColor ? getStageColorValue(project.categoryColor) : "#6366f1";
 
+								// Calcular alertas para este proyecto
+								const showDelayInPlanned = shouldShowDelayIcon(project);
+								const showExecutionDelay = shouldShowExecutionDelayIcon(project);
+								const showLateCompletion = isLateCompletion(project);
+
 								return (
 									<div key={project.id} className="flex border-b hover:bg-secondary/20">
 										<div className="w-72 min-w-72 p-3 border-r border-l-4 sticky left-0 z-5 bg-background shadow-md" style={{ borderLeftColor: categoryColor }}>
@@ -297,7 +344,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 												<Tooltip>
 													<TooltipTrigger asChild>
 														<div
-															className="rounded-md shadow-md hover:shadow-lg transition-shadow cursor-pointer overflow-hidden group border-2 border-transparent bg-blue-500 hover:bg-blue-600"
+															className="rounded-md shadow-md hover:shadow-lg transition-shadow cursor-pointer overflow-hidden group border-2 border-transparent bg-blue-500 hover:bg-blue-600 relative"
 															style={{
 																width: "100%",
 																height: "32px",
@@ -316,16 +363,41 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 																	)}
 																</div>
 															)}
+
+															{/* Íconos de alerta en la esquina superior derecha */}
+															<div className="absolute top-1 right-1 flex items-center space-x-1">
+																{/* Ícono de retraso en inicio si no se ha iniciado a tiempo */}
+																{showDelayInPlanned && (
+																	<div className="bg-red-500 rounded-full p-0.5">
+																		<ClockIcon className="h-3 w-3 text-white" />
+																	</div>
+																)}
+															</div>
 														</div>
 													</TooltipTrigger>
 													<TooltipContent>
 														<div className="text-sm">
+															<p className="font-medium">{project.name}</p>
 															<p className="text-xs mt-2">Categoría: {project.categoryName || "Sin categoría"}</p>
 															<p className="text-xs">Estado: {ProjectStatusLabels[project.status as keyof typeof ProjectStatusLabels] || "No definido"}</p>
 															<p className="text-xs">Responsable: {project.managerUserName}</p>
 															<p className="text-xs">Avance: {project.progressPercentage}%</p>
 															{project.team && <p className="text-xs">Equipo: {project.team.length} miembros</p>}
 															{project.activitiesCount !== undefined && <p className="text-xs">Actividades: {project.activitiesCount}</p>}
+
+															{/* Alertas */}
+															{showDelayInPlanned && (
+																<div className="border-t border-border mt-2 pt-2">
+																	<p className="text-xs text-red-600 font-medium">⚠️ Proyecto no iniciado</p>
+																	<p className="text-xs text-red-600">El proyecto debería haber comenzado el {format(new Date(project.startDate), "dd MMM yyyy", { locale: es })}</p>
+																</div>
+															)}
+
+															<div className="border-t border-border mt-2 pt-1">
+																<p className="text-xs">
+																	Plan: {format(new Date(project.startDate), "dd MMM yyyy", { locale: es })} - {format(new Date(project.endDate), "dd MMM yyyy", { locale: es })}
+																</p>
+															</div>
 														</div>
 													</TooltipContent>
 												</Tooltip>
@@ -349,12 +421,52 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 																		<div className="font-medium truncate text-xs">{project.progressPercentage}%</div>
 																	</div>
 																)}
+
+																{/* Íconos de alerta en la esquina superior derecha */}
+																<div className="absolute top-1 right-1 flex items-center space-x-1">
+																	{/* Ícono de retraso en finalización (no ha cerrado a tiempo) */}
+																	{showExecutionDelay && (
+																		<div className="bg-red-500 rounded-full p-0.5">
+																			<ClockIcon className="h-3 w-3 text-white" />
+																		</div>
+																	)}
+
+																	{/* Ícono de terminación tardía */}
+																	{showLateCompletion && (
+																		<div className="bg-amber-500 rounded-full p-0.5">
+																			<AlertTriangleIcon className="h-3 w-3 text-white" />
+																		</div>
+																	)}
+																</div>
 															</div>
 														</TooltipTrigger>
 														<TooltipContent>
 															<div className="text-sm">
 																<p className="font-medium">{project.name} - Ejecución Real</p>
 																<p className="text-xs mt-2">Avance: {project.progressPercentage}%</p>
+
+																{/* Alertas */}
+																{showExecutionDelay && (
+																	<div className="border-t border-border mt-2 pt-2">
+																		<p className="text-xs text-red-600 font-medium">⚠️ Proyecto atrasado</p>
+																		<p className="text-xs text-red-600">El proyecto debería haber terminado el {format(new Date(project.endDate), "dd MMM yyyy", { locale: es })}</p>
+																	</div>
+																)}
+
+																{showLateCompletion && (
+																	<div className="border-t border-border mt-2 pt-2">
+																		<p className="text-xs text-amber-600 font-medium">⚠️ Terminado con retraso</p>
+																		<p className="text-xs text-amber-600">
+																			Terminó tarde: {format(new Date(project.realEndDate!), "dd MMM yyyy", { locale: es })} (planificado: {format(new Date(project.endDate), "dd MMM yyyy", { locale: es })})
+																		</p>
+																	</div>
+																)}
+
+																<div className="border-t border-border mt-2 pt-1">
+																	<p className="text-xs">
+																		Real: {format(new Date(project.realStartDate!), "dd MMM yyyy", { locale: es })} - {project.realEndDate ? format(new Date(project.realEndDate), "dd MMM yyyy", { locale: es }) : "hoy"}
+																	</p>
+																</div>
 															</div>
 														</TooltipContent>
 													</Tooltip>
@@ -365,19 +477,6 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 								);
 							})}
 						</div>
-
-						{/* Today indicator */}
-						{dateRange.length > 0 && (
-							<div
-								className="absolute w-0.5 bg-primary z-10"
-								style={{
-									left: `${(Math.floor(differenceInDays(new Date(), dateRange[0]) / 7) + 0.5) * 100}px`,
-									display: differenceInDays(new Date(), dateRange[0]) >= 0 && differenceInDays(new Date(), dateRange[dateRange.length - 1]) <= 0 ? "block" : "none",
-									top: "72px", // Altura del encabezado (ahora con dos filas)
-									bottom: "0",
-								}}
-							/>
-						)}
 					</div>
 				</div>
 			</div>
