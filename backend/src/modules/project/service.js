@@ -68,6 +68,9 @@ const getProjects = async () => {
 				},
 			},
 		},
+		where: {
+			// archived: false, // Solo proyectos activos
+		},
 	});
 
 	// Enriquecer cada proyecto con métricas adicionales
@@ -219,7 +222,7 @@ const createProject = async (projectData) => {
 };
 
 const updateProject = async (projectId, projectData) => {
-	const { name, description, startDate, endDate, status, managerUserId, categoryId } = projectData;
+	const { name, description, startDate, endDate, status, managerUserId, categoryId, archived } = projectData;
 
 	// Verificar si el proyecto existe
 	const existingProject = await prisma.project.findUnique({
@@ -258,6 +261,7 @@ const updateProject = async (projectId, projectData) => {
 			status,
 			managerUserId,
 			categoryId,
+			archived: archived || false, // Asegurarse de que archived sea un booleano
 		},
 		include: {
 			category: true,

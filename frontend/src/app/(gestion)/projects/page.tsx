@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Loader2, KanbanSquare, GanttChart } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Plus, Search, Loader2, KanbanSquare, GanttChart, Archive } from "lucide-react";
 import { ProjectsService } from "@/services/project.service";
 import { Project } from "@/types/new/project.type";
 import ProjectKanbanBoard from "@/components/projects/project-kanban-board";
@@ -23,6 +25,7 @@ export default function KanbanPage() {
 	const [projects, setProjects] = useState<Project[]>([]);
 	const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
 	const [searchTerm, setSearchTerm] = useState("");
+	const [showArchived, setShowArchived] = useState(false);
 	const [loading, setLoading] = useState(true);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [activeView, setActiveView] = useState<"kanban" | "gantt">("kanban");
@@ -87,8 +90,9 @@ export default function KanbanPage() {
 	const filteredProjects = projects.filter((project) => {
 		const matchesCategory = selectedCategory === "all" || project.categoryId === selectedCategory;
 		const matchesSearch = searchTerm === "" || project.name.toLowerCase().includes(searchTerm.toLowerCase()) || project.description?.toLowerCase().includes(searchTerm.toLowerCase());
+		const matchesArchived = showArchived || !project.archived;
 
-		return matchesCategory && matchesSearch;
+		return matchesCategory && matchesSearch && matchesArchived;
 	});
 
 	// Manejar cambios en proyectos (después de arrastrar)
@@ -212,6 +216,13 @@ export default function KanbanPage() {
 						<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
 						<Input type="search" placeholder="Buscar proyectos..." className="w-full pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
 					</div>
+					<div className="flex items-center space-x-2">
+						<Switch id="show-archived" checked={showArchived} onCheckedChange={setShowArchived} />
+						<Label htmlFor="show-archived" className="text-sm font-medium cursor-pointer flex items-center">
+							<Archive className="mr-1 h-3 w-3" />
+							Mostrar archivados
+						</Label>
+					</div>
 					<div className="text-sm text-muted-foreground">
 						{loading ? (
 							<span className="flex items-center">
@@ -219,7 +230,7 @@ export default function KanbanPage() {
 								Cargando proyectos...
 							</span>
 						) : (
-							`${filteredProjects.length} proyectos`
+							`${filteredProjects.length} proyectos${showArchived ? " (incluyendo archivados)" : " (activos)"}`
 						)}
 					</div>
 				</div>

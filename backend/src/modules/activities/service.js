@@ -61,13 +61,13 @@ const updateActivity = async (activityId, activityData) => {
 };
 
 const deleteActivity = async (activityId) => {
+	await updateProjectStatusByActivityId(activityId);
+
 	const data = await prisma.projectActivity.delete({
 		where: {
 			id: activityId,
 		},
 	});
-
-	await updateProjectStatusByActivityId(activityId);
 
 	return { success: true, data };
 };
@@ -139,7 +139,7 @@ const updateProjectStatusByActivityId = async (activityId) => {
 		(acc, stage) =>
 			acc +
 			stage.ProjectActivity.filter(
-				(activity) => activity.status === ActivityStatus.in_progress || ActivityStatus.review
+				(activity) => activity.status === ActivityStatus.in_progress || activity.status === ActivityStatus.review
 			).length,
 		0
 	);
@@ -150,14 +150,14 @@ const updateProjectStatusByActivityId = async (activityId) => {
 	console.log(`Total activities: ${totalActivities}`);
 
 	if (completedActivities === totalActivities && totalActivities > 0) {
-		updatedData.newStatus = 'review';
+		updatedData.status = 'review';
 		updatedData.realEndDate = new Date();
-	} else if (totalActivities > completedActivities && inProgressActivities > 0) {
-		updatedData.newStatus = 'in_progress';
+	} else if (inProgressActivities > 0) {
+		updatedData.status = 'in_progress';
 		updatedData.realEndDate = null;
 		updatedData.realStartDate = new Date();
 	} else {
-		updatedData.newStatus = 'pending';
+		updatedData.status = 'pending';
 	}
 
 	console.log('________________Updating project status to:', updatedData);

@@ -15,7 +15,6 @@ const getProjects = async (): Promise<ApiResponse> => {
 
 const getSingleProject = async (projectId: string): Promise<ApiResponse> => {
 	try {
-		console.log("JAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", `${HOST}/api/is/projects/${projectId}`);
 		const petition = await fetch(`${HOST}/api/is/projects/${projectId}`, { method: "GET" });
 
 		return await petition.json();

@@ -19,6 +19,7 @@ const ProjectSchema = z.object({
 	status: z.string().optional(),
 	manager: z.any().optional(), // Se definirá como User en el tipo inferido
 	previousProjectId: z.string().optional(),
+	archived: z.boolean().optional(),
 });
 
 export type Project = z.infer<typeof ProjectSchema> & {

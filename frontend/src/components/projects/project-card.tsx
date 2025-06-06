@@ -1,27 +1,39 @@
 import { memo, useState } from "react";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, Trash2, CheckSquare, Edit3, Users, ChevronDown, ChevronUp, Clock, Target } from "lucide-react";
+import { CalendarIcon, Trash2, CheckSquare, ChevronDown, ChevronUp, Clock, Target, Check, Archive } from "lucide-react";
 import { Project } from "@/types/new/project.type";
-import { ProjectStatus, ProjectStatusLabels } from "@/types/enums";
 import { getStageColorValue } from "@/lib/colors";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/auth-context";
-import { Progress } from "@/components/ui/progress";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { ProjectsService } from "@/services/project.service";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProjectCardProps {
 	project: Project;
 	onDelete?: () => void;
 	onClick?: () => void;
 	isDragging?: boolean;
+	onProjectUpdate?: (updatedProject: Project) => void;
 }
 
-const ProjectCard = memo(({ project, onDelete, onClick, isDragging }: ProjectCardProps) => {
+const ProjectCard = memo(({ project, onDelete, onClick, isDragging, onProjectUpdate }: ProjectCardProps) => {
 	const { user } = useAuth();
+	const { toast } = useToast();
 	const isViewer = user?.role === "viewer";
 	const [isExpanded, setIsExpanded] = useState(false);
+	const [isUpdating, setIsUpdating] = useState(false);
 
 	const formattedStartDate = new Date(project.startDate).toLocaleDateString();
 	const formattedEndDate = new Date(project.endDate).toLocaleDateString();
@@ -68,6 +80,10 @@ const ProjectCard = memo(({ project, onDelete, onClick, isDragging }: ProjectCar
 		if ((e.target as HTMLElement).closest(".expand-toggle")) {
 			return;
 		}
+		// Si se hizo clic en algún botón de acción (AlertDialog triggers), no ejecutar onClick principal
+		if ((e.target as HTMLElement).closest(".action-button")) {
+			return;
+		}
 		if (onClick) {
 			onClick();
 		}
@@ -77,6 +93,71 @@ const ProjectCard = memo(({ project, onDelete, onClick, isDragging }: ProjectCar
 		e.stopPropagation();
 		setIsExpanded(!isExpanded);
 	};
+
+	const handleCompleteProject = async () => {
+		if (isUpdating) return;
+
+		setIsUpdating(true);
+		try {
+			const updateData = { id: project.id, status: "completed" };
+			const result = await ProjectsService.updateProject(project.id.toString(), updateData);
+
+			if (result.success) {
+				toast({
+					description: "Proyecto completado exitosamente",
+				});
+
+				// Actualizar el proyecto localmente
+				const updatedProject = { ...project, status: "completed" };
+				if (onProjectUpdate) {
+					onProjectUpdate(updatedProject);
+				}
+			} else {
+				throw new Error(result.message || "Error al completar el proyecto");
+			}
+		} catch (error) {
+			toast({
+				variant: "destructive",
+				description: error instanceof Error ? error.message : "Error al completar el proyecto",
+			});
+		} finally {
+			setIsUpdating(false);
+		}
+	};
+
+	const handleArchiveProject = async () => {
+		if (isUpdating) return;
+
+		setIsUpdating(true);
+		try {
+			const updateData = { id: project.id, archived: true };
+			const result = await ProjectsService.updateProject(project.id.toString(), updateData);
+
+			if (result.success) {
+				toast({
+					description: "Proyecto archivado exitosamente",
+				});
+
+				// Actualizar el proyecto localmente
+				const updatedProject = { ...project, archived: true };
+				if (onProjectUpdate) {
+					onProjectUpdate(updatedProject);
+				}
+			} else {
+				throw new Error(result.message || "Error al archivar el proyecto");
+			}
+		} catch (error) {
+			toast({
+				variant: "destructive",
+				description: error instanceof Error ? error.message : "Error al archivar el proyecto",
+			});
+		} finally {
+			setIsUpdating(false);
+		}
+	};
+
+	const shouldShowCompleteButton = project.status === "review" && !isViewer;
+	const shouldShowArchiveButton = project.status === "completed" && !isViewer;
 
 	return (
 		<Card
@@ -98,6 +179,79 @@ const ProjectCard = memo(({ project, onDelete, onClick, isDragging }: ProjectCar
 						<Button variant="ghost" size="sm" className="expand-toggle h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={handleToggleExpand}>
 							{isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
 						</Button>
+
+						{/* Botón Completar para proyectos en review */}
+						{shouldShowCompleteButton && (
+							<AlertDialog>
+								<AlertDialogTrigger asChild>
+									<Button
+										variant="ghost"
+										size="sm"
+										className="action-button h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-green-600 hover:text-green-800"
+										disabled={isUpdating}
+										onClick={(e) => e.stopPropagation()}
+									>
+										<Check className="h-3 w-3" />
+									</Button>
+								</AlertDialogTrigger>
+								<AlertDialogContent>
+									<AlertDialogHeader>
+										<AlertDialogTitle>¿Completar proyecto?</AlertDialogTitle>
+										<AlertDialogDescription>¿Estás seguro de que deseas marcar el proyecto &quot;{project.name}&quot; como completado? Esta acción cambiará el estado del proyecto.</AlertDialogDescription>
+									</AlertDialogHeader>
+									<AlertDialogFooter>
+										<AlertDialogCancel>Cancelar</AlertDialogCancel>
+										<AlertDialogAction
+											onClick={(e) => {
+												e.stopPropagation();
+												handleCompleteProject();
+											}}
+											disabled={isUpdating}
+										>
+											{isUpdating ? "Completando..." : "Completar"}
+										</AlertDialogAction>
+									</AlertDialogFooter>
+								</AlertDialogContent>
+							</AlertDialog>
+						)}
+
+						{/* Botón Archivar para proyectos completados */}
+						{shouldShowArchiveButton && (
+							<AlertDialog>
+								<AlertDialogTrigger asChild>
+									<Button
+										variant="ghost"
+										size="sm"
+										className="action-button h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-blue-600 hover:text-blue-800"
+										disabled={isUpdating}
+										onClick={(e) => e.stopPropagation()}
+									>
+										<Archive className="h-3 w-3" />
+									</Button>
+								</AlertDialogTrigger>
+								<AlertDialogContent>
+									<AlertDialogHeader>
+										<AlertDialogTitle>¿Archivar proyecto?</AlertDialogTitle>
+										<AlertDialogDescription>
+											¿Estás seguro de que deseas archivar el proyecto &quot;{project.name}&quot;? Los proyectos archivados pueden seguir siendo consultados pero no aparecerán en las listas principales.
+										</AlertDialogDescription>
+									</AlertDialogHeader>
+									<AlertDialogFooter>
+										<AlertDialogCancel>Cancelar</AlertDialogCancel>
+										<AlertDialogAction
+											onClick={(e) => {
+												e.stopPropagation();
+												handleArchiveProject();
+											}}
+											disabled={isUpdating}
+										>
+											{isUpdating ? "Archivando..." : "Archivar"}
+										</AlertDialogAction>
+									</AlertDialogFooter>
+								</AlertDialogContent>
+							</AlertDialog>
+						)}
+
 						{onDelete && !isViewer && (
 							<Button
 								variant="ghost"

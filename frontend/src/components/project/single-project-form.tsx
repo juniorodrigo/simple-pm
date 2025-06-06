@@ -76,7 +76,7 @@ export default function ProjectForm({ initialProjects, categories, onProjectChan
 					</div>
 				)}
 			</div>
-
+			{/* 
 			<div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
 				<div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
 					<div className="w-full md:w-64">
@@ -111,7 +111,7 @@ export default function ProjectForm({ initialProjects, categories, onProjectChan
 						Gantt
 					</Button>
 				</div>
-			</div>
+			</div> */}
 
 			{activeView === "kanban" ? (
 				<ProjectKanbanBoard initialProjects={filteredProjects} onProjectChange={handleProjectChange} onProjectClick={handleProjectClick} isViewer={isViewer} />
