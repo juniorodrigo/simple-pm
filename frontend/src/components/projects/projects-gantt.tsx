@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { addDays, differenceInDays, format, startOfDay } from "date-fns";
-import { CalendarIcon, Users2Icon } from "lucide-react";
+import { CalendarIcon, Users2Icon, ClockIcon } from "lucide-react";
 import { es } from "date-fns/locale";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getStageColorValue, STATUS_COLORS } from "@/lib/colors";
@@ -38,6 +38,21 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 
 			if (endDate > latestDate) {
 				latestDate = endDate;
+			}
+
+			// También considerar fechas reales si existen
+			if (project.realStartDate) {
+				const realStartDate = new Date(project.realStartDate);
+				if (realStartDate < earliestDate) {
+					earliestDate = realStartDate;
+				}
+			}
+
+			if (project.realEndDate) {
+				const realEndDate = new Date(project.realEndDate);
+				if (realEndDate > latestDate) {
+					latestDate = realEndDate;
+				}
 			}
 		});
 
@@ -89,6 +104,23 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 		return { left, width };
 	};
 
+	// Función para calcular posición y ancho de las barras reales
+	const getRealBarPosition = (project: Project) => {
+		if (dateRange.length === 0 || !project.realStartDate) return null;
+
+		const realStartDate = new Date(project.realStartDate);
+		const realEndDate = project.realEndDate ? new Date(project.realEndDate) : new Date(); // Si no tiene fecha de fin, usar hoy
+		const firstDate = dateRange[0];
+
+		const startOffset = Math.floor(differenceInDays(realStartDate, firstDate) / 7);
+		const duration = Math.ceil(differenceInDays(realEndDate, realStartDate) / 7) + 1;
+
+		const left = startOffset * 100;
+		const width = duration * 100;
+
+		return { left, width };
+	};
+
 	const isWeekend = (date: Date) => {
 		const day = date.getDay();
 		return day === 0 || day === 6;
@@ -130,28 +162,69 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 		);
 	}
 
+	const hasRealProjects = projects.some((project) => project.realStartDate);
+
 	return (
 		<TooltipProvider>
 			<div className="space-y-3">
 				<div className="overflow-x-auto border rounded-md shadow">
 					<div style={{ minWidth: `${chartWidth}px` }} className="relative">
 						{/* Header with dates */}
-						<div className="flex border-b sticky top-0 bg-background z-10">
-							<div className="w-72 min-w-72 p-3 border-r font-medium sticky left-0 z-15 bg-background shadow-md">Proyecto</div>
-							<div className="flex-1 flex">
-								{dateRange.map((date, index) => (
-									<div
-										key={index}
-										className={`w-[100px] flex-shrink-0 text-center text-xs py-2 border-r
-                    ${isWeekend(date) ? "bg-secondary/40" : ""}
-                    ${isPast(date) ? "bg-secondary/10" : ""}
-                    ${isCurrentWeek(date) ? "bg-primary/20 font-bold" : ""}`}
-									>
-										<div className="font-medium">Sem {format(date, "w")}</div>
-										<div>{format(date, "MMM", { locale: es })}</div>
-										{isCurrentWeek(date) && <div className="h-1 w-full bg-primary mt-1"></div>}
-									</div>
-								))}
+						<div className="sticky top-0 bg-background z-10 border-b">
+							{/* Fila de meses */}
+							<div className="flex border-b">
+								<div className="w-72 min-w-72 p-2 border-r font-medium sticky left-0 z-15 bg-background shadow-md text-sm">Cronograma</div>
+								<div className="flex-1 flex">
+									{(() => {
+										if (dateRange.length === 0) return null;
+
+										const monthGroups: { month: string; year: number; startIndex: number; count: number }[] = [];
+										let currentMonth = format(dateRange[0], "MMM yyyy", { locale: es });
+										let currentYear = dateRange[0].getFullYear();
+										let startIndex = 0;
+										let count = 1;
+
+										for (let i = 1; i < dateRange.length; i++) {
+											const monthYear = format(dateRange[i], "MMM yyyy", { locale: es });
+											if (monthYear === currentMonth) {
+												count++;
+											} else {
+												monthGroups.push({ month: currentMonth, year: currentYear, startIndex, count });
+												currentMonth = monthYear;
+												currentYear = dateRange[i].getFullYear();
+												startIndex = i;
+												count = 1;
+											}
+										}
+										monthGroups.push({ month: currentMonth, year: currentYear, startIndex, count });
+
+										return monthGroups.map((group, index) => (
+											<div key={index} className="flex-shrink-0 text-center text-sm py-2 border-r font-medium bg-secondary/20" style={{ width: `${group.count * 100}px` }}>
+												{group.month}
+											</div>
+										));
+									})()}
+								</div>
+							</div>
+
+							{/* Fila de semanas */}
+							<div className="flex">
+								<div className="w-72 min-w-72 p-3 border-r font-medium sticky left-0 z-15 bg-background shadow-md">Proyecto</div>
+								<div className="flex-1 flex">
+									{dateRange.map((date, index) => (
+										<div
+											key={index}
+											className={`w-[100px] flex-shrink-0 text-center text-xs py-2 border-r
+		                    ${isWeekend(date) ? "bg-secondary/40" : ""}
+		                    ${isPast(date) ? "bg-secondary/10" : ""}
+		                    ${isCurrentWeek(date) ? "bg-primary/20 font-bold" : ""}`}
+										>
+											<div className="font-medium">Sem {format(date, "w")}</div>
+											<div>{format(date, "dd", { locale: es })}</div>
+											{isCurrentWeek(date) && <div className="h-1 w-full bg-primary mt-1"></div>}
+										</div>
+									))}
+								</div>
 							</div>
 						</div>
 
@@ -159,6 +232,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 						<div>
 							{projects.map((project) => {
 								const barPosition = getBarPosition(project);
+								const realBarPosition = getRealBarPosition(project);
 								const categoryColor = project.categoryColor ? getStageColorValue(project.categoryColor) : "#6366f1";
 
 								return (
@@ -166,11 +240,6 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 										<div className="w-72 min-w-72 p-3 border-r border-l-4 sticky left-0 z-5 bg-background shadow-md" style={{ borderLeftColor: categoryColor }}>
 											<div className="font-medium line-clamp-1">{project.name}</div>
 											<div className="flex items-center space-x-2 mt-2">
-												{/* {project.categoryName && (
-													<Badge variant="outline" className="text-xs px-1.5 py-0 font-medium shadow-sm">
-														{project.categoryName}
-													</Badge>
-												)} */}
 												{project.status && (
 													<Badge variant="outline" className={`text-xs px-1.5 py-0 font-medium shadow-sm ${STATUS_COLORS[project.status as keyof typeof STATUS_COLORS]}`}>
 														{ProjectStatusLabels[project.status as keyof typeof ProjectStatusLabels] || project.status || ""}
@@ -182,8 +251,24 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 													<AvatarFallback>{getInitials(project.manager?.name + "" + project.manager?.lastname)}</AvatarFallback>
 												</Avatar>
 											</div>
-											<div className="text-xs text-muted-foreground mt-2">
-												{format(new Date(project.startDate), "dd MMM yyyy", { locale: es })} - {format(new Date(project.endDate), "dd MMM yyyy", { locale: es })}
+
+											{/* Fechas planificadas */}
+											<div className="text-xs flex items-center gap-1 mt-2">
+												<ClockIcon className="h-3 w-3" />
+												<div className="text-muted-foreground">
+													Plan: {format(new Date(project.startDate), "dd MMM", { locale: es })} - {format(new Date(project.endDate), "dd MMM", { locale: es })}
+												</div>
+											</div>
+
+											{/* Fechas reales */}
+											<div className="text-xs flex items-center gap-1 mt-1">
+												<ClockIcon className="h-3 w-3" />
+												{(project.realStartDate && (
+													<span className="text-green-600">
+														Real: {format(new Date(project.realStartDate), "dd MMM", { locale: es })}
+														{(project.realEndDate && ` - ${format(new Date(project.realEndDate), "dd MMM", { locale: es })}`) || " - hoy"}
+													</span>
+												)) || <span className="text-muted-foreground">No se ha ejecutado</span>}
 											</div>
 										</div>
 										<div className="flex-1 relative" style={{ height: "120px" }}>
@@ -198,24 +283,31 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 												/>
 											))}
 
-											{/* Barra principal del proyecto */}
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<div
-														className="absolute top-3 rounded-md shadow-md hover:shadow-lg transition-shadow z-10 cursor-pointer overflow-hidden group"
-														style={{
-															left: `${barPosition.left}px`,
-															width: `${barPosition.width}px`,
-															backgroundColor: categoryColor,
-															height: "60px",
-															border: `1px solid ${isPast(new Date(project.endDate)) ? "#d1d5db" : "transparent"}`,
-														}}
-														onClick={() => router.push(`/projects/${project.id}`)}
-													>
-														{!isShortBar(project) && (
-															<div className="h-full p-2 text-white">
-																<div className="flex items-center justify-between">
-																	<div className="font-medium truncate text-sm">{project.name}</div>
+											{/* Contenedor de barras centrado verticalmente */}
+											<div
+												className="absolute flex flex-col justify-center gap-1"
+												style={{
+													left: `${barPosition.left}px`,
+													width: `${barPosition.width}px`,
+													height: "120px",
+													top: 0,
+												}}
+											>
+												{/* Barra planificada (azul, más delgada) */}
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<div
+															className="rounded-md shadow-md hover:shadow-lg transition-shadow cursor-pointer overflow-hidden group border-2 border-transparent bg-blue-500 hover:bg-blue-600"
+															style={{
+																width: "100%",
+																height: "32px",
+																border: `1px solid ${isPast(new Date(project.endDate)) ? "#d1d5db" : "transparent"}`,
+															}}
+															onClick={() => router.push(`/projects/${project.id}`)}
+														>
+															{!isShortBar(project) && (
+																<div className="h-full px-2 py-1 text-white flex items-center justify-between">
+																	<div className="font-medium truncate text-xs flex-1">{project.name}</div>
 																	{project.team && project.team.length > 0 && (
 																		<div className="ml-1 flex items-center">
 																			<Users2Icon className="h-3.5 w-3.5" />
@@ -223,32 +315,51 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 																		</div>
 																	)}
 																</div>
-																<div className="mt-2 text-xs">
-																	<span className="bg-white/20 px-1.5 py-0.5 rounded-sm">{project.progressPercentage}%</span>
-																	{project.activitiesCount !== undefined && <span className="ml-1 bg-white/20 px-1.5 py-0.5 rounded-sm">{project.activitiesCount} actividades</span>}
-																</div>
-															</div>
-														)}
-													</div>
-												</TooltipTrigger>
-												<TooltipContent>
-													<div className="text-sm">
-														<p className="font-medium">{project.name}</p>
-														{project.description && <p className="text-xs mt-1 max-w-[300px] opacity-90">{project.description}</p>}
-														<p className="text-xs mt-2">Categoría: {project.categoryName || "Sin categoría"}</p>
-														<p className="text-xs">Estado: {project.status || "No definido"}</p>
-														<p className="text-xs">Responsable: {project.managerUserName}</p>
-														<p className="text-xs">Avance: {project.progressPercentage}%</p>
-														{project.team && <p className="text-xs">Equipo: {project.team.length} miembros</p>}
-														{project.activitiesCount !== undefined && <p className="text-xs">Actividades: {project.activitiesCount}</p>}
-														<div className="border-t border-border mt-2 pt-1">
-															<p className="text-xs">
-																{format(new Date(project.startDate), "dd MMM yyyy", { locale: es })} - {format(new Date(project.endDate), "dd MMM yyyy", { locale: es })}
-															</p>
+															)}
 														</div>
-													</div>
-												</TooltipContent>
-											</Tooltip>
+													</TooltipTrigger>
+													<TooltipContent>
+														<div className="text-sm">
+															<p className="text-xs mt-2">Categoría: {project.categoryName || "Sin categoría"}</p>
+															<p className="text-xs">Estado: {ProjectStatusLabels[project.status as keyof typeof ProjectStatusLabels] || "No definido"}</p>
+															<p className="text-xs">Responsable: {project.managerUserName}</p>
+															<p className="text-xs">Avance: {project.progressPercentage}%</p>
+															{project.team && <p className="text-xs">Equipo: {project.team.length} miembros</p>}
+															{project.activitiesCount !== undefined && <p className="text-xs">Actividades: {project.activitiesCount}</p>}
+														</div>
+													</TooltipContent>
+												</Tooltip>
+
+												{/* Barra ejecutada (verde) */}
+												{realBarPosition && (
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<div
+																className="relative rounded-md overflow-hidden cursor-pointer transition-shadow flex items-center border-2 border-dashed border-green-700"
+																style={{
+																	width: `${(realBarPosition.width / barPosition.width) * 100}%`,
+																	backgroundColor: "rgba(34, 197, 94, 0.8)",
+																	height: "32px",
+																	marginLeft: `${((realBarPosition.left - barPosition.left) / barPosition.width) * 100}%`,
+																}}
+																onClick={() => router.push(`/projects/${project.id}`)}
+															>
+																{!isShortBar(project) && (
+																	<div className="h-full px-2 py-1 text-white flex items-center">
+																		<div className="font-medium truncate text-xs">{project.progressPercentage}%</div>
+																	</div>
+																)}
+															</div>
+														</TooltipTrigger>
+														<TooltipContent>
+															<div className="text-sm">
+																<p className="font-medium">{project.name} - Ejecución Real</p>
+																<p className="text-xs mt-2">Avance: {project.progressPercentage}%</p>
+															</div>
+														</TooltipContent>
+													</Tooltip>
+												)}
+											</div>
 										</div>
 									</div>
 								);
@@ -262,7 +373,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 								style={{
 									left: `${(Math.floor(differenceInDays(new Date(), dateRange[0]) / 7) + 0.5) * 100}px`,
 									display: differenceInDays(new Date(), dateRange[0]) >= 0 && differenceInDays(new Date(), dateRange[dateRange.length - 1]) <= 0 ? "block" : "none",
-									top: "36px", // Altura del encabezado
+									top: "72px", // Altura del encabezado (ahora con dos filas)
 									bottom: "0",
 								}}
 							/>

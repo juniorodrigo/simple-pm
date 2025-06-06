@@ -8,6 +8,8 @@ const ProjectSchema = z.object({
 	description: z.string().optional(),
 	startDate: z.date(),
 	endDate: z.date(),
+	realStartDate: z.date().optional(),
+	realEndDate: z.date().optional(),
 	managerUserName: z.string(),
 	managerUserId: z.string(),
 	categoryName: z.string().optional(),
