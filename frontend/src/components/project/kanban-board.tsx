@@ -64,6 +64,10 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 	// Nuevo estado para cambios pendientes
 	const [pendingStatusChange, setPendingStatusChange] = useState<null | { activity: BaseActivity; newStatus: ActivityStatus }>(null);
 
+	// Nuevo estado para el modal de confirmación de retroceso
+	const [isRollbackModalOpen, setIsRollbackModalOpen] = useState(false);
+	const [rollbackActivity, setRollbackActivity] = useState<null | { activity: BaseActivity; newStatus: ActivityStatus }>(null);
+
 	// Actualizar actividades solo cuando cambian
 	useEffect(() => {
 		if (JSON.stringify(activities) !== JSON.stringify(initialActivities)) {
@@ -167,6 +171,16 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 						setOverId(null);
 						return;
 					}
+
+					// Verificar si es un retroceso (el nuevo índice es menor que el actual)
+					if (newIdx < currentIdx) {
+						setRollbackActivity({ activity: activeActivity, newStatus });
+						setIsRollbackModalOpen(true);
+						setActiveId(null);
+						setOverId(null);
+						return;
+					}
+
 					if ((newStatus === ActivityStatus.IN_PROGRESS && activeActivity.status === ActivityStatus.TODO) || newStatus === ActivityStatus.DONE) {
 						setPendingStatusChange({ activity: activeActivity, newStatus });
 						setCompletedActivity({ ...activeActivity, status: newStatus });
@@ -264,6 +278,38 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 		setOverId((over?.id as string) || null);
 	}, []);
 
+	// Nuevo manejador para confirmar el retroceso
+	const handleRollbackConfirm = useCallback(async () => {
+		if (!rollbackActivity) return;
+
+		try {
+			const updatedActivities = activities.map((activity) => (activity.id === rollbackActivity.activity.id ? { ...activity, status: rollbackActivity.newStatus } : activity));
+			setActivities(updatedActivities);
+			if (onActivityChange) {
+				onActivityChange(updatedActivities);
+			}
+			const response = await ActivitysService.updateActivityStatus(rollbackActivity.activity.id, rollbackActivity.newStatus);
+			if (!response.success) throw new Error("Error al actualizar el estado");
+
+			toast({
+				title: "Estado actualizado",
+				description: "La actividad ha sido retrocedida correctamente",
+			});
+		} catch (error) {
+			console.error("Error al actualizar el estado:", error);
+			toast({ title: "Error", description: "No se pudo actualizar el estado de la actividad", variant: "destructive" });
+		}
+
+		setIsRollbackModalOpen(false);
+		setRollbackActivity(null);
+	}, [activities, onActivityChange, rollbackActivity, toast]);
+
+	// Nuevo manejador para cancelar el retroceso
+	const handleRollbackCancel = useCallback(() => {
+		setIsRollbackModalOpen(false);
+		setRollbackActivity(null);
+	}, []);
+
 	return (
 		<>
 			<DndContext
@@ -314,7 +360,27 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 				</DialogContent>
 			</Dialog>
 
-			{/* Nuevo modal para fechas de ejecución */}
+			{/* Modal de confirmación de retroceso */}
+			<Dialog open={isRollbackModalOpen} onOpenChange={setIsRollbackModalOpen}>
+				<DialogContent className="sm:max-w-[425px]">
+					<DialogHeader>
+						<DialogTitle>Confirmar retroceso</DialogTitle>
+						<DialogDescription>
+							¿Estás seguro de que deseas retroceder esta actividad a {rollbackActivity ? ActivitiesLabels[rollbackActivity.newStatus] : ""}? Esta acción puede afectar el seguimiento del progreso.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button variant="outline" onClick={handleRollbackCancel}>
+							Cancelar
+						</Button>
+						<Button variant="default" onClick={handleRollbackConfirm}>
+							Confirmar
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Modal de fechas de ejecución */}
 			<ExecutionDateModal
 				activity={completedActivity}
 				isOpen={isExecutionDateModalOpen}

@@ -20,6 +20,7 @@ import CreateProjectForm from "@/components/projects/project-form";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
+import { ProjectStatus, ProjectStatusLabels } from "@/types/enums";
 
 interface ClientViewProps {
 	project: ExtendedProject;
@@ -45,6 +46,33 @@ export default function ClientView({ project: initialProject, activities: initia
 	const [statsVisible, setStatsVisible] = useState(false);
 	const [selectedStageId, setSelectedStageId] = useState<string>("all");
 	const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false);
+
+	// Normalizar el status del proyecto
+	const normalizedStatus = project.status || "pending";
+
+	// Logs de validación detallados
+	console.log("🔍 Análisis completo del proyecto:", {
+		projectId: project.id,
+		projectName: project.name,
+		rawStatus: project.status,
+		normalizedStatus: normalizedStatus,
+		archived: project.archived,
+		realEndDate: project.realEndDate,
+		// Comparaciones directas como en project-card.tsx
+		isStatusCompleted: project.status === "completed",
+		isStatusReview: project.status === "review",
+		isArchived: project.archived === true,
+		// Comparaciones con enum
+		isStatusCompletedEnum: project.status === ProjectStatus.COMPLETED,
+		// Verificar ProjectStatus values
+		ProjectStatusValues: Object.values(ProjectStatus),
+		// Verificar si el status está en el enum
+		isValidStatus: Object.values(ProjectStatus).includes(project.status as ProjectStatus),
+	});
+
+	// Usar comparaciones con strings literales como en project-card.tsx
+	const isProjectCompleted = project.status === "completed";
+	const isProjectArchived = project.archived === true;
 
 	// Filtrado
 	const filteredActivities = selectedStageId !== "all" ? projectActivities.filter((a) => a.stageId === selectedStageId) : projectActivities;
@@ -108,6 +136,16 @@ export default function ClientView({ project: initialProject, activities: initia
 								<div className="flex items-center gap-3 mb-1 flex-wrap">
 									<h1 className="text-2xl font-bold">{project.name}</h1>
 									{project.categoryName && project.categoryColor && <div className={`px-3 py-1 text-xs rounded-full font-medium border ${getTagColorClass(project.categoryColor)}`}>{project.categoryName}</div>}
+
+									{/* Estado actual del proyecto */}
+									{project.status && (
+										<div className={`px-3 py-1 text-xs rounded-full font-medium border ${isProjectCompleted ? "bg-green-100 text-green-800 border-green-200" : "bg-blue-100 text-blue-800 border-blue-200"}`}>
+											{ProjectStatusLabels[project.status as ProjectStatus] || project.status}
+										</div>
+									)}
+
+									{/* Indicador de archivado */}
+									{isProjectArchived && <div className="px-3 py-1 text-xs rounded-full font-medium border bg-gray-100 text-gray-800 border-gray-200">📁 Archivado</div>}
 								</div>
 								<div className="space-y-2">
 									<p className="text-muted-foreground text-justify">
@@ -131,7 +169,7 @@ export default function ClientView({ project: initialProject, activities: initia
 								</div>
 							</div>
 						</div>
-						{!isViewer && (
+						{!isViewer && !isProjectCompleted && (
 							<div className="flex gap-2">
 								{/* Mostrar/Ocultar resumen */}
 								<Button variant="outline" size="sm" onClick={() => setStatsVisible(!statsVisible)}>
@@ -260,12 +298,14 @@ export default function ClientView({ project: initialProject, activities: initia
 						<KanbanBoard
 							activities={filteredActivities}
 							stages={projectStages}
-							onActivityChange={isViewer ? undefined : handleActivityChange}
+							onActivityChange={isViewer || isProjectCompleted ? undefined : handleActivityChange}
 							onActivityClick={(a) => {
-								setEditingActivity(a);
-								setIsActivityModalOpen(true);
+								if (!isProjectCompleted) {
+									setEditingActivity(a);
+									setIsActivityModalOpen(true);
+								}
 							}}
-							isViewer={isViewer}
+							isViewer={isViewer || isProjectCompleted}
 						/>
 					) : (
 						<GanttChart activities={filteredActivities} stages={projectStages} viewMode={ganttViewMode} />

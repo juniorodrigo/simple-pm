@@ -107,7 +107,7 @@ export const ActivityBar = memo(({ activity, barPosition, executedBarPos, execut
 								backgroundColor: "rgba(34, 197, 94, 0.8)", // Siempre verde
 								height: "32px",
 								borderWidth: "2px",
-								borderStyle: "dashed",
+								borderStyle: "solid",
 								borderColor: "#15803d", // Siempre verde
 								marginLeft: `${((executedBarPos.left - barPosition.left) / barPosition.width) * 100}%`,
 							}}

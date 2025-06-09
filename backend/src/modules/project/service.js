@@ -125,6 +125,8 @@ const getProjectById = async (projectId) => {
 		description,
 		startDate,
 		endDate,
+		status: project.status,
+		archived: project.archived || false, // Asegurarse de que archived sea un booleano
 		progressPercentage,
 		managerUserId: manager.id,
 		managerUserName: manager.name + ' ' + manager.lastname,

@@ -180,10 +180,7 @@ export default function KanbanPage() {
 								<Grid3X3 className="h-6 w-6 text-primary" />
 							</div>
 							<div>
-								<h1 className="text-2xl font-bold flex items-center gap-2">
-									Gestión de Proyectos
-									<FolderOpen className="h-5 w-5 text-muted-foreground" />
-								</h1>
+								<h1 className="text-2xl font-bold flex items-center gap-2">Gestión de Proyectos</h1>
 								<p className="text-muted-foreground">Vista general de proyectos</p>
 							</div>
 						</div>

@@ -37,6 +37,18 @@ export default function ProjectKanbanBoard({ initialProjects, onProjectChange, o
 		}
 	}, [initialProjects]);
 
+	// Función para manejar actualizaciones de proyectos
+	const handleProjectUpdate = useCallback(
+		async (updatedProject: Project) => {
+			const updatedProjects = projects.map((project) => (project.id === updatedProject.id ? updatedProject : project));
+			setProjects(updatedProjects);
+			if (onProjectChange) {
+				await onProjectChange(updatedProjects);
+			}
+		},
+		[projects, onProjectChange]
+	);
+
 	// Función para mostrar el modal de confirmación de eliminación
 	const handleDeleteProject = useCallback((projectId: string) => {
 		setProjectToDelete(projectId);
@@ -116,7 +128,15 @@ export default function ProjectKanbanBoard({ initialProjects, onProjectChange, o
 		<>
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 h-full">
 				{LANES.map((lane) => (
-					<LaneContainer key={lane.id} lane={lane} projects={laneProjects[lane.id] || []} onDeleteProject={handleDeleteProject} onProjectClick={handleProjectClick} isViewer={isViewer} />
+					<LaneContainer
+						key={lane.id}
+						lane={lane}
+						projects={laneProjects[lane.id] || []}
+						onDeleteProject={handleDeleteProject}
+						onProjectClick={handleProjectClick}
+						onProjectUpdate={handleProjectUpdate}
+						isViewer={isViewer}
+					/>
 				))}
 			</div>
 
@@ -148,12 +168,14 @@ const LaneContainer = memo(
 		projects,
 		onDeleteProject,
 		onProjectClick,
+		onProjectUpdate,
 		isViewer,
 	}: {
 		lane: { id: string; title: string };
 		projects: Project[];
 		onDeleteProject: (id: string) => void;
 		onProjectClick?: (project: Project) => void;
+		onProjectUpdate: (updatedProject: Project) => Promise<void>;
 		isViewer?: boolean;
 	}) => {
 		// Manejar el evento de rueda para prevenir la propagación
@@ -199,6 +221,7 @@ const LaneContainer = memo(
 									project={project}
 									onDelete={isViewer ? undefined : () => onDeleteProject(project.id.toString())}
 									onClick={onProjectClick ? () => onProjectClick(project) : undefined}
+									onProjectUpdate={onProjectUpdate}
 								/>
 							))}
 						</div>

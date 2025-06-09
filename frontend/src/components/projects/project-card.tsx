@@ -1,7 +1,7 @@
 import { memo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, Trash2, CheckSquare, ChevronDown, ChevronUp, Clock, Target, Check, Archive } from "lucide-react";
+import { CalendarIcon, Trash2, CheckSquare, ChevronDown, ChevronUp, Clock, Target, Check, Archive, ArchiveRestore } from "lucide-react";
 import { Project } from "@/types/new/project.type";
 import { getStageColorValue } from "@/lib/colors";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -25,7 +25,7 @@ interface ProjectCardProps {
 	onDelete?: () => void;
 	onClick?: () => void;
 	isDragging?: boolean;
-	onProjectUpdate?: (updatedProject: Project) => void;
+	onProjectUpdate: (updatedProject: Project) => void;
 }
 
 const ProjectCard = memo(({ project, onDelete, onClick, isDragging, onProjectUpdate }: ProjectCardProps) => {
@@ -34,6 +34,20 @@ const ProjectCard = memo(({ project, onDelete, onClick, isDragging, onProjectUpd
 	const isViewer = user?.role === "viewer";
 	const [isExpanded, setIsExpanded] = useState(false);
 	const [isUpdating, setIsUpdating] = useState(false);
+
+	// Log de comparación con ClientView
+	console.log("📋 ProjectCard - Estado del proyecto:", {
+		projectId: project.id,
+		projectName: project.name,
+		rawStatus: project.status,
+		archived: project.archived,
+		// Comparaciones que funcionan en project-card
+		isStatusReview: project.status === "review",
+		isStatusCompleted: project.status === "completed",
+		isArchived: project.archived,
+		shouldShowCompleteButton: project.status === "review" && !isViewer,
+		shouldShowArchiveButton: project.status === "completed" && !project.archived && !isViewer,
+	});
 
 	const formattedStartDate = new Date(project.startDate).toLocaleDateString();
 	const formattedEndDate = new Date(project.endDate).toLocaleDateString();
@@ -156,8 +170,40 @@ const ProjectCard = memo(({ project, onDelete, onClick, isDragging, onProjectUpd
 		}
 	};
 
+	const handleUnarchiveProject = async () => {
+		if (isUpdating) return;
+
+		setIsUpdating(true);
+		try {
+			const updateData = { id: project.id, archived: false };
+			const result = await ProjectsService.updateProject(project.id.toString(), updateData);
+
+			if (result.success) {
+				toast({
+					description: "Proyecto desarchivado exitosamente",
+				});
+
+				// Actualizar el proyecto localmente
+				const updatedProject = { ...project, archived: false };
+				if (onProjectUpdate) {
+					onProjectUpdate(updatedProject);
+				}
+			} else {
+				throw new Error(result.message || "Error al desarchivar el proyecto");
+			}
+		} catch (error) {
+			toast({
+				variant: "destructive",
+				description: error instanceof Error ? error.message : "Error al desarchivar el proyecto",
+			});
+		} finally {
+			setIsUpdating(false);
+		}
+	};
+
 	const shouldShowCompleteButton = project.status === "review" && !isViewer;
 	const shouldShowArchiveButton = project.status === "completed" && !project.archived && !isViewer;
+	const shouldShowUnarchiveButton = project.archived && !isViewer;
 
 	return (
 		<Card
@@ -174,6 +220,12 @@ const ProjectCard = memo(({ project, onDelete, onClick, isDragging, onProjectUpd
 					<div className="flex items-center gap-2">
 						<div className="w-2 h-2 rounded-full" style={{ backgroundColor: categoryColor }} />
 						<span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{project.categoryName || "Sin categoría"}</span>
+						{project.archived && (
+							<div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+								<Archive className="h-3 w-3" />
+								<span>Archivado</span>
+							</div>
+						)}
 					</div>
 					<div className="flex items-center gap-1">
 						<Button variant="ghost" size="sm" className="expand-toggle h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={handleToggleExpand}>
@@ -200,7 +252,7 @@ const ProjectCard = memo(({ project, onDelete, onClick, isDragging, onProjectUpd
 										<AlertDialogDescription>¿Estás seguro de que deseas marcar el proyecto &quot;{project.name}&quot; como completado? Esta acción cambiará el estado del proyecto.</AlertDialogDescription>
 									</AlertDialogHeader>
 									<AlertDialogFooter>
-										<AlertDialogCancel>Cancelar</AlertDialogCancel>
+										<AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancelar</AlertDialogCancel>
 										<AlertDialogAction
 											onClick={(e) => {
 												e.stopPropagation();
@@ -237,7 +289,7 @@ const ProjectCard = memo(({ project, onDelete, onClick, isDragging, onProjectUpd
 										</AlertDialogDescription>
 									</AlertDialogHeader>
 									<AlertDialogFooter>
-										<AlertDialogCancel>Cancelar</AlertDialogCancel>
+										<AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancelar</AlertDialogCancel>
 										<AlertDialogAction
 											onClick={(e) => {
 												e.stopPropagation();
@@ -246,6 +298,41 @@ const ProjectCard = memo(({ project, onDelete, onClick, isDragging, onProjectUpd
 											disabled={isUpdating}
 										>
 											{isUpdating ? "Archivando..." : "Archivar"}
+										</AlertDialogAction>
+									</AlertDialogFooter>
+								</AlertDialogContent>
+							</AlertDialog>
+						)}
+
+						{/* Botón Desarchivar para proyectos archivados */}
+						{shouldShowUnarchiveButton && (
+							<AlertDialog>
+								<AlertDialogTrigger asChild>
+									<Button
+										variant="ghost"
+										size="sm"
+										className="action-button h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-orange-600 hover:text-orange-800"
+										disabled={isUpdating}
+										onClick={(e) => e.stopPropagation()}
+									>
+										<ArchiveRestore className="h-3 w-3" />
+									</Button>
+								</AlertDialogTrigger>
+								<AlertDialogContent>
+									<AlertDialogHeader>
+										<AlertDialogTitle>¿Desarchivar proyecto?</AlertDialogTitle>
+										<AlertDialogDescription>¿Estás seguro de que deseas desarchivar el proyecto &quot;{project.name}&quot;? El proyecto volverá a aparecer en las listas principales.</AlertDialogDescription>
+									</AlertDialogHeader>
+									<AlertDialogFooter>
+										<AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancelar</AlertDialogCancel>
+										<AlertDialogAction
+											onClick={(e) => {
+												e.stopPropagation();
+												handleUnarchiveProject();
+											}}
+											disabled={isUpdating}
+										>
+											{isUpdating ? "Desarchivando..." : "Desarchivar"}
 										</AlertDialogAction>
 									</AlertDialogFooter>
 								</AlertDialogContent>
