@@ -8,8 +8,8 @@ import { AuthProvider } from "@/contexts/auth-context";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-	title: "Systems Project Management",
-	description: "Project management application for Systems department",
+	title: "Gestión de Proyectos",
+	description: "Aplicación de gestión de proyectos de Madrid Inmobiliaria",
 	generator: "v0.dev",
 };
 

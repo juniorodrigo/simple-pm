@@ -184,7 +184,7 @@ export default function KanbanPage() {
 									Gestión de Proyectos
 									<FolderOpen className="h-5 w-5 text-muted-foreground" />
 								</h1>
-								<p className="text-muted-foreground">Vista general • Gestiona todos tus proyectos usando arrastrar y soltar</p>
+								<p className="text-muted-foreground">Vista general de proyectos</p>
 							</div>
 						</div>
 						{!isViewer && (
