@@ -97,6 +97,35 @@ export default function TagsSettings() {
 		return true;
 	};
 
+	const validateTagForEdit = (tagToValidate: TagWithCount): boolean => {
+		setValidationError("");
+
+		if (!tagToValidate.name.trim()) {
+			setValidationError("El nombre de la categoría es obligatorio");
+			return false;
+		}
+
+		if (tagToValidate.name.trim().length < 2) {
+			setValidationError("El nombre debe tener al menos 2 caracteres");
+			return false;
+		}
+
+		if (tagToValidate.name.trim().length > 30) {
+			setValidationError("El nombre no puede exceder 30 caracteres");
+			return false;
+		}
+
+		// Verificar si ya existe una categoría con ese nombre (excluyendo la actual)
+		const existingTag = tags.find((tag) => tag.name.toLowerCase().trim() === tagToValidate.name.toLowerCase().trim() && tag.id !== tagToValidate.id);
+
+		if (existingTag) {
+			setValidationError("Ya existe una categoría con ese nombre");
+			return false;
+		}
+
+		return true;
+	};
+
 	const handleAddTag = async () => {
 		if (!validateForm()) return;
 
@@ -133,17 +162,10 @@ export default function TagsSettings() {
 		const tagToUpdate = tags.find((tag) => tag.id === id);
 		if (!tagToUpdate) return;
 
-		// Validar con los datos del tag actual
-		const tempFormData = { name: tagToUpdate.name, color: tagToUpdate.color };
-		const originalFormData = formData;
-		setFormData(tempFormData);
-
-		if (!validateForm()) {
-			setFormData(originalFormData);
+		// Validar directamente con los datos del tag que se está editando
+		if (!validateTagForEdit(tagToUpdate)) {
 			return;
 		}
-
-		setFormData(originalFormData);
 
 		try {
 			setIsSubmitting(true);
@@ -155,6 +177,7 @@ export default function TagsSettings() {
 
 			if (response.success) {
 				setEditingTag(null);
+				setValidationError(""); // Limpiar errores de validación
 				toast({
 					title: "¡Categoría actualizada!",
 					description: `La categoría "${tagToUpdate.name}" se ha actualizado exitosamente.`,
