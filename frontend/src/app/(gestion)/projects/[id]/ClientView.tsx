@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { Edit, Plus, ListPlus, ChevronDown, ChevronUp, X, BarChart3 } from "lucide-react";
+import { Edit, Plus, ListPlus, ChevronDown, ChevronUp, X, BarChart3, ArrowLeft, Folder, Target } from "lucide-react";
 import KanbanBoard from "@/components/project/kanban-board";
 import GanttChart from "@/components/project/gantt-chart";
 import CreateActivityModal from "@/components/project/activity-modal";
@@ -19,6 +19,7 @@ import { getTagColorClass } from "@/lib/colors";
 import CreateProjectForm from "@/components/projects/create-project-form";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/components/ui/use-toast";
+import { useRouter } from "next/navigation";
 
 interface ClientViewProps {
 	project: ExtendedProject;
@@ -29,6 +30,7 @@ export default function ClientView({ project: initialProject, activities: initia
 	const { toast } = useToast();
 	const { user } = useAuth();
 	const isViewer = user?.role === "viewer";
+	const router = useRouter();
 
 	// Estado inicial
 	const [project, setProject] = useState<ExtendedProject>(initialProject);
@@ -80,88 +82,115 @@ export default function ClientView({ project: initialProject, activities: initia
 
 	// ——— UI ———
 	return (
-		<div className="space-y-6">
-			{/* Header + botones de editar */}
-			<div className="flex flex-col md:flex-row md:justify-between gap-4">
-				<div>
-					<h1 className="text-2xl font-bold">{project.name}</h1>
-					<p className="text-muted-foreground">{project.description}</p>
+		<div className="h-full flex flex-col space-y-6">
+			{/* Header distintivo del proyecto específico */}
+			<div className="space-y-4 flex-shrink-0">
+				{/* Breadcrumb navigation */}
+				<div className="flex items-center gap-2 text-sm text-muted-foreground">
+					<Button variant="ghost" size="sm" className="p-0 h-auto font-normal" onClick={() => router.back()}>
+						<ArrowLeft className="h-4 w-4 mr-1" />
+						Volver a Proyectos
+					</Button>
+					<span>/</span>
+					<Folder className="h-4 w-4" />
+					<span className="font-medium text-foreground">{project.name}</span>
 				</div>
-				{!isViewer && (
-					<div className="flex gap-2">
-						{/* Mostrar/Ocultar resumen */}
-						<Button variant="outline" onClick={() => setStatsVisible(!statsVisible)}>
-							<BarChart3 className="mr-2 h-4 w-4" />
-							{statsVisible ? "Ocultar resumen" : "Mostrar resumen"}
-						</Button>
 
-						{/* Editar proyecto */}
-						<Dialog open={isEditProjectModalOpen} onOpenChange={setIsEditProjectModalOpen}>
-							<Button variant="outline" onClick={() => setIsEditProjectModalOpen(true)}>
-								<Edit className="mr-2 h-4 w-4" /> Editar Proyecto
-							</Button>
-							<DialogContent className="sm:max-w-[700px]">
-								<DialogTitle>Editar Proyecto</DialogTitle>
-								<DialogDescription>Actualiza los detalles del proyecto</DialogDescription>
-								<CreateProjectForm isEditing projectData={project} onSuccess={handleProjectUpdated} />
-							</DialogContent>
-						</Dialog>
+				{/* Project header sin colores específicos */}
+				<div className="bg-card border rounded-lg p-6">
+					<div className="flex flex-col md:flex-row md:justify-between gap-4">
+						<div className="flex items-start gap-3">
+							<div className="p-2 bg-muted rounded-lg">
+								<Target className="h-6 w-6 text-muted-foreground" />
+							</div>
+							<div>
+								<div className="flex items-center gap-3 mb-1 flex-wrap">
+									<h1 className="text-2xl font-bold">{project.name}</h1>
+									{project.categoryName && project.categoryColor && <div className={`px-3 py-1 text-xs rounded-full font-medium border ${getTagColorClass(project.categoryColor)}`}>{project.categoryName}</div>}
+								</div>
+								<p className="text-muted-foreground">{project.description}</p>
+							</div>
+						</div>
+						{!isViewer && (
+							<div className="flex gap-2">
+								{/* Mostrar/Ocultar resumen */}
+								<Button variant="outline" size="sm" onClick={() => setStatsVisible(!statsVisible)}>
+									<BarChart3 className="mr-2 h-4 w-4" />
+									{statsVisible ? "Ocultar resumen" : "Mostrar resumen"}
+								</Button>
 
-						{/* Gestionar etapas */}
-						<Dialog open={isStagesModalOpen} onOpenChange={setIsStagesModalOpen}>
-							<Button variant="outline" onClick={() => setIsStagesModalOpen(true)}>
-								<ListPlus className="mr-2 h-4 w-4" /> Administrar Etapas
-							</Button>
-							<DialogContent className="sm:max-w-[700px]">
-								<DialogTitle>Gestionar Etapas del Proyecto</DialogTitle>
-								<DialogDescription>Crea y gestiona las etapas del proyecto</DialogDescription>
-								<ProjectStagesModal projectId={project.id} stages={projectStages} onClose={() => setIsStagesModalOpen(false)} onSave={handleUpdateStages} />
-							</DialogContent>
-						</Dialog>
+								{/* Editar proyecto */}
+								<Dialog open={isEditProjectModalOpen} onOpenChange={setIsEditProjectModalOpen}>
+									<Button variant="outline" size="sm" onClick={() => setIsEditProjectModalOpen(true)}>
+										<Edit className="mr-2 h-4 w-4" /> Editar
+									</Button>
+									<DialogContent className="sm:max-w-[700px]">
+										<DialogTitle>Editar Proyecto</DialogTitle>
+										<DialogDescription>Actualiza los detalles del proyecto</DialogDescription>
+										<CreateProjectForm isEditing projectData={project} onSuccess={handleProjectUpdated} />
+									</DialogContent>
+								</Dialog>
 
-						{/* Nueva actividad */}
-						<Dialog
-							open={isActivityModalOpen}
-							onOpenChange={(open) => {
-								setIsActivityModalOpen(open);
-								if (!open) setEditingActivity(null);
-							}}
-						>
-							<Button onClick={() => setIsActivityModalOpen(true)}>
-								<Plus className="mr-2 h-4 w-4" /> Nueva Actividad
-							</Button>
-							<DialogContent className="sm:max-w-[600px]">
-								<DialogTitle>{editingActivity ? "Editar Actividad" : "Nueva Actividad"}</DialogTitle>
-								<DialogDescription>{editingActivity ? "Actualiza los detalles de la actividad" : "Crea una actividad para el proyecto"}</DialogDescription>
-								<CreateActivityModal
-									projectId={project.id}
-									stages={projectStages}
-									activity={editingActivity}
-									onClose={() => setIsActivityModalOpen(false)}
-									onSuccess={(act) => {
-										if (editingActivity) {
-											handleActivityChange(projectActivities.map((a) => (a.id === act.id ? act : a)));
-										} else {
-											handleAddActivity(act);
-										}
+								{/* Gestionar etapas */}
+								<Dialog open={isStagesModalOpen} onOpenChange={setIsStagesModalOpen}>
+									<Button variant="outline" size="sm" onClick={() => setIsStagesModalOpen(true)}>
+										<ListPlus className="mr-2 h-4 w-4" /> Etapas
+									</Button>
+									<DialogContent className="sm:max-w-[700px]">
+										<DialogTitle>Gestionar Etapas del Proyecto</DialogTitle>
+										<DialogDescription>Crea y gestiona las etapas del proyecto</DialogDescription>
+										<ProjectStagesModal projectId={project.id} stages={projectStages} onClose={() => setIsStagesModalOpen(false)} onSave={handleUpdateStages} />
+									</DialogContent>
+								</Dialog>
+
+								{/* Nueva actividad */}
+								<Dialog
+									open={isActivityModalOpen}
+									onOpenChange={(open) => {
+										setIsActivityModalOpen(open);
+										if (!open) setEditingActivity(null);
 									}}
-								/>
-							</DialogContent>
-						</Dialog>
+								>
+									<Button size="sm" onClick={() => setIsActivityModalOpen(true)}>
+										<Plus className="mr-2 h-4 w-4" /> Nueva Actividad
+									</Button>
+									<DialogContent className="sm:max-w-[600px]">
+										<DialogTitle>{editingActivity ? "Editar Actividad" : "Nueva Actividad"}</DialogTitle>
+										<DialogDescription>{editingActivity ? "Actualiza los detalles de la actividad" : "Crea una actividad para el proyecto"}</DialogDescription>
+										<CreateActivityModal
+											projectId={project.id}
+											stages={projectStages}
+											activity={editingActivity}
+											onClose={() => setIsActivityModalOpen(false)}
+											onSuccess={(act) => {
+												if (editingActivity) {
+													handleActivityChange(projectActivities.map((a) => (a.id === act.id ? act : a)));
+												} else {
+													handleAddActivity(act);
+												}
+											}}
+										/>
+									</DialogContent>
+								</Dialog>
+							</div>
+						)}
 					</div>
-				)}
+				</div>
 			</div>
 
 			{/* Resumen del proyecto - mostrar cuando statsVisible es true */}
 			{statsVisible && (
-				<div className="border rounded-lg p-4">
-					<h3 className="text-lg font-medium mb-4">Resumen del Proyecto</h3>
+				<div className="border rounded-lg p-4 bg-gradient-to-r from-green-500/5 to-blue-500/5 flex-shrink-0">
+					<div className="flex items-center gap-2 mb-4">
+						<BarChart3 className="h-5 w-5 text-blue-600" />
+						<h3 className="text-lg font-medium">Resumen del Proyecto</h3>
+					</div>
 					<ProjectStatsCards project={project} activities={projectActivities} />
 				</div>
 			)}
 
 			{/* Filtros y vistas */}
-			<div className="flex justify-between items-center">
+			<div className="flex justify-between items-center flex-shrink-0">
 				<h2 className="text-xl font-bold"></h2>
 				<div className="flex flex-wrap gap-2 items-center">
 					{activeView === "gantt" && (
@@ -205,21 +234,23 @@ export default function ClientView({ project: initialProject, activities: initia
 			</div>
 
 			{/* Tablero / Gantt */}
-			<div className="border rounded-lg p-4">
-				{activeView === "kanban" ? (
-					<KanbanBoard
-						activities={filteredActivities}
-						stages={projectStages}
-						onActivityChange={isViewer ? undefined : handleActivityChange}
-						onActivityClick={(a) => {
-							setEditingActivity(a);
-							setIsActivityModalOpen(true);
-						}}
-						isViewer={isViewer}
-					/>
-				) : (
-					<GanttChart activities={filteredActivities} stages={projectStages} viewMode={ganttViewMode} />
-				)}
+			<div className="flex-1 min-h-0">
+				<div className="border rounded-lg p-4 h-full">
+					{activeView === "kanban" ? (
+						<KanbanBoard
+							activities={filteredActivities}
+							stages={projectStages}
+							onActivityChange={isViewer ? undefined : handleActivityChange}
+							onActivityClick={(a) => {
+								setEditingActivity(a);
+								setIsActivityModalOpen(true);
+							}}
+							isViewer={isViewer}
+						/>
+					) : (
+						<GanttChart activities={filteredActivities} stages={projectStages} viewMode={ganttViewMode} />
+					)}
+				</div>
 			</div>
 		</div>
 	);

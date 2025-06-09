@@ -45,18 +45,22 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 
 	return (
 		<TooltipProvider>
-			<div className="space-y-3">
-				{hasExecutedActivities && showLegend && <Legend showLegend={showLegend} setShowLegend={setShowLegend} />}
+			<div className="h-full flex flex-col space-y-3">
+				{hasExecutedActivities && showLegend && (
+					<div className="flex-shrink-0">
+						<Legend showLegend={showLegend} setShowLegend={setShowLegend} />
+					</div>
+				)}
 
-				<div className="border rounded-md shadow relative">
-					<div className="flex sticky top-0 bg-background border-b" style={{ maxWidth: "100%" }}>
+				<div className="border rounded-md shadow relative flex-1 flex flex-col min-h-0">
+					<div className="flex sticky top-0 bg-background border-b flex-shrink-0" style={{ maxWidth: "100%" }}>
 						<div className="w-64 min-w-64 p-3 border-r font-medium bg-background z-30 shadow-sm sticky left-0">Actividad</div>
 						<div ref={headerScrollRef} className="flex-1 overflow-x-auto scrollbar-hide" onScroll={handleHeaderScroll} style={{ maxWidth: "calc(100% - 256px)" }}>
 							<DateHeader dateRange={dateRange} chartWidth={chartWidth} viewMode={viewMode} />
 						</div>
 					</div>
 
-					<div ref={contentRef} className="overflow-x-auto overflow-y-auto max-h-[70vh]" style={{ maxWidth: "100%" }} onScroll={handleScroll}>
+					<div ref={contentRef} className="overflow-x-auto overflow-y-auto flex-1" style={{ maxWidth: "100%" }} onScroll={handleScroll}>
 						<div style={{ width: `${chartWidth + 256}px` }}>
 							{activities.map((activity) => {
 								const executedBarPos = getExecutedBarPosition(activity, dateRange, viewMode);

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, Loader2, KanbanSquare, GanttChart, Archive } from "lucide-react";
+import { Plus, Search, Loader2, KanbanSquare, GanttChart, Archive, FolderOpen, Grid3X3 } from "lucide-react";
 import { ProjectsService } from "@/services/project.service";
 import { Project } from "@/types/new/project.type";
 import ProjectKanbanBoard from "@/components/projects/project-kanban-board";
@@ -169,33 +169,47 @@ export default function KanbanPage() {
 	};
 
 	return (
-		<div className="space-y-6">
-			<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-				<div>
-					<h1 className="text-2xl font-bold">Lista de Proyectos</h1>
-					<p className="text-muted-foreground">Gestiona tus proyectos usando arrastrar y soltar</p>
-				</div>
-				{!isViewer && (
-					<div className="flex items-center gap-2">
-						<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-							<DialogTrigger asChild>
-								<Button>
-									<Plus className="mr-2 h-4 w-4" />
-									Nuevo Proyecto
-								</Button>
-							</DialogTrigger>
-							<DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-								<DialogHeader>
-									<DialogTitle>Crear nuevo proyecto</DialogTitle>
-								</DialogHeader>
-								<CreateProjectForm onSuccess={handleProjectCreated} />
-							</DialogContent>
-						</Dialog>
+		<div className="h-full flex flex-col space-y-6">
+			{/* Header distintivo para la vista de lista de proyectos */}
+			<div className="relative flex-shrink-0">
+				<div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg"></div>
+				<div className="relative bg-card/50 backdrop-blur-sm border rounded-lg p-6">
+					<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+						<div className="flex items-center gap-3">
+							<div className="p-2 bg-primary/10 rounded-lg">
+								<Grid3X3 className="h-6 w-6 text-primary" />
+							</div>
+							<div>
+								<h1 className="text-2xl font-bold flex items-center gap-2">
+									Gestión de Proyectos
+									<FolderOpen className="h-5 w-5 text-muted-foreground" />
+								</h1>
+								<p className="text-muted-foreground">Vista general • Gestiona todos tus proyectos usando arrastrar y soltar</p>
+							</div>
+						</div>
+						{!isViewer && (
+							<div className="flex items-center gap-2">
+								<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+									<DialogTrigger asChild>
+										<Button className="shadow-lg">
+											<Plus className="mr-2 h-4 w-4" />
+											Nuevo Proyecto
+										</Button>
+									</DialogTrigger>
+									<DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+										<DialogHeader>
+											<DialogTitle>Crear nuevo proyecto</DialogTitle>
+										</DialogHeader>
+										<CreateProjectForm onSuccess={handleProjectCreated} />
+									</DialogContent>
+								</Dialog>
+							</div>
+						)}
 					</div>
-				)}
+				</div>
 			</div>
 
-			<div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+			<div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between flex-shrink-0">
 				<div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
 					<div className="w-full md:w-64">
 						<Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -247,15 +261,17 @@ export default function KanbanPage() {
 				</div>
 			</div>
 
-			{loading ? (
-				<div className="flex justify-center items-center h-64">
-					<Loader2 className="h-8 w-8 animate-spin text-primary" />
-				</div>
-			) : activeView === "kanban" ? (
-				<ProjectKanbanBoard initialProjects={filteredProjects} onProjectChange={handleProjectChange} onProjectClick={handleProjectClick} isViewer={isViewer} />
-			) : (
-				<ProjectsGantt projects={filteredProjects} />
-			)}
+			<div className="flex-1 min-h-0">
+				{loading ? (
+					<div className="flex justify-center items-center h-64">
+						<Loader2 className="h-8 w-8 animate-spin text-primary" />
+					</div>
+				) : activeView === "kanban" ? (
+					<ProjectKanbanBoard initialProjects={filteredProjects} onProjectChange={handleProjectChange} onProjectClick={handleProjectClick} isViewer={isViewer} />
+				) : (
+					<ProjectsGantt projects={filteredProjects} />
+				)}
+			</div>
 		</div>
 	);
 }

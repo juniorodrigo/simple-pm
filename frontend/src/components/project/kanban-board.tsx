@@ -278,7 +278,7 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 					},
 				}}
 			>
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 h-full">
 					{LANES.map((lane) => (
 						<LaneContainer
 							key={lane.id}
@@ -366,7 +366,7 @@ const LaneContainer = memo(
 
 		const itemIds = useMemo(() => activities.map((a) => a.id), [activities]);
 
-		const laneClassName = `bg-secondary/50 rounded-lg p-2 flex-1 min-h-[500px] transition-all duration-200 ${isOver ? "ring-2 ring-primary bg-secondary/70" : ""}`;
+		const laneClassName = `bg-secondary/50 rounded-lg p-2 flex-1 overflow-y-auto transition-all duration-200 ${isOver ? "ring-2 ring-primary bg-secondary/70" : ""}`;
 
 		return (
 			<div className="flex flex-col h-full">

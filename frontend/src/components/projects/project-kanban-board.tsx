@@ -114,7 +114,7 @@ export default function ProjectKanbanBoard({ initialProjects, onProjectChange, o
 
 	return (
 		<>
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 h-full">
 				{LANES.map((lane) => (
 					<LaneContainer key={lane.id} lane={lane} projects={laneProjects[lane.id] || []} onDeleteProject={handleDeleteProject} onProjectClick={handleProjectClick} isViewer={isViewer} />
 				))}
@@ -179,7 +179,7 @@ const LaneContainer = memo(
 				</div>
 
 				<div
-					className="bg-secondary/50 rounded-lg p-2 flex-1 min-h-[500px] overflow-y-auto max-h-[70vh]"
+					className="bg-secondary/50 rounded-lg p-2 flex-1 overflow-y-auto"
 					style={{
 						scrollbarWidth: "none" /* Firefox */,
 						msOverflowStyle: "none" /* IE/Edge */,

@@ -157,7 +157,7 @@ const ProjectCard = memo(({ project, onDelete, onClick, isDragging, onProjectUpd
 	};
 
 	const shouldShowCompleteButton = project.status === "review" && !isViewer;
-	const shouldShowArchiveButton = project.status === "completed" && !isViewer;
+	const shouldShowArchiveButton = project.status === "completed" && !project.archived && !isViewer;
 
 	return (
 		<Card
