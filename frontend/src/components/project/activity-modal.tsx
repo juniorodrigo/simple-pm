@@ -80,7 +80,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 
 	useEffect(() => {
 		const loadUsers = async () => {
-			const response = await UsersService.getUsers();
+			const response = await UsersService.getUsersByProjectId(String(projectId));
 			if (response.success && response.data) {
 				setUsers(response.data);
 			}

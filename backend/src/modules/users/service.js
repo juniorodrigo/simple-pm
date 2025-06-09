@@ -10,6 +10,40 @@ const getUsers = async () => {
 	return { success: true, data: users };
 };
 
+const getUsersByProjectId = async (projectId) => {
+	let users = [];
+
+	const managerUser = await prisma.project.findFirst({
+		where: {
+			id: Number(projectId),
+		},
+		select: {
+			manager: true,
+		},
+	});
+
+	users.push(managerUser.manager);
+
+	let members = await prisma.projectMember.findMany({
+		where: {
+			projectId: parseInt(projectId),
+		},
+		select: {
+			user: true,
+		},
+	});
+
+	if (members) users = [...users, ...members.map((member) => member.user)];
+
+	console.log('Users found in project:', users);
+
+	users = users.map((user) => {
+		return { ...user, lastActive: new Date() };
+	});
+
+	return { success: true, data: users };
+};
+
 const createUser = async (userData) => {
 	console.log('Creating user with data:', userData);
 
@@ -33,6 +67,8 @@ const createUser = async (userData) => {
 
 const updateUser = async (userId, userData) => {
 	const { username, name, lastname, email, isActive, role } = userData;
+
+	console.log('USERDATA: ', userData);
 
 	const result = await prisma.user.update({
 		where: {
@@ -69,4 +105,5 @@ export const Service = {
 	createUser,
 	updateUser,
 	deleteUser,
+	getUsersByProjectId,
 };

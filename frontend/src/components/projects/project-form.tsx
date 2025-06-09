@@ -28,7 +28,12 @@ const formSchema = z.object({
 	name: z.string().min(2, {
 		message: "Debe tener al menos dos caracteres.",
 	}),
-	description: z.string().optional(),
+	description: z
+		.string()
+		.max(500, {
+			message: "La descripción no puede exceder los 500 caracteres.",
+		})
+		.optional(),
 	startDate: z.date().optional(),
 	endDate: z.date().optional(),
 	teamMembers: z.array(z.string()).min(1, "Se requiere al menos un miembro en el equipo"),
@@ -231,7 +236,10 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 							<FormItem>
 								<FormLabel>Descripción</FormLabel>
 								<FormControl>
-									<Textarea placeholder="Describe el proyecto" className="resize-none" {...field} />
+									<div className="relative">
+										<Textarea placeholder="Describe el proyecto" className="resize-none" {...field} />
+										<div className="absolute bottom-2 right-2 text-xs text-muted-foreground">{field.value?.length || 0}/500</div>
+									</div>
 								</FormControl>
 								<FormMessage />
 							</FormItem>

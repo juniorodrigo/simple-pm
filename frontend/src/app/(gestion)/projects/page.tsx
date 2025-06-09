@@ -12,7 +12,7 @@ import { ProjectsService } from "@/services/project.service";
 import { Project } from "@/types/new/project.type";
 import ProjectKanbanBoard from "@/components/projects/project-kanban-board";
 import { useToast } from "@/hooks/use-toast";
-import CreateProjectForm from "@/components/projects/create-project-form";
+import CreateProjectForm from "@/components/projects/project-form";
 import { useRouter } from "next/navigation";
 import ProjectsGantt from "@/components/projects/projects-gantt";
 import { useAuth } from "@/contexts/auth-context";

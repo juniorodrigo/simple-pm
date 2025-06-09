@@ -112,7 +112,6 @@ async function createUser(data) {
 
 	return { data: newUser, message: 'User created successfully' };
 }
-
 async function updateUser(id, name, lastname, email, areaId, role, isActive) {
 	const existingUser = await prisma.user.findUnique({
 		where: { id: id },
@@ -121,7 +120,7 @@ async function updateUser(id, name, lastname, email, areaId, role, isActive) {
 
 	const updatedUser = await prisma.user.update({
 		where: { id: id },
-		data: { name: name, email: email, isActive: isActive },
+		data: { name: name, email: email, isActive: isActive, lastname },
 		select: {
 			id: true,
 			name: true,
@@ -132,7 +131,6 @@ async function updateUser(id, name, lastname, email, areaId, role, isActive) {
 
 	return { data: updatedUser, message: 'User updated successfully' };
 }
-
 async function deleteUser(id) {
 	const existingUser = await prisma.user.findUnique({
 		where: { id: id },

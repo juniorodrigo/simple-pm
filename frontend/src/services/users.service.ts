@@ -11,6 +11,15 @@ const getUsers = async (): Promise<ApiResponse> => {
 	}
 };
 
+const getUsersByProjectId = async (projectId: string): Promise<ApiResponse> => {
+	try {
+		const petition = await fetch(`/api/is/users/by-project/${projectId}`, { method: "GET" });
+		return await petition.json();
+	} catch (error) {
+		return { success: false };
+	}
+};
+
 const deleteUser = async (userId: string): Promise<ApiResponse> => {
 	try {
 		const petition = await fetch(`/api/is/users/${userId}`, {
@@ -66,6 +75,7 @@ const updateUser = async (userId: string, user: User): Promise<ApiResponse> => {
 
 export const UsersService = {
 	getUsers,
+	getUsersByProjectId,
 	deleteUser,
 	createUser,
 	updateUser,

@@ -6,7 +6,16 @@ const saltRounds = 10;
 //TODO: No se debe devolver la contraseña en los users o creación o updates
 
 const getUsers = async (req, res) => {
-	const { data } = await Service.getUsers(req, res);
+	const params = req.query;
+
+	const { data } = await Service.getUsers(params);
+	res.success(data, 'Lista de usuarios obtenida correctamente');
+};
+
+const getUsersByProjectId = async (req, res) => {
+	const projectId = req.params.projectId;
+
+	const { data } = await Service.getUsersByProjectId(projectId);
 	res.success(data, 'Lista de usuarios obtenida correctamente');
 };
 
@@ -56,4 +65,4 @@ const deleteUser = async (req, res) => {
 	}
 };
 
-export const Controller = { getUsers, createUser, updateUser, deleteUser };
+export const Controller = { getUsers, createUser, updateUser, deleteUser, getUsersByProjectId };

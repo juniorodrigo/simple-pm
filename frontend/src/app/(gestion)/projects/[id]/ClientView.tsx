@@ -16,7 +16,7 @@ import { ExtendedProject } from "@/types/new/project.type";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { getTagColorClass } from "@/lib/colors";
-import CreateProjectForm from "@/components/projects/create-project-form";
+import CreateProjectForm from "@/components/projects/project-form";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
@@ -31,6 +31,7 @@ export default function ClientView({ project: initialProject, activities: initia
 	const { user } = useAuth();
 	const isViewer = user?.role === "viewer";
 	const router = useRouter();
+	const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
 	// Estado inicial
 	const [project, setProject] = useState<ExtendedProject>(initialProject);
@@ -108,7 +109,26 @@ export default function ClientView({ project: initialProject, activities: initia
 									<h1 className="text-2xl font-bold">{project.name}</h1>
 									{project.categoryName && project.categoryColor && <div className={`px-3 py-1 text-xs rounded-full font-medium border ${getTagColorClass(project.categoryColor)}`}>{project.categoryName}</div>}
 								</div>
-								<p className="text-muted-foreground">{project.description}</p>
+								<div className="space-y-2">
+									<p className="text-muted-foreground text-justify">
+										{isDescriptionExpanded || (project.description || "").length <= 120 ? project.description || "" : (project.description || "").slice(0, 120) + "..."}
+										{project.description && project.description.length > 120 && (
+											<Button variant="ghost" size="sm" className="p-0 h-auto text-muted-foreground hover:text-foreground align-baseline ml-2" onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}>
+												{isDescriptionExpanded ? (
+													<>
+														<ChevronUp className="h-4 w-4 mr-1 inline" />
+														Mostrar menos
+													</>
+												) : (
+													<>
+														<ChevronDown className="h-4 w-4 mr-1 inline" />
+														Leer más
+													</>
+												)}
+											</Button>
+										)}
+									</p>
+								</div>
 							</div>
 						</div>
 						{!isViewer && (
