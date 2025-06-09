@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Search, Edit, Plus, Trash2, Loader2, Building2, AlertTriangle, Save, X } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AreaService } from "@/services/new/area.service";
@@ -383,14 +383,16 @@ export default function AreasSettings() {
 																<DialogHeader>
 																	<DialogTitle>Confirmar eliminación</DialogTitle>
 																	<DialogDescription className="space-y-2">
-																		<p>
+																		<span>
 																			¿Estás seguro de que quieres eliminar el área <strong>&quot;{area.name}&quot;</strong>?
-																		</p>
-																		<p className="text-sm text-muted-foreground">Esta acción no se puede deshacer.</p>
+																		</span>
+																		<span className="text-sm text-muted-foreground">Esta acción no se puede deshacer.</span>
 																	</DialogDescription>
 																</DialogHeader>
 																<DialogFooter>
-																	<Button variant="outline">Cancelar</Button>
+																	<DialogClose asChild>
+																		<Button variant="outline">Cancelar</Button>
+																	</DialogClose>
 																	<Button variant="destructive" onClick={() => handleDeleteArea(area)} disabled={isSubmitting}>
 																		{isSubmitting ? (
 																			<>
