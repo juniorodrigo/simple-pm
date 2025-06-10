@@ -121,7 +121,7 @@ export const ActivityCard = memo(
 					</div>
 					{/* Título y descripción */}
 					<div className="mb-3">
-						<div className="font-bold text-base text-white mb-1">{activity.title}</div>
+						<div className="font-bold text-base mb-1">{activity.title}</div>
 						<p className="text-xs text-zinc-400 line-clamp-2">{activity.description}</p>
 					</div>
 					{/* Footer */}
