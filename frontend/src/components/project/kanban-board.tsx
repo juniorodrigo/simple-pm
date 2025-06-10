@@ -17,6 +17,7 @@ import {
 	useDroppable,
 	MeasuringStrategy,
 } from "@dnd-kit/core";
+import { Lock } from "lucide-react";
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { BaseActivity } from "@/types/activity.type";
 import { BaseStage } from "@/types/stage.type";
@@ -47,7 +48,7 @@ const LANES = Object.values(ActivityStatus).map((statusValue) => ({
 const STATUS_ORDER = [ActivityStatus.TODO, ActivityStatus.IN_PROGRESS, ActivityStatus.REVIEW, ActivityStatus.DONE];
 
 // Componente principal optimizado
-export default function KanbanBoard({ activities: initialActivities, stages, onActivityChange, onActivityClick }: KanbanBoardProps) {
+export default function KanbanBoard({ activities: initialActivities, stages, onActivityChange, onActivityClick, isViewer }: KanbanBoardProps) {
 	const [activities, setActivities] = useState<BaseActivity[]>([]);
 	const [activeId, setActiveId] = useState<string | null>(null);
 	const [overId, setOverId] = useState<string | null>(null);
@@ -134,13 +135,22 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 	}, []);
 
 	// Callbacks optimizados
-	const handleDragStart = useCallback((event: DragStartEvent) => {
-		const { active } = event;
-		setActiveId(active.id as string);
-	}, []);
+	const handleDragStart = useCallback(
+		(event: DragStartEvent) => {
+			if (isViewer) return;
+			const { active } = event;
+			setActiveId(active.id as string);
+		},
+		[isViewer]
+	);
 
 	const handleDragEnd = useCallback(
 		async (event: DragEndEvent) => {
+			if (isViewer) {
+				setActiveId(null);
+				setOverId(null);
+				return;
+			}
 			const { active, over } = event;
 			if (!over) {
 				setActiveId(null);
@@ -205,7 +215,7 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 			setActiveId(null);
 			setOverId(null);
 		},
-		[activities, onActivityChange, toast]
+		[activities, onActivityChange, toast, isViewer]
 	);
 
 	// Manejar el éxito del registro de fechas de ejecución
@@ -273,10 +283,14 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 	);
 
 	// Nuevo manejador para el evento dragOver
-	const handleDragOver = useCallback((event: DragOverEvent) => {
-		const { over } = event;
-		setOverId((over?.id as string) || null);
-	}, []);
+	const handleDragOver = useCallback(
+		(event: DragOverEvent) => {
+			if (isViewer) return;
+			const { over } = event;
+			setOverId((over?.id as string) || null);
+		},
+		[isViewer]
+	);
 
 	// Nuevo manejador para confirmar el retroceso
 	const handleRollbackConfirm = useCallback(async () => {
@@ -312,36 +326,46 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 
 	return (
 		<>
-			<DndContext
-				sensors={sensors}
-				onDragStart={handleDragStart}
-				onDragEnd={handleDragEnd}
-				onDragOver={handleDragOver}
-				collisionDetection={closestCenter}
-				measuring={{
-					droppable: {
-						strategy: MeasuringStrategy.Always,
-					},
-				}}
-			>
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 h-full">
-					{LANES.map((lane) => (
-						<LaneContainer
-							key={lane.id}
-							lane={lane}
-							activities={laneActivities[lane.id] || []}
-							getPriorityColor={getPriorityColor}
-							stages={stages}
-							onDeleteActivity={handleDeleteActivity}
-							onActivityClick={handleActivityClick}
-							isOver={overId === lane.id}
-						/>
-					))}
-				</div>
+			<div className="flex flex-col h-full">
+				{/* Indicador de bloqueo */}
+				{isViewer && (
+					<div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2 text-amber-800 flex-shrink-0">
+						<Lock className="h-4 w-4" />
+						<span className="text-sm font-medium">Este tablero está bloqueado. No se pueden realizar cambios porque el proyecto está completado o archivado.</span>
+					</div>
+				)}
 
-				<DragOverlay>{activeId ? <ActivityCard activity={activities.find((a) => a.id === activeId)!} stages={stages} /> : null}</DragOverlay>
-			</DndContext>
+				<DndContext
+					sensors={sensors}
+					onDragStart={handleDragStart}
+					onDragEnd={handleDragEnd}
+					onDragOver={handleDragOver}
+					collisionDetection={closestCenter}
+					measuring={{
+						droppable: {
+							strategy: MeasuringStrategy.Always,
+						},
+					}}
+				>
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 flex-1 min-h-0">
+						{LANES.map((lane) => (
+							<LaneContainer
+								key={lane.id}
+								lane={lane}
+								activities={laneActivities[lane.id] || []}
+								getPriorityColor={getPriorityColor}
+								stages={stages}
+								onDeleteActivity={isViewer ? undefined : handleDeleteActivity}
+								onActivityClick={handleActivityClick}
+								isOver={overId === lane.id}
+								isViewer={isViewer}
+							/>
+						))}
+					</div>
 
+					<DragOverlay>{activeId && !isViewer ? <ActivityCard activity={activities.find((a) => a.id === activeId)!} stages={stages} /> : null}</DragOverlay>
+				</DndContext>
+			</div>
 			{/* Modal de confirmación de eliminación */}
 			<Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
 				<DialogContent className="sm:max-w-[425px]">
@@ -412,14 +436,16 @@ const LaneContainer = memo(
 		onDeleteActivity,
 		onActivityClick,
 		isOver,
+		isViewer,
 	}: {
 		lane: { id: string; title: string };
 		activities: BaseActivity[];
 		getPriorityColor: (priority: string) => string;
 		stages: BaseStage[];
-		onDeleteActivity: (id: string) => void;
+		onDeleteActivity?: (id: string) => void;
 		onActivityClick?: (activity: BaseActivity) => void;
 		isOver: boolean;
+		isViewer?: boolean;
 	}) => {
 		const { setNodeRef } = useDroppable({
 			id: lane.id,
@@ -446,7 +472,7 @@ const LaneContainer = memo(
 						<SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
 							<div className="space-y-3">
 								{activities.map((activity) => (
-									<SortableItem key={activity.id} activity={activity} getPriorityColor={getPriorityColor} stages={stages} onDelete={onDeleteActivity} onClick={onActivityClick} />
+									<SortableItem key={activity.id} activity={activity} getPriorityColor={getPriorityColor} stages={stages} onDelete={onDeleteActivity} onClick={onActivityClick} isViewer={isViewer} />
 								))}
 							</div>
 						</SortableContext>
@@ -467,12 +493,14 @@ const SortableItem = memo(
 		stages,
 		onDelete,
 		onClick,
+		isViewer,
 	}: {
 		activity: BaseActivity;
 		getPriorityColor: (priority: string) => string;
 		stages: BaseStage[];
 		onDelete?: (id: string) => void;
 		onClick?: (activity: BaseActivity) => void;
+		isViewer?: boolean;
 	}) => {
 		const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
 			id: activity.id,
@@ -481,6 +509,7 @@ const SortableItem = memo(
 				activity,
 				status: activity.status,
 			},
+			disabled: isViewer,
 		});
 
 		const style = {
@@ -488,12 +517,12 @@ const SortableItem = memo(
 			transition,
 			opacity: isDragging ? 0.5 : 1,
 			zIndex: isDragging ? 1 : 0,
-			cursor: "grab",
-			touchAction: "none",
+			cursor: isViewer ? "default" : "grab",
+			touchAction: isViewer ? "auto" : "none",
 		};
 
 		return (
-			<div ref={setNodeRef} style={style} {...attributes} {...listeners} className="touch-none">
+			<div ref={setNodeRef} style={style} {...attributes} {...listeners} className={isViewer ? "" : "touch-none"}>
 				<ActivityCard activity={activity} stages={stages} onDelete={onDelete} onClick={onClick} />
 			</div>
 		);

@@ -4,6 +4,17 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Edit, Plus, ListPlus, ChevronDown, ChevronUp, X, BarChart3, ArrowLeft, Folder, Target } from "lucide-react";
 import KanbanBoard from "@/components/project/kanban-board";
 import GanttChart from "@/components/project/gantt-chart";
@@ -21,6 +32,8 @@ import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
 import { ProjectStatus, ProjectStatusLabels } from "@/types/enums";
+import { ProjectsService } from "@/services/project.service";
+import { ArchiveRestore, RotateCcw, Check } from "lucide-react";
 
 interface ClientViewProps {
 	project: ExtendedProject;
@@ -31,6 +44,7 @@ export default function ClientView({ project: initialProject, activities: initia
 	const { toast } = useToast();
 	const { user } = useAuth();
 	const isViewer = user?.role === "viewer";
+	const isEditor = user?.role === "admin" || user?.role === "editor";
 	const router = useRouter();
 	const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
@@ -46,6 +60,7 @@ export default function ClientView({ project: initialProject, activities: initia
 	const [statsVisible, setStatsVisible] = useState(false);
 	const [selectedStageId, setSelectedStageId] = useState<string>("all");
 	const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false);
+	const [isUpdating, setIsUpdating] = useState(false);
 
 	// Normalizar el status del proyecto
 	const normalizedStatus = project.status || "pending";
@@ -73,6 +88,7 @@ export default function ClientView({ project: initialProject, activities: initia
 	// Usar comparaciones con strings literales como en project-card.tsx
 	const isProjectCompleted = project.status === "completed";
 	const isProjectArchived = project.archived === true;
+	const isProjectInReview = project.status === "review";
 
 	// Filtrado
 	const filteredActivities = selectedStageId !== "all" ? projectActivities.filter((a) => a.stageId === selectedStageId) : projectActivities;
@@ -107,6 +123,96 @@ export default function ClientView({ project: initialProject, activities: initia
 		setIsEditProjectModalOpen(false);
 		toast({ title: "Proyecto actualizado con éxito" });
 		// Opcional: re-fetch si hace falta
+	};
+
+	const handleUnarchiveProject = async () => {
+		if (isUpdating) return;
+
+		setIsUpdating(true);
+		try {
+			const updateData = { id: project.id, archived: false };
+			const result = await ProjectsService.updateProject(project.id.toString(), updateData);
+
+			if (result.success) {
+				toast({
+					title: "Proyecto desarchivado",
+					description: "El proyecto ha sido desarchivado exitosamente",
+				});
+
+				// Actualizar el proyecto localmente
+				setProject({ ...project, archived: false });
+			} else {
+				throw new Error(result.message || "Error al desarchivar el proyecto");
+			}
+		} catch (error) {
+			toast({
+				title: "Error",
+				description: error instanceof Error ? error.message : "Error al desarchivar el proyecto",
+				variant: "destructive",
+			});
+		} finally {
+			setIsUpdating(false);
+		}
+	};
+
+	const handleReturnToReview = async () => {
+		if (isUpdating) return;
+
+		setIsUpdating(true);
+		try {
+			const updateData = { id: project.id, status: "review" };
+			const result = await ProjectsService.updateProject(project.id.toString(), updateData);
+
+			if (result.success) {
+				toast({
+					title: "Proyecto regresado a revisión",
+					description: "El proyecto ha sido regresado a revisión exitosamente",
+				});
+
+				// Actualizar el proyecto localmente
+				setProject({ ...project, status: "review" });
+			} else {
+				throw new Error(result.message || "Error al regresar el proyecto a revisión");
+			}
+		} catch (error) {
+			toast({
+				title: "Error",
+				description: error instanceof Error ? error.message : "Error al regresar el proyecto a revisión",
+				variant: "destructive",
+			});
+		} finally {
+			setIsUpdating(false);
+		}
+	};
+
+	const handleCompleteProject = async () => {
+		if (isUpdating) return;
+
+		setIsUpdating(true);
+		try {
+			const updateData = { id: project.id, status: "completed" };
+			const result = await ProjectsService.updateProject(project.id.toString(), updateData);
+
+			if (result.success) {
+				toast({
+					title: "Proyecto completado",
+					description: "El proyecto ha sido completado exitosamente",
+				});
+
+				// Actualizar el proyecto localmente
+				setProject({ ...project, status: "completed" });
+			} else {
+				throw new Error(result.message || "Error al completar el proyecto");
+			}
+		} catch (error) {
+			toast({
+				title: "Error",
+				description: error instanceof Error ? error.message : "Error al completar el proyecto",
+				variant: "destructive",
+			});
+		} finally {
+			setIsUpdating(false);
+		}
 	};
 
 	// ——— UI ———
@@ -169,69 +275,148 @@ export default function ClientView({ project: initialProject, activities: initia
 								</div>
 							</div>
 						</div>
-						{!isViewer && !isProjectCompleted && (
-							<div className="flex gap-2">
-								{/* Mostrar/Ocultar resumen */}
-								<Button variant="outline" size="sm" onClick={() => setStatsVisible(!statsVisible)}>
-									<BarChart3 className="mr-2 h-4 w-4" />
-									{statsVisible ? "Ocultar resumen" : "Mostrar resumen"}
-								</Button>
 
-								{/* Editar proyecto */}
-								<Dialog open={isEditProjectModalOpen} onOpenChange={setIsEditProjectModalOpen}>
-									<Button variant="outline" size="sm" onClick={() => setIsEditProjectModalOpen(true)}>
-										<Edit className="mr-2 h-4 w-4" /> Editar
-									</Button>
-									<DialogContent className="sm:max-w-[700px]">
-										<DialogTitle>Editar Proyecto</DialogTitle>
-										<DialogDescription>Actualiza los detalles del proyecto</DialogDescription>
-										<CreateProjectForm isEditing projectData={project} onSuccess={handleProjectUpdated} />
-									</DialogContent>
-								</Dialog>
+						<div className="flex gap-2">
+							{/* Mostrar/Ocultar resumen */}
+							<Button variant="outline" size="sm" onClick={() => setStatsVisible(!statsVisible)}>
+								<BarChart3 className="mr-2 h-4 w-4" />
+								{statsVisible ? "Ocultar resumen" : "Mostrar resumen"}
+							</Button>
 
-								{/* Gestionar etapas */}
-								<Dialog open={isStagesModalOpen} onOpenChange={setIsStagesModalOpen}>
-									<Button variant="outline" size="sm" onClick={() => setIsStagesModalOpen(true)}>
-										<ListPlus className="mr-2 h-4 w-4" /> Etapas
-									</Button>
-									<DialogContent className="sm:max-w-[700px]">
-										<DialogTitle>Gestionar Etapas del Proyecto</DialogTitle>
-										<DialogDescription>Crea y gestiona las etapas del proyecto</DialogDescription>
-										<ProjectStagesModal projectId={project.id} stages={projectStages} onClose={() => setIsStagesModalOpen(false)} onSave={handleUpdateStages} />
-									</DialogContent>
-								</Dialog>
+							{/* Botón Desarchivar - solo si está archivado */}
+							{isProjectArchived && isEditor && (
+								<AlertDialog>
+									<AlertDialogTrigger asChild>
+										<Button variant="outline" size="sm" disabled={isUpdating}>
+											<ArchiveRestore className="mr-2 h-4 w-4" />
+											{isUpdating ? "Desarchivando..." : "Desarchivar"}
+										</Button>
+									</AlertDialogTrigger>
+									<AlertDialogContent>
+										<AlertDialogHeader>
+											<AlertDialogTitle>¿Desarchivar proyecto?</AlertDialogTitle>
+											<AlertDialogDescription>
+												¿Estás seguro de que deseas desarchivar el proyecto &quot;{project.name}&quot;? El proyecto volverá a aparecer en las listas principales y podrás realizar cambios.
+											</AlertDialogDescription>
+										</AlertDialogHeader>
+										<AlertDialogFooter>
+											<AlertDialogCancel>Cancelar</AlertDialogCancel>
+											<AlertDialogAction onClick={handleUnarchiveProject} disabled={isUpdating}>
+												{isUpdating ? "Desarchivando..." : "Desarchivar"}
+											</AlertDialogAction>
+										</AlertDialogFooter>
+									</AlertDialogContent>
+								</AlertDialog>
+							)}
 
-								{/* Nueva actividad */}
-								<Dialog
-									open={isActivityModalOpen}
-									onOpenChange={(open) => {
-										setIsActivityModalOpen(open);
-										if (!open) setEditingActivity(null);
-									}}
-								>
-									<Button size="sm" onClick={() => setIsActivityModalOpen(true)}>
-										<Plus className="mr-2 h-4 w-4" /> Nueva Actividad
-									</Button>
-									<DialogContent className="sm:max-w-[600px]">
-										<DialogTitle>{editingActivity ? "Editar Actividad" : "Nueva Actividad"}</DialogTitle>
-										<DialogDescription>{editingActivity ? "Actualiza los detalles de la actividad" : "Crea una actividad para el proyecto"}</DialogDescription>
-										<CreateActivityModal
-											projectId={project.id}
-											stages={projectStages}
-											activity={editingActivity}
-											onClose={() => setIsActivityModalOpen(false)}
-											onSuccess={(act) => {
-												if (editingActivity) {
-													handleActivityChange(projectActivities.map((a) => (a.id === act.id ? act : a)));
-												} else {
-													handleAddActivity(act);
-												}
-											}}
-										/>
-									</DialogContent>
-								</Dialog>
-							</div>
-						)}
+							{/* Botón Completar - solo si está en revisión */}
+							{isProjectInReview && !isProjectArchived && isEditor && (
+								<AlertDialog>
+									<AlertDialogTrigger asChild>
+										<Button variant="outline" size="sm" disabled={isUpdating}>
+											<Check className="mr-2 h-4 w-4" />
+											{isUpdating ? "Completando..." : "Completar"}
+										</Button>
+									</AlertDialogTrigger>
+									<AlertDialogContent>
+										<AlertDialogHeader>
+											<AlertDialogTitle>¿Completar proyecto?</AlertDialogTitle>
+											<AlertDialogDescription>¿Estás seguro de que deseas marcar el proyecto &quot;{project.name}&quot; como completado? Esta acción cambiará el estado del proyecto.</AlertDialogDescription>
+										</AlertDialogHeader>
+										<AlertDialogFooter>
+											<AlertDialogCancel>Cancelar</AlertDialogCancel>
+											<AlertDialogAction onClick={handleCompleteProject} disabled={isUpdating}>
+												{isUpdating ? "Completando..." : "Completar"}
+											</AlertDialogAction>
+										</AlertDialogFooter>
+									</AlertDialogContent>
+								</AlertDialog>
+							)}
+
+							{/* Botón Regresar a revisión - solo si está completado pero no archivado */}
+							{isProjectCompleted && !isProjectArchived && isEditor && (
+								<AlertDialog>
+									<AlertDialogTrigger asChild>
+										<Button variant="outline" size="sm" disabled={isUpdating}>
+											<RotateCcw className="mr-2 h-4 w-4" />
+											{isUpdating ? "Regresando..." : "Regresar a revisión"}
+										</Button>
+									</AlertDialogTrigger>
+									<AlertDialogContent>
+										<AlertDialogHeader>
+											<AlertDialogTitle>¿Regresar proyecto a revisión?</AlertDialogTitle>
+											<AlertDialogDescription>
+												¿Estás seguro de que deseas regresar el proyecto &quot;{project.name}&quot; al estado de revisión? Esto permitirá realizar cambios nuevamente.
+											</AlertDialogDescription>
+										</AlertDialogHeader>
+										<AlertDialogFooter>
+											<AlertDialogCancel>Cancelar</AlertDialogCancel>
+											<AlertDialogAction onClick={handleReturnToReview} disabled={isUpdating}>
+												{isUpdating ? "Regresando..." : "Regresar a revisión"}
+											</AlertDialogAction>
+										</AlertDialogFooter>
+									</AlertDialogContent>
+								</AlertDialog>
+							)}
+
+							{!isProjectCompleted && !isProjectArchived && isEditor && (
+								<>
+									{/* Editar proyecto */}
+									<Dialog open={isEditProjectModalOpen} onOpenChange={setIsEditProjectModalOpen}>
+										<Button variant="outline" size="sm" onClick={() => setIsEditProjectModalOpen(true)}>
+											<Edit className="mr-2 h-4 w-4" /> Editar
+										</Button>
+										<DialogContent className="sm:max-w-[700px]">
+											<DialogTitle>Editar Proyecto</DialogTitle>
+											<DialogDescription>Actualiza los detalles del proyecto</DialogDescription>
+											<CreateProjectForm isEditing projectData={project} onSuccess={handleProjectUpdated} />
+										</DialogContent>
+									</Dialog>
+
+									{/* Gestionar etapas */}
+									<Dialog open={isStagesModalOpen} onOpenChange={setIsStagesModalOpen}>
+										<Button variant="outline" size="sm" onClick={() => setIsStagesModalOpen(true)}>
+											<ListPlus className="mr-2 h-4 w-4" /> Etapas
+										</Button>
+										<DialogContent className="sm:max-w-[700px]">
+											<DialogTitle>Gestionar Etapas del Proyecto</DialogTitle>
+											<DialogDescription>Crea y gestiona las etapas del proyecto</DialogDescription>
+											<ProjectStagesModal projectId={project.id} stages={projectStages} onClose={() => setIsStagesModalOpen(false)} onSave={handleUpdateStages} />
+										</DialogContent>
+									</Dialog>
+
+									{/* Nueva actividad */}
+									<Dialog
+										open={isActivityModalOpen}
+										onOpenChange={(open) => {
+											setIsActivityModalOpen(open);
+											if (!open) setEditingActivity(null);
+										}}
+									>
+										<Button size="sm" onClick={() => setIsActivityModalOpen(true)}>
+											<Plus className="mr-2 h-4 w-4" /> Nueva Actividad
+										</Button>
+										<DialogContent className="sm:max-w-[600px]">
+											<DialogTitle>{editingActivity ? "Editar Actividad" : "Nueva Actividad"}</DialogTitle>
+											<DialogDescription>{editingActivity ? "Actualiza los detalles de la actividad" : "Crea una actividad para el proyecto"}</DialogDescription>
+											<CreateActivityModal
+												projectId={project.id}
+												stages={projectStages}
+												activity={editingActivity}
+												onClose={() => setIsActivityModalOpen(false)}
+												onSuccess={(act) => {
+													if (editingActivity) {
+														handleActivityChange(projectActivities.map((a) => (a.id === act.id ? act : a)));
+													} else {
+														handleAddActivity(act);
+													}
+												}}
+											/>
+										</DialogContent>
+									</Dialog>
+								</>
+							)}
+						</div>
 					</div>
 				</div>
 			</div>
@@ -248,7 +433,7 @@ export default function ClientView({ project: initialProject, activities: initia
 			)}
 
 			{/* Filtros y vistas */}
-			<div className="flex justify-between items-center flex-shrink-0">
+			<div className="flex justify-between items-center">
 				<h2 className="text-xl font-bold"></h2>
 				<div className="flex flex-wrap gap-2 items-center">
 					{activeView === "gantt" && (
@@ -293,19 +478,19 @@ export default function ClientView({ project: initialProject, activities: initia
 
 			{/* Tablero / Gantt */}
 			<div className="flex-1 min-h-0">
-				<div className="border rounded-lg p-4 h-full">
+				<div className="border rounded-lg px-4 py-2 h-full">
 					{activeView === "kanban" ? (
 						<KanbanBoard
 							activities={filteredActivities}
 							stages={projectStages}
-							onActivityChange={isViewer || isProjectCompleted ? undefined : handleActivityChange}
+							onActivityChange={isViewer || isProjectCompleted || isProjectArchived ? undefined : handleActivityChange}
 							onActivityClick={(a) => {
-								if (!isProjectCompleted) {
+								if (!isProjectCompleted && !isProjectArchived) {
 									setEditingActivity(a);
 									setIsActivityModalOpen(true);
 								}
 							}}
-							isViewer={isViewer || isProjectCompleted}
+							isViewer={isViewer || isProjectCompleted || isProjectArchived}
 						/>
 					) : (
 						<GanttChart activities={filteredActivities} stages={projectStages} viewMode={ganttViewMode} />

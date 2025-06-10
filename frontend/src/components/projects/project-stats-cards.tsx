@@ -112,7 +112,9 @@ export default function ProjectStatsCards({ project, activities }: ProjectStatsC
 				<CardContent className="py-2 px-3">
 					<div className="text-xs mb-2 flex justify-between">
 						<span className="text-muted-foreground">Total:</span>
-						<span className="font-medium">{activities.length} actividades</span>
+						<span className="font-medium">
+							{activities.length} {activities.length === 1 ? "actividad" : "actividades"}
+						</span>
 					</div>
 					<div className="grid grid-cols-3 gap-1 text-[10px]">
 						<div className="flex flex-col items-center justify-center rounded-lg bg-red-50 border border-red-100 p-1.5">
@@ -147,7 +149,9 @@ export default function ProjectStatsCards({ project, activities }: ProjectStatsC
 				</CardHeader>
 				<CardContent className="py-2 px-3">
 					<div className="flex items-center mb-2 justify-between">
-						<div className="bg-amber-50 text-amber-700 font-medium rounded-full px-2 py-0.5 text-xs border border-amber-200">{project.team.length} miembros</div>
+						<div className="bg-amber-50 text-amber-700 font-medium rounded-full px-2 py-0.5 text-xs border border-amber-200">
+							{project.team.length + 1} {project.team.length + 1 === 1 ? "miembro" : "miembros"}
+						</div>
 						<div className="flex -space-x-1.5">
 							{project.team.slice(0, 3).map((member, i) => (
 								<Avatar key={i} className="h-5 w-5 border-2 border-background">
