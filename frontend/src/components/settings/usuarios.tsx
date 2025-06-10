@@ -9,10 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Search, Edit, Plus, Trash2, Loader2, Users, AlertTriangle, Save, X } from "lucide-react";
+import { Search, Edit, Plus, Trash2, Loader2, Users, AlertTriangle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-
 import { UserService } from "@/services/new/user.service";
 import { SelectService } from "@/services/select.service";
 import { useToast } from "@/hooks/use-toast";
@@ -70,6 +69,25 @@ export default function UserManagement() {
 			name: "Usuario",
 			description: "Acceso de solo lectura a proyectos y actividades",
 			permissions: ["Ver todos los proyectos y actividades"],
+		},
+		{
+			id: Role.GERENTE_AREA,
+			name: "Gerente de Área",
+			description: "Puede gestionar proyectos y actividades de su área",
+			permissions: ["Crear y gestionar proyectos", "Crear y gestionar actividades", "Ver todos los proyectos y actividades", "Gestionar etiquetas"],
+		},
+		{
+			id: Role.GERENTE_GENERAL,
+			name: "Gerente General",
+			description: "Acceso completo a todas las funciones y configuraciones",
+			permissions: [
+				"Gestionar usuarios y roles",
+				"Crear y gestionar proyectos",
+				"Crear y gestionar actividades",
+				"Ver todos los proyectos y actividades",
+				"Gestionar etiquetas",
+				"Acceder a configuraciones del sistema",
+			],
 		},
 	];
 

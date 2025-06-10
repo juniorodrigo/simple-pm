@@ -166,6 +166,8 @@ enum Role {
   editor
   admin
   viewer
+  gerente_area
+  gerente_general
 }
 
 enum UserActionTipe {
