@@ -33,7 +33,7 @@ export default function UserManagement() {
 		name: "",
 		lastname: "",
 		email: "",
-		role: Role.USER,
+		role: Role.VIEWER,
 		isActive: true,
 		areaId: "",
 		area: {
@@ -65,8 +65,8 @@ export default function UserManagement() {
 			permissions: ["Crear y gestionar proyectos", "Crear y gestionar actividades", "Ver todos los proyectos y actividades", "Gestionar etiquetas"],
 		},
 		{
-			id: Role.USER,
-			name: "Usuario",
+			id: Role.VIEWER,
+			name: "Visualizador",
 			description: "Acceso de solo lectura a proyectos y actividades",
 			permissions: ["Ver todos los proyectos y actividades"],
 		},
@@ -189,7 +189,7 @@ export default function UserManagement() {
 				name: "",
 				lastname: "",
 				email: "",
-				role: Role.USER,
+				role: Role.VIEWER,
 				isActive: true,
 				areaId: "",
 				area: {
@@ -209,7 +209,7 @@ export default function UserManagement() {
 			name: "",
 			lastname: "",
 			email: "",
-			role: Role.USER,
+			role: Role.VIEWER,
 			isActive: true,
 			areaId: "",
 			area: {
@@ -336,7 +336,7 @@ export default function UserManagement() {
 				return "bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200";
 			case Role.EDITOR:
 				return "bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200";
-			case Role.USER:
+			case Role.VIEWER:
 				return "bg-green-100 text-green-800 border-green-200 hover:bg-green-200";
 			default:
 				return "bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200";

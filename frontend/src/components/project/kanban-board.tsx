@@ -331,7 +331,7 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 				{isViewer && (
 					<div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2 text-amber-800 flex-shrink-0">
 						<Lock className="h-4 w-4" />
-						<span className="text-sm font-medium">Este tablero está bloqueado. No se pueden realizar cambios porque el proyecto está completado o archivado.</span>
+						<span className="text-sm font-medium">Este tablero está bloqueado por estar completado, archivado o ser un usuario visualizador.</span>
 					</div>
 				)}
 

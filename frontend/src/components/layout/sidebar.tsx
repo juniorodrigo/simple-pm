@@ -12,9 +12,11 @@ import { KanbanSquare, Settings, Menu, X, ChevronLeft, ChevronRight } from "luci
 import Image from "next/image";
 import { useMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/auth-context";
+import { Role } from "@/types/enums";
 
 export default function Sidebar() {
 	const pathname = usePathname();
+
 	const isMobile = useMobile();
 	const { user, logout } = useAuth();
 	const [isOpen, setIsOpen] = useState(false);
@@ -45,13 +47,16 @@ export default function Sidebar() {
 			icon: KanbanSquare,
 			current: pathname === "/projects" || pathname.startsWith("/projects/"),
 		},
-		{
+	];
+
+	if (user?.role != Role.VIEWER) {
+		navigation.push({
 			name: "Configuración",
 			href: "/settings",
 			icon: Settings,
 			current: pathname === "/settings",
-		},
-	];
+		});
+	}
 
 	const sidebarClasses = cn("bg-background h-full border-r flex-col z-30 transition-all duration-300 ease-in-out", isMobile ? "fixed" : "hidden md:flex", isCollapsed && !isMobile ? "w-20" : "w-64");
 

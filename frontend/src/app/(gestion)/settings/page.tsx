@@ -7,10 +7,13 @@ import UserManagement from "@/components/settings/usuarios";
 import GeneralSettings from "@/components/settings/general";
 import TagsSettings from "@/components/settings/categorias";
 import AreasSettings from "@/components/settings/areas";
+import { useAuth } from "@/contexts/auth-context";
+import { Role } from "@/types/enums";
 
 export default function SettingsPage() {
+	const { user } = useAuth();
 	const searchParams = useSearchParams();
-	const [activeTab, setActiveTab] = useState("general");
+	const [activeTab, setActiveTab] = useState("tags");
 
 	useEffect(() => {
 		const tab = searchParams.get("tab");
@@ -28,10 +31,10 @@ export default function SettingsPage() {
 
 			<Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
 				<TabsList>
-					<TabsTrigger value="general">General</TabsTrigger>
-					<TabsTrigger value="users">Usuarios y Roles</TabsTrigger>
-					<TabsTrigger value="tags">Categorías de Proyectos</TabsTrigger>
-					<TabsTrigger value="areas">Áreas</TabsTrigger>
+					{user?.role === Role.ADMIN && <TabsTrigger value="general">General</TabsTrigger>}
+					{user?.role === Role.ADMIN && <TabsTrigger value="users">Usuarios y Roles</TabsTrigger>}
+					{<TabsTrigger value="tags">Categorías de Proyectos</TabsTrigger>}
+					{user?.role === Role.ADMIN && <TabsTrigger value="areas">Áreas</TabsTrigger>}
 				</TabsList>
 
 				<TabsContent value="general" className="space-y-4">

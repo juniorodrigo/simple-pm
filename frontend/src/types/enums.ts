@@ -30,6 +30,8 @@ export enum Role {
 	EDITOR = "editor",
 	ADMIN = "admin",
 	VIEWER = "viewer",
+	GERENTE_AREA = "gerente_area",
+	GERENTE_GENERAL = "gerente_general",
 }
 
 export enum UserActionType {
