@@ -35,7 +35,7 @@ interface KanbanBoardProps {
 	stages: BaseStage[];
 	onActivityChange?: (updatedActivities: BaseActivity[]) => void;
 	onActivityClick?: (activity: BaseActivity) => void;
-	isViewer?: boolean; // Nueva propiedad para controlar permisos
+	isViewer?: boolean; // Propiedad unificada para controlar acceso (modo vista)
 }
 
 // Generar las columnas (lanes) automáticamente desde el enum ActivityStatus y sus etiquetas
@@ -48,7 +48,7 @@ const LANES = Object.values(ActivityStatus).map((statusValue) => ({
 const STATUS_ORDER = [ActivityStatus.TODO, ActivityStatus.IN_PROGRESS, ActivityStatus.REVIEW, ActivityStatus.DONE];
 
 // Componente principal optimizado
-export default function KanbanBoard({ activities: initialActivities, stages, onActivityChange, onActivityClick, isViewer }: KanbanBoardProps) {
+export default function KanbanBoard({ activities: initialActivities, stages, onActivityChange, onActivityClick, isViewer: isInViewMode }: KanbanBoardProps) {
 	const [activities, setActivities] = useState<BaseActivity[]>([]);
 	const [activeId, setActiveId] = useState<string | null>(null);
 	const [overId, setOverId] = useState<string | null>(null);
@@ -137,16 +137,16 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 	// Callbacks optimizados
 	const handleDragStart = useCallback(
 		(event: DragStartEvent) => {
-			if (isViewer) return;
+			if (isInViewMode) return;
 			const { active } = event;
 			setActiveId(active.id as string);
 		},
-		[isViewer]
+		[isInViewMode]
 	);
 
 	const handleDragEnd = useCallback(
 		async (event: DragEndEvent) => {
-			if (isViewer) {
+			if (isInViewMode) {
 				setActiveId(null);
 				setOverId(null);
 				return;
@@ -215,7 +215,7 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 			setActiveId(null);
 			setOverId(null);
 		},
-		[activities, onActivityChange, toast, isViewer]
+		[activities, onActivityChange, toast, isInViewMode]
 	);
 
 	// Manejar el éxito del registro de fechas de ejecución
@@ -285,11 +285,11 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 	// Nuevo manejador para el evento dragOver
 	const handleDragOver = useCallback(
 		(event: DragOverEvent) => {
-			if (isViewer) return;
+			if (isInViewMode) return;
 			const { over } = event;
 			setOverId((over?.id as string) || null);
 		},
-		[isViewer]
+		[isInViewMode]
 	);
 
 	// Nuevo manejador para confirmar el retroceso
@@ -328,7 +328,7 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 		<>
 			<div className="flex flex-col h-full">
 				{/* Indicador de bloqueo */}
-				{isViewer && (
+				{isInViewMode && (
 					<div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2 text-amber-800 flex-shrink-0">
 						<Lock className="h-4 w-4" />
 						<span className="text-sm font-medium">Este tablero está bloqueado por estar completado, archivado o ser un usuario visualizador.</span>
@@ -355,15 +355,15 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 								activities={laneActivities[lane.id] || []}
 								getPriorityColor={getPriorityColor}
 								stages={stages}
-								onDeleteActivity={isViewer ? undefined : handleDeleteActivity}
+								onDeleteActivity={isInViewMode ? undefined : handleDeleteActivity}
 								onActivityClick={handleActivityClick}
 								isOver={overId === lane.id}
-								isViewer={isViewer}
+								isViewer={isInViewMode}
 							/>
 						))}
 					</div>
 
-					<DragOverlay>{activeId && !isViewer ? <ActivityCard activity={activities.find((a) => a.id === activeId)!} stages={stages} /> : null}</DragOverlay>
+					<DragOverlay>{activeId && !isInViewMode ? <ActivityCard activity={activities.find((a) => a.id === activeId)!} stages={stages} /> : null}</DragOverlay>
 				</DndContext>
 			</div>
 			{/* Modal de confirmación de eliminación */}

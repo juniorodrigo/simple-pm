@@ -65,30 +65,13 @@ export default function ClientView({ project: initialProject, activities: initia
 	// Normalizar el status del proyecto
 	const normalizedStatus = project.status || "pending";
 
-	// Logs de validación detallados
-	console.log("🔍 Análisis completo del proyecto:", {
-		projectId: project.id,
-		projectName: project.name,
-		rawStatus: project.status,
-		normalizedStatus: normalizedStatus,
-		archived: project.archived,
-		realEndDate: project.realEndDate,
-		// Comparaciones directas como en project-card.tsx
-		isStatusCompleted: project.status === "completed",
-		isStatusReview: project.status === "review",
-		isArchived: project.archived === true,
-		// Comparaciones con enum
-		isStatusCompletedEnum: project.status === ProjectStatus.COMPLETED,
-		// Verificar ProjectStatus values
-		ProjectStatusValues: Object.values(ProjectStatus),
-		// Verificar si el status está en el enum
-		isValidStatus: Object.values(ProjectStatus).includes(project.status as ProjectStatus),
-	});
-
-	// Usar comparaciones con strings literales como en project-card.tsx
+	// Variables auxiliares para estados específicos
 	const isProjectCompleted = project.status === "completed";
 	const isProjectArchived = project.archived === true;
 	const isProjectInReview = project.status === "review";
+
+	// Variable unificada para control de acceso - combina todas las condiciones que requieren modo vista
+	const isInViewMode = isViewer || isProjectCompleted || isProjectArchived;
 
 	// Filtrado
 	const filteredActivities = selectedStageId !== "all" ? projectActivities.filter((a) => a.stageId === selectedStageId) : projectActivities;
@@ -359,7 +342,7 @@ export default function ClientView({ project: initialProject, activities: initia
 								</AlertDialog>
 							)}
 
-							{!isProjectCompleted && !isProjectArchived && isEditor && (
+							{!isInViewMode && isEditor && (
 								<>
 									{/* Editar proyecto */}
 									<Dialog open={isEditProjectModalOpen} onOpenChange={setIsEditProjectModalOpen}>
@@ -483,14 +466,14 @@ export default function ClientView({ project: initialProject, activities: initia
 						<KanbanBoard
 							activities={filteredActivities}
 							stages={projectStages}
-							onActivityChange={isViewer || isProjectCompleted || isProjectArchived ? undefined : handleActivityChange}
+							onActivityChange={isInViewMode ? undefined : handleActivityChange}
 							onActivityClick={(a) => {
-								if (!isProjectCompleted && !isProjectArchived) {
+								if (!isInViewMode) {
 									setEditingActivity(a);
 									setIsActivityModalOpen(true);
 								}
 							}}
-							isViewer={isViewer || isProjectCompleted || isProjectArchived}
+							isViewer={isInViewMode}
 						/>
 					) : (
 						<GanttChart activities={filteredActivities} stages={projectStages} viewMode={ganttViewMode} />

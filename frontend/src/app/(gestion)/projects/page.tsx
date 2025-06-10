@@ -39,7 +39,7 @@ export default function KanbanPage() {
 
 			try {
 				// Cargar proyectos
-				const projectResponse: ApiResponse = await ProjectsService.getProjects();
+				const projectResponse: ApiResponse = await ProjectsService.getProjects(user?.id || null);
 
 				if (projectResponse.success && projectResponse.data) {
 					const projectsData = Array.isArray(projectResponse.data) ? projectResponse.data : [projectResponse.data];
@@ -100,7 +100,7 @@ export default function KanbanPage() {
 		setProjects(updatedProjects);
 
 		try {
-			const projectResponse: ApiResponse = await ProjectsService.getProjects();
+			const projectResponse: ApiResponse = await ProjectsService.getProjects(user?.id || null);
 
 			if (projectResponse.success && projectResponse.data) {
 				const projectsData = Array.isArray(projectResponse.data) ? projectResponse.data : [projectResponse.data];
@@ -136,7 +136,7 @@ export default function KanbanPage() {
 		setIsDialogOpen(false);
 		setLoading(true);
 		try {
-			const response = await ProjectsService.getProjects();
+			const response = await ProjectsService.getProjects(user?.id || null);
 			if (response.success && response.data) {
 				setProjects(response.data);
 
