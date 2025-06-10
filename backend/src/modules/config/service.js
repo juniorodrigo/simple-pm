@@ -1,5 +1,6 @@
 import { AppError } from '#middlewares/errors';
 import prisma from '#services/prisma.service';
+import bcrypt from 'bcrypt';
 
 async function getAreas() {
 	const areas = await prisma.area.findMany();
@@ -83,7 +84,6 @@ async function getUsers() {
 
 	return { data: users, message: 'Users retrieved successfully' };
 }
-
 async function createUser(data) {
 	const existingUser = await prisma.user.findFirst({
 		where: {
@@ -143,5 +143,35 @@ async function deleteUser(id) {
 
 	return { data: null, message: 'User deleted successfully' };
 }
-
 export const UserService = { getUsers, createUser, updateUser, deleteUser };
+
+async function login(email, password) {
+	if (!email || !password) throw new AppError('Email and password are required');
+
+	const user = await prisma.user.findUnique({
+		where: { email: email },
+		select: {
+			id: true,
+			name: true,
+			lastname: true,
+			email: true,
+			password: true,
+			role: true,
+			isActive: true,
+			area: {
+				select: {
+					id: true,
+					name: true,
+				},
+			},
+		},
+	});
+
+	if (!user) throw new AppError('User not found');
+
+	const isPasswordValid = await bcrypt.compare(password, user.password);
+	if (!isPasswordValid) throw new AppError('Invalid password');
+
+	return { data: user, message: 'Login successful' };
+}
+export const AuthService = { login };

@@ -1,5 +1,5 @@
 import express from 'express';
-import { AreaController, UserController } from './controller.js';
+import { AreaController, UserController, AuthController } from './controller.js';
 
 const router = express.Router();
 
@@ -14,5 +14,8 @@ router.get('/users', UserController.getUsers);
 router.post('/users', UserController.createUser);
 router.put('/users/:id', UserController.updateUser);
 router.delete('/users/:id', UserController.deleteUser);
+
+// Auth
+router.post('/login', AuthController.login);
 
 export default router;

@@ -39,30 +39,12 @@ export default function Sidebar() {
 	};
 
 	const navigation = [
-		// {
-		// 	name: "Dashboard",
-		// 	href: "/",
-		// 	icon: LayoutDashboard,
-		// 	current: pathname === "/",
-		// },
-		// {
-		// 	name: "Proyectos",
-		// 	href: "/projects",
-		// 	icon: FolderKanban,
-		// 	current: pathname === "/projects" || pathname.startsWith("/projects/"),
-		// },
 		{
 			name: "Proyectos",
 			href: "/projects",
 			icon: KanbanSquare,
 			current: pathname === "/projects" || pathname.startsWith("/projects/"),
 		},
-		// {
-		// 	name: "Línea de Tiempo",
-		// 	href: "/timeline",
-		// 	icon: GanttChartSquare,
-		// 	current: pathname === "/gantt",
-		// },
 		{
 			name: "Configuración",
 			href: "/settings",

@@ -3,9 +3,9 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { setCookie, getCookie, deleteCookie } from "cookies-next";
-import { users, User } from "@/data/users";
+import { User } from "@/data/users";
+import HOST from "@/lib/host";
 
-// Tipo para el usuario autenticado (omitiendo la contraseña)
 type AuthenticatedUser = Omit<User, "password">;
 
 interface AuthContextType {
@@ -40,14 +40,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	}, []);
 
 	const login = async (email: string, password: string): Promise<AuthenticatedUser | null> => {
-		const foundUser = users.find((user) => user.email === email && user.password === password);
-
 		console.log("trying to login", email, password);
 
-		if (foundUser) {
-			console.log("user found", foundUser);
+		try {
+			const response = await fetch(`${HOST}/config/login`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ email, password }),
+			});
 
-			const { password: _, ...authenticatedUser } = foundUser;
+			if (!response.ok) {
+				console.error("Login failed:", response.status, response.statusText);
+				return null;
+			}
+
+			const { data } = await response.json();
+			console.log("user found", data);
+
+			const { password: _, ...authenticatedUser } = data;
 
 			// Actualizar el estado de forma síncrona
 			setUser(authenticatedUser);
@@ -58,9 +70,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			});
 
 			return authenticatedUser;
+		} catch (error) {
+			console.error("Error during login:", error);
+			return null;
 		}
-
-		return null;
 	};
 
 	const logout = () => {

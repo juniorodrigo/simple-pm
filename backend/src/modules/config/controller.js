@@ -1,4 +1,4 @@
-import { AreasService, UserService } from '#modules/config/service';
+import { AreasService, UserService, AuthService } from '#modules/config/service';
 import { NotFoundError, ValidationError } from '#middlewares/errors';
 import bcrypt from 'bcrypt';
 
@@ -83,6 +83,16 @@ const deleteUser = async (req, res) => {
 	res.success(data, message);
 };
 
+const login = async (req, res) => {
+	const { email, password } = req.body;
+	if (!email || !password) throw new ValidationError('Email and password are required');
+
+	const { data, message } = await AuthService.login(email, password);
+	if (!data) throw new NotFoundError(message);
+
+	res.success(data, message);
+};
+
 export const AreaController = {
 	getAreas,
 	createArea,
@@ -95,4 +105,8 @@ export const UserController = {
 	createUser,
 	updateUser,
 	deleteUser,
+};
+
+export const AuthController = {
+	login,
 };
