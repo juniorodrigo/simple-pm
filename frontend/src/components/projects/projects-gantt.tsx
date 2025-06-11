@@ -16,10 +16,70 @@ interface ProjectsGanttProps {
 	projects: Project[];
 }
 
+// Componente de leyenda
+const ProjectsLegend = ({ showLegend, setShowLegend }: { showLegend: boolean; setShowLegend: (show: boolean) => void }) => (
+	<div className="flex flex-wrap items-center gap-4 text-xs p-3 bg-muted/30 rounded-lg border">
+		<h4 className="font-medium text-foreground">Leyenda:</h4>
+
+		{/* Grupo 1: Estados básicos */}
+		<div className="flex items-center gap-3">
+			<div className="flex items-center gap-2">
+				<div className="h-3 w-6 rounded bg-blue-500"></div>
+				<span className="text-muted-foreground">Planificado</span>
+			</div>
+			<div className="flex items-center gap-2">
+				<div className="h-3 w-6 rounded" style={{ backgroundColor: "rgba(34, 197, 94, 0.8)" }}></div>
+				<span className="text-muted-foreground">Ejecutado</span>
+			</div>
+			<div className="flex items-center gap-2">
+				<div className="h-3 w-6 rounded border-2 border-dashed bg-blue-500"></div>
+				<span className="text-muted-foreground">Vencido</span>
+			</div>
+		</div>
+
+		{/* Separador visual */}
+		<div className="h-4 w-px bg-border"></div>
+
+		{/* Grupo 2: Alertas y problemas */}
+		<div className="flex items-center gap-3">
+			<div className="flex items-center gap-2">
+				<div className="relative h-3 w-6 rounded bg-blue-500">
+					<div className="absolute -top-0.5 -right-0.5 bg-red-500 rounded-full p-0.5">
+						<ClockIcon className="h-2 w-2 text-white" />
+					</div>
+				</div>
+				<span className="text-muted-foreground">Inicio tardío</span>
+			</div>
+			<div className="flex items-center gap-2">
+				<div className="relative h-3 w-6 rounded" style={{ backgroundColor: "rgba(34, 197, 94, 0.8)" }}>
+					<div className="absolute -top-0.5 -right-0.5 bg-red-500 rounded-full p-0.5">
+						<ClockIcon className="h-2 w-2 text-white" />
+					</div>
+				</div>
+				<span className="text-muted-foreground">En progreso con retraso</span>
+			</div>
+			<div className="flex items-center gap-2">
+				<div className="relative h-3 w-6 rounded" style={{ backgroundColor: "rgba(34, 197, 94, 0.8)" }}>
+					<div className="absolute -top-0.5 -right-0.5 bg-amber-500 rounded-full p-0.5">
+						<AlertTriangleIcon className="h-2 w-2 text-white" />
+					</div>
+				</div>
+				<span className="text-muted-foreground">Completado con retraso</span>
+			</div>
+		</div>
+
+		{/* Botón para ocultar */}
+		<button onClick={() => setShowLegend(false)} className="ml-auto px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded transition-colors">
+			Ocultar
+		</button>
+	</div>
+);
+
 export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 	const router = useRouter();
 	const [dateRange, setDateRange] = useState<Date[]>([]);
 	const [chartWidth, setChartWidth] = useState(0);
+	const [showLegend, setShowLegend] = useState(true);
 
 	// Find the earliest start date and latest end date
 	useEffect(() => {
@@ -209,6 +269,11 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 	return (
 		<TooltipProvider>
 			<div className="space-y-3">
+				{hasRealProjects && showLegend && (
+					<div className="flex-shrink-0">
+						<ProjectsLegend showLegend={showLegend} setShowLegend={setShowLegend} />
+					</div>
+				)}
 				<div className="overflow-x-auto border rounded-md shadow">
 					<div style={{ minWidth: `${chartWidth}px` }} className="relative">
 						{/* Header with dates */}
@@ -251,7 +316,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 
 							{/* Fila de semanas */}
 							<div className="flex">
-								<div className="w-72 min-w-72 p-3 border-r font-medium sticky left-0 z-15 bg-background shadow-md">Proyecto</div>
+								<div className="w-72 min-w-72 p-3 border-r font-medium sticky left-0 z-15 bg-background">Actividades</div>
 								<div className="flex-1 flex">
 									{dateRange.map((date, index) => (
 										<div
@@ -344,11 +409,12 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 												<Tooltip>
 													<TooltipTrigger asChild>
 														<div
-															className="rounded-md shadow-md hover:shadow-lg transition-shadow cursor-pointer overflow-hidden group border-2 border-transparent bg-blue-500 hover:bg-blue-600 relative"
+															className={`rounded-md shadow-md hover:shadow-lg transition-shadow cursor-pointer overflow-hidden group bg-blue-500 hover:bg-blue-600 relative ${
+																isPast(new Date(project.endDate)) ? "border-2 border-dashed border-gray-400" : "border-2 border-transparent"
+															}`}
 															style={{
 																width: "100%",
 																height: "32px",
-																border: `1px solid ${isPast(new Date(project.endDate)) ? "#d1d5db" : "transparent"}`,
 															}}
 															onClick={() => router.push(`/projects/${project.id}`)}
 														>
@@ -407,7 +473,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 													<Tooltip>
 														<TooltipTrigger asChild>
 															<div
-																className="relative rounded-md overflow-hidden cursor-pointer transition-shadow flex items-center border-2 border-dashed border-green-700"
+																className="relative rounded-md overflow-hidden cursor-pointer transition-shadow flex items-center"
 																style={{
 																	width: `${(realBarPosition.width / barPosition.width) * 100}%`,
 																	backgroundColor: "rgba(34, 197, 94, 0.8)",

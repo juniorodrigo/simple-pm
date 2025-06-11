@@ -214,191 +214,196 @@ export default function ClientView({ project: initialProject, activities: initia
 					<span className="font-medium text-foreground">{project.name}</span>
 				</div>
 
-				{/* Project header sin colores específicos */}
-				<div className="bg-card border rounded-lg p-6">
-					<div className="flex flex-col md:flex-row md:justify-between gap-4">
-						<div className="flex items-start gap-3">
-							<div className="p-2 bg-muted rounded-lg">
-								<Target className="h-6 w-6 text-muted-foreground" />
-							</div>
-							<div>
-								<div className="flex items-center gap-3 mb-1 flex-wrap">
-									<h1 className="text-2xl font-bold">{project.name}</h1>
-									{project.categoryName && project.categoryColor && <div className={`px-3 py-1 text-xs rounded-full font-medium border ${getTagColorClass(project.categoryColor)}`}>{project.categoryName}</div>}
-
-									{/* Estado actual del proyecto */}
-									{project.status && (
-										<div className={`px-3 py-1 text-xs rounded-full font-medium border ${isProjectCompleted ? "bg-green-100 text-green-800 border-green-200" : "bg-blue-100 text-blue-800 border-blue-200"}`}>
-											{ProjectStatusLabels[project.status as ProjectStatus] || project.status}
-										</div>
-									)}
-
-									{/* Indicador de archivado */}
-									{isProjectArchived && <div className="px-3 py-1 text-xs rounded-full font-medium border bg-gray-100 text-gray-800 border-gray-200">📁 Archivado</div>}
+				{/* Project header con el mismo estilo que page.tsx */}
+				<div className="relative">
+					<div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg"></div>
+					<div className="relative bg-card/50 backdrop-blur-sm border rounded-lg p-6">
+						<div className="flex flex-col md:flex-row md:justify-between gap-4">
+							<div className="flex items-start gap-3">
+								<div className="p-2 bg-muted rounded-lg">
+									<Target className="h-6 w-6 text-muted-foreground" />
 								</div>
-								<div className="space-y-2">
-									<p className="text-muted-foreground text-justify">
-										{isDescriptionExpanded || (project.description || "").length <= 120 ? project.description || "" : (project.description || "").slice(0, 120) + "..."}
-										{project.description && project.description.length > 120 && (
-											<Button variant="ghost" size="sm" className="p-0 h-auto text-muted-foreground hover:text-foreground align-baseline ml-2" onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}>
-												{isDescriptionExpanded ? (
-													<>
-														<ChevronUp className="h-4 w-4 mr-1 inline" />
-														Mostrar menos
-													</>
-												) : (
-													<>
-														<ChevronDown className="h-4 w-4 mr-1 inline" />
-														Leer más
-													</>
-												)}
-											</Button>
+								<div>
+									<div className="flex items-center gap-3 mb-1 flex-wrap">
+										<h1 className="text-2xl font-bold">{project.name}</h1>
+										{project.categoryName && project.categoryColor && (
+											<div className={`px-3 py-1 text-xs rounded-full font-medium border ${getTagColorClass(project.categoryColor)}`}>{project.categoryName}</div>
 										)}
-									</p>
+
+										{/* Estado actual del proyecto */}
+										{project.status && (
+											<div className={`px-3 py-1 text-xs rounded-full font-medium border ${isProjectCompleted ? "bg-green-100 text-green-800 border-green-200" : "bg-blue-100 text-blue-800 border-blue-200"}`}>
+												{ProjectStatusLabels[project.status as ProjectStatus] || project.status}
+											</div>
+										)}
+
+										{/* Indicador de archivado */}
+										{isProjectArchived && <div className="px-3 py-1 text-xs rounded-full font-medium border bg-gray-100 text-gray-800 border-gray-200">📁 Archivado</div>}
+									</div>
+									<div className="space-y-2">
+										<p className="text-muted-foreground text-justify">
+											{isDescriptionExpanded || (project.description || "").length <= 120 ? project.description || "" : (project.description || "").slice(0, 120) + "..."}
+											{project.description && project.description.length > 120 && (
+												<Button variant="ghost" size="sm" className="p-0 h-auto text-muted-foreground hover:text-foreground align-baseline ml-2" onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}>
+													{isDescriptionExpanded ? (
+														<>
+															<ChevronUp className="h-4 w-4 mr-1 inline" />
+															Mostrar menos
+														</>
+													) : (
+														<>
+															<ChevronDown className="h-4 w-4 mr-1 inline" />
+															Leer más
+														</>
+													)}
+												</Button>
+											)}
+										</p>
+									</div>
 								</div>
 							</div>
-						</div>
 
-						<div className="flex gap-2">
-							{/* Mostrar/Ocultar resumen */}
-							<Button variant="outline" size="sm" onClick={() => setStatsVisible(!statsVisible)}>
-								<BarChart3 className="mr-2 h-4 w-4" />
-								{statsVisible ? "Ocultar resumen" : "Mostrar resumen"}
-							</Button>
+							<div className="flex gap-2">
+								{/* Mostrar/Ocultar resumen */}
+								<Button variant="outline" size="sm" onClick={() => setStatsVisible(!statsVisible)}>
+									<BarChart3 className="mr-2 h-4 w-4" />
+									{statsVisible ? "Ocultar resumen" : "Mostrar resumen"}
+								</Button>
 
-							{/* Botón Desarchivar - solo si está archivado */}
-							{isProjectArchived && isEditor && (
-								<AlertDialog>
-									<AlertDialogTrigger asChild>
-										<Button variant="outline" size="sm" disabled={isUpdating}>
-											<ArchiveRestore className="mr-2 h-4 w-4" />
-											{isUpdating ? "Desarchivando..." : "Desarchivar"}
-										</Button>
-									</AlertDialogTrigger>
-									<AlertDialogContent>
-										<AlertDialogHeader>
-											<AlertDialogTitle>¿Desarchivar proyecto?</AlertDialogTitle>
-											<AlertDialogDescription>
-												¿Estás seguro de que deseas desarchivar el proyecto &quot;{project.name}&quot;? El proyecto volverá a aparecer en las listas principales y podrás realizar cambios.
-											</AlertDialogDescription>
-										</AlertDialogHeader>
-										<AlertDialogFooter>
-											<AlertDialogCancel>Cancelar</AlertDialogCancel>
-											<AlertDialogAction onClick={handleUnarchiveProject} disabled={isUpdating}>
+								{/* Botón Desarchivar - solo si está archivado */}
+								{isProjectArchived && isEditor && (
+									<AlertDialog>
+										<AlertDialogTrigger asChild>
+											<Button variant="outline" size="sm" disabled={isUpdating}>
+												<ArchiveRestore className="mr-2 h-4 w-4" />
 												{isUpdating ? "Desarchivando..." : "Desarchivar"}
-											</AlertDialogAction>
-										</AlertDialogFooter>
-									</AlertDialogContent>
-								</AlertDialog>
-							)}
+											</Button>
+										</AlertDialogTrigger>
+										<AlertDialogContent>
+											<AlertDialogHeader>
+												<AlertDialogTitle>¿Desarchivar proyecto?</AlertDialogTitle>
+												<AlertDialogDescription>
+													¿Estás seguro de que deseas desarchivar el proyecto &quot;{project.name}&quot;? El proyecto volverá a aparecer en las listas principales y podrás realizar cambios.
+												</AlertDialogDescription>
+											</AlertDialogHeader>
+											<AlertDialogFooter>
+												<AlertDialogCancel>Cancelar</AlertDialogCancel>
+												<AlertDialogAction onClick={handleUnarchiveProject} disabled={isUpdating}>
+													{isUpdating ? "Desarchivando..." : "Desarchivar"}
+												</AlertDialogAction>
+											</AlertDialogFooter>
+										</AlertDialogContent>
+									</AlertDialog>
+								)}
 
-							{/* Botón Completar - solo si está en revisión */}
-							{isProjectInReview && !isProjectArchived && isEditor && (
-								<AlertDialog>
-									<AlertDialogTrigger asChild>
-										<Button variant="outline" size="sm" disabled={isUpdating}>
-											<Check className="mr-2 h-4 w-4" />
-											{isUpdating ? "Completando..." : "Completar"}
-										</Button>
-									</AlertDialogTrigger>
-									<AlertDialogContent>
-										<AlertDialogHeader>
-											<AlertDialogTitle>¿Completar proyecto?</AlertDialogTitle>
-											<AlertDialogDescription>¿Estás seguro de que deseas marcar el proyecto &quot;{project.name}&quot; como completado? Esta acción cambiará el estado del proyecto.</AlertDialogDescription>
-										</AlertDialogHeader>
-										<AlertDialogFooter>
-											<AlertDialogCancel>Cancelar</AlertDialogCancel>
-											<AlertDialogAction onClick={handleCompleteProject} disabled={isUpdating}>
+								{/* Botón Completar - solo si está en revisión */}
+								{isProjectInReview && !isProjectArchived && isEditor && (
+									<AlertDialog>
+										<AlertDialogTrigger asChild>
+											<Button variant="outline" size="sm" disabled={isUpdating}>
+												<Check className="mr-2 h-4 w-4" />
 												{isUpdating ? "Completando..." : "Completar"}
-											</AlertDialogAction>
-										</AlertDialogFooter>
-									</AlertDialogContent>
-								</AlertDialog>
-							)}
+											</Button>
+										</AlertDialogTrigger>
+										<AlertDialogContent>
+											<AlertDialogHeader>
+												<AlertDialogTitle>¿Completar proyecto?</AlertDialogTitle>
+												<AlertDialogDescription>¿Estás seguro de que deseas marcar el proyecto &quot;{project.name}&quot; como completado? Esta acción cambiará el estado del proyecto.</AlertDialogDescription>
+											</AlertDialogHeader>
+											<AlertDialogFooter>
+												<AlertDialogCancel>Cancelar</AlertDialogCancel>
+												<AlertDialogAction onClick={handleCompleteProject} disabled={isUpdating}>
+													{isUpdating ? "Completando..." : "Completar"}
+												</AlertDialogAction>
+											</AlertDialogFooter>
+										</AlertDialogContent>
+									</AlertDialog>
+								)}
 
-							{/* Botón Regresar a revisión - solo si está completado pero no archivado */}
-							{isProjectCompleted && !isProjectArchived && isEditor && (
-								<AlertDialog>
-									<AlertDialogTrigger asChild>
-										<Button variant="outline" size="sm" disabled={isUpdating}>
-											<RotateCcw className="mr-2 h-4 w-4" />
-											{isUpdating ? "Regresando..." : "Regresar a revisión"}
-										</Button>
-									</AlertDialogTrigger>
-									<AlertDialogContent>
-										<AlertDialogHeader>
-											<AlertDialogTitle>¿Regresar proyecto a revisión?</AlertDialogTitle>
-											<AlertDialogDescription>
-												¿Estás seguro de que deseas regresar el proyecto &quot;{project.name}&quot; al estado de revisión? Esto permitirá realizar cambios nuevamente.
-											</AlertDialogDescription>
-										</AlertDialogHeader>
-										<AlertDialogFooter>
-											<AlertDialogCancel>Cancelar</AlertDialogCancel>
-											<AlertDialogAction onClick={handleReturnToReview} disabled={isUpdating}>
+								{/* Botón Regresar a revisión - solo si está completado pero no archivado */}
+								{isProjectCompleted && !isProjectArchived && isEditor && (
+									<AlertDialog>
+										<AlertDialogTrigger asChild>
+											<Button variant="outline" size="sm" disabled={isUpdating}>
+												<RotateCcw className="mr-2 h-4 w-4" />
 												{isUpdating ? "Regresando..." : "Regresar a revisión"}
-											</AlertDialogAction>
-										</AlertDialogFooter>
-									</AlertDialogContent>
-								</AlertDialog>
-							)}
+											</Button>
+										</AlertDialogTrigger>
+										<AlertDialogContent>
+											<AlertDialogHeader>
+												<AlertDialogTitle>¿Regresar proyecto a revisión?</AlertDialogTitle>
+												<AlertDialogDescription>
+													¿Estás seguro de que deseas regresar el proyecto &quot;{project.name}&quot; al estado de revisión? Esto permitirá realizar cambios nuevamente.
+												</AlertDialogDescription>
+											</AlertDialogHeader>
+											<AlertDialogFooter>
+												<AlertDialogCancel>Cancelar</AlertDialogCancel>
+												<AlertDialogAction onClick={handleReturnToReview} disabled={isUpdating}>
+													{isUpdating ? "Regresando..." : "Regresar a revisión"}
+												</AlertDialogAction>
+											</AlertDialogFooter>
+										</AlertDialogContent>
+									</AlertDialog>
+								)}
 
-							{!isInViewMode && isEditor && (
-								<>
-									{/* Editar proyecto */}
-									<Dialog open={isEditProjectModalOpen} onOpenChange={setIsEditProjectModalOpen}>
-										<Button variant="outline" size="sm" onClick={() => setIsEditProjectModalOpen(true)}>
-											<Edit className="mr-2 h-4 w-4" /> Editar
-										</Button>
-										<DialogContent className="sm:max-w-[700px]">
-											<DialogTitle>Editar Proyecto</DialogTitle>
-											<DialogDescription>Actualiza los detalles del proyecto</DialogDescription>
-											<CreateProjectForm isEditing projectData={project} onSuccess={handleProjectUpdated} />
-										</DialogContent>
-									</Dialog>
+								{!isInViewMode && isEditor && (
+									<>
+										{/* Editar proyecto */}
+										<Dialog open={isEditProjectModalOpen} onOpenChange={setIsEditProjectModalOpen}>
+											<Button variant="outline" size="sm" onClick={() => setIsEditProjectModalOpen(true)}>
+												<Edit className="mr-2 h-4 w-4" /> Editar
+											</Button>
+											<DialogContent className="sm:max-w-[700px]">
+												<DialogTitle>Editar Proyecto</DialogTitle>
+												<DialogDescription>Actualiza los detalles del proyecto</DialogDescription>
+												<CreateProjectForm isEditing projectData={project} onSuccess={handleProjectUpdated} />
+											</DialogContent>
+										</Dialog>
 
-									{/* Gestionar etapas */}
-									<Dialog open={isStagesModalOpen} onOpenChange={setIsStagesModalOpen}>
-										<Button variant="outline" size="sm" onClick={() => setIsStagesModalOpen(true)}>
-											<ListPlus className="mr-2 h-4 w-4" /> Etapas
-										</Button>
-										<DialogContent className="sm:max-w-[700px]">
-											<DialogTitle>Gestionar Etapas del Proyecto</DialogTitle>
-											<DialogDescription>Crea y gestiona las etapas del proyecto</DialogDescription>
-											<ProjectStagesModal projectId={project.id} stages={projectStages} onClose={() => setIsStagesModalOpen(false)} onSave={handleUpdateStages} />
-										</DialogContent>
-									</Dialog>
+										{/* Gestionar etapas */}
+										<Dialog open={isStagesModalOpen} onOpenChange={setIsStagesModalOpen}>
+											<Button variant="outline" size="sm" onClick={() => setIsStagesModalOpen(true)}>
+												<ListPlus className="mr-2 h-4 w-4" /> Etapas
+											</Button>
+											<DialogContent className="sm:max-w-[700px]">
+												<DialogTitle>Gestionar Etapas del Proyecto</DialogTitle>
+												<DialogDescription>Crea y gestiona las etapas del proyecto</DialogDescription>
+												<ProjectStagesModal projectId={project.id} stages={projectStages} onClose={() => setIsStagesModalOpen(false)} onSave={handleUpdateStages} />
+											</DialogContent>
+										</Dialog>
 
-									{/* Nueva actividad */}
-									<Dialog
-										open={isActivityModalOpen}
-										onOpenChange={(open) => {
-											setIsActivityModalOpen(open);
-											if (!open) setEditingActivity(null);
-										}}
-									>
-										<Button size="sm" onClick={() => setIsActivityModalOpen(true)}>
-											<Plus className="mr-2 h-4 w-4" /> Nueva Actividad
-										</Button>
-										<DialogContent className="sm:max-w-[600px]">
-											<DialogTitle>{editingActivity ? "Editar Actividad" : "Nueva Actividad"}</DialogTitle>
-											<DialogDescription>{editingActivity ? "Actualiza los detalles de la actividad" : "Crea una actividad para el proyecto"}</DialogDescription>
-											<CreateActivityModal
-												projectId={project.id}
-												stages={projectStages}
-												activity={editingActivity}
-												onClose={() => setIsActivityModalOpen(false)}
-												onSuccess={(act) => {
-													if (editingActivity) {
-														handleActivityChange(projectActivities.map((a) => (a.id === act.id ? act : a)));
-													} else {
-														handleAddActivity(act);
-													}
-												}}
-											/>
-										</DialogContent>
-									</Dialog>
-								</>
-							)}
+										{/* Nueva actividad */}
+										<Dialog
+											open={isActivityModalOpen}
+											onOpenChange={(open) => {
+												setIsActivityModalOpen(open);
+												if (!open) setEditingActivity(null);
+											}}
+										>
+											<Button size="sm" onClick={() => setIsActivityModalOpen(true)}>
+												<Plus className="mr-2 h-4 w-4" /> Nueva Actividad
+											</Button>
+											<DialogContent className="sm:max-w-[600px]">
+												<DialogTitle>{editingActivity ? "Editar Actividad" : "Nueva Actividad"}</DialogTitle>
+												<DialogDescription>{editingActivity ? "Actualiza los detalles de la actividad" : "Crea una actividad para el proyecto"}</DialogDescription>
+												<CreateActivityModal
+													projectId={project.id}
+													stages={projectStages}
+													activity={editingActivity}
+													onClose={() => setIsActivityModalOpen(false)}
+													onSuccess={(act) => {
+														if (editingActivity) {
+															handleActivityChange(projectActivities.map((a) => (a.id === act.id ? act : a)));
+														} else {
+															handleAddActivity(act);
+														}
+													}}
+												/>
+											</DialogContent>
+										</Dialog>
+									</>
+								)}
+							</div>
 						</div>
 					</div>
 				</div>

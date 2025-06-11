@@ -125,7 +125,7 @@ export const ActivityCard = memo(
 						<p className="text-xs text-zinc-400 line-clamp-2">{activity.description}</p>
 					</div>
 					{/* Footer */}
-					<div className="flex items-center justify-between pt-2 border-t border-zinc-800">
+					<div className="flex items-center justify-between pt-2 border-t ">
 						<UserAvatar name={`${activity.assignedToUser.name} ${activity.assignedToUser.lastname}`} initials={getInitials(`${activity.assignedToUser.name} ${activity.assignedToUser.lastname}`)} />
 						<div className="flex items-center text-xs text-zinc-400">
 							<CalendarClock className="mr-1 h-3 w-3" />

@@ -12,7 +12,7 @@ export const env = createEnv({
 	client: {
 		NEXT_PUBLIC_APP_NAME: z.string().optional(),
 		NEXT_PUBLIC_GOOGLE_MAP_API_KEY: z.string().optional().default(""),
-		NEXT_PUBLIC_HOST: z.string().default("http://localhost:4141"),
+		NEXT_PUBLIC_HOST: z.string().optional().default("http://localhost:3000"),
 	},
 	runtimeEnv: process.env,
 });

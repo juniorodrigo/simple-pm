@@ -46,7 +46,7 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 	return (
 		<TooltipProvider>
 			<div className="h-full flex flex-col space-y-3">
-				{hasExecutedActivities && showLegend && (
+				{showLegend && (
 					<div className="flex-shrink-0">
 						<Legend showLegend={showLegend} setShowLegend={setShowLegend} />
 					</div>

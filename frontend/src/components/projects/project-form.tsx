@@ -23,6 +23,7 @@ import { Tag } from "@/types/new/tag.type";
 import { Project, ProjectCreate, ProjectUpdate, ExtendedProject } from "@/types/new/project.type";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/contexts/auth-context";
 
 const formSchema = z.object({
 	name: z.string().min(2, {
@@ -61,6 +62,7 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 	const [availableTags, setAvailableTags] = useState<Tag[]>([]);
 	const [projects, setProjects] = useState<Project[]>([]);
 	const [loading, setLoading] = useState(false);
+	const { user } = useAuth();
 	const [dateRange, setDateRange] = useState<DateRange>({
 		from: new Date(),
 		to: addDays(new Date(), 30),
@@ -98,7 +100,7 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 		const loadData = async () => {
 			const usersResponse = await UsersService.getUsers();
 			const tagsResponse = await CategoriaService.getAll();
-			const projectsResponse = await ProjectsService.getProjects();
+			const projectsResponse = await ProjectsService.getProjects(user?.id || null);
 
 			if (usersResponse.success && usersResponse.data) {
 				setUsers(usersResponse.data);

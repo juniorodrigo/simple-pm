@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UserManagement from "@/components/settings/usuarios";
 import GeneralSettings from "@/components/settings/general";
@@ -10,7 +10,7 @@ import AreasSettings from "@/components/settings/areas";
 import { useAuth } from "@/contexts/auth-context";
 import { Role } from "@/types/enums";
 
-export default function SettingsPage() {
+function SettingsContent() {
 	const { user } = useAuth();
 	const searchParams = useSearchParams();
 	const [activeTab, setActiveTab] = useState("tags");
@@ -54,5 +54,13 @@ export default function SettingsPage() {
 				</TabsContent>
 			</Tabs>
 		</div>
+	);
+}
+
+export default function SettingsPage() {
+	return (
+		<Suspense fallback={<div>Cargando configuración...</div>}>
+			<SettingsContent />
+		</Suspense>
 	);
 }
