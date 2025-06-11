@@ -1,11 +1,13 @@
 import { z } from "zod";
 import { createEnv } from "@t3-oss/env-nextjs";
 
+console.log("process.env", process.env);
+
+console.log("NEXT_PUBLIC_HOST from process.env:", process.env.NEXT_PUBLIC_HOST);
+
 export const env = createEnv({
 	server: {
 		NODE_ENV: z.enum(["development", "test", "production"]),
-		// NEXTAUTH_SECRET: process.env.NODE_ENV === 'production' ? z.string().min(1) : z.string().min(1).optional(),
-		// NEXTAUTH_URL: z.string().url(),
 		BACKEND_HOST: z.string().min(1),
 	},
 
