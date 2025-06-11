@@ -29,6 +29,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { getPriorityColor } from "@/lib/colors";
 import ExecutionDateModal from "@/components/project/execution-date-modal";
+import CreateActivityModal from "@/components/project/activity-modal";
 
 interface KanbanBoardProps {
 	activities: BaseActivity[];
@@ -68,6 +69,10 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 	// Nuevo estado para el modal de confirmación de retroceso
 	const [isRollbackModalOpen, setIsRollbackModalOpen] = useState(false);
 	const [rollbackActivity, setRollbackActivity] = useState<null | { activity: BaseActivity; newStatus: ActivityStatus }>(null);
+
+	// Estados para el modal de actividad en modo solo lectura
+	const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
+	const [selectedActivity, setSelectedActivity] = useState<BaseActivity | null>(null);
 
 	// Actualizar actividades solo cuando cambian
 	useEffect(() => {
@@ -275,12 +280,30 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 	// Manejador para clics de actividad
 	const handleActivityClick = useCallback(
 		(activity: BaseActivity) => {
-			if (onActivityClick) {
+			if (isInViewMode) {
+				// Si está en modo visor, abrir el modal en solo lectura
+				setSelectedActivity(activity);
+				setIsActivityModalOpen(true);
+			} else if (onActivityClick) {
+				// Si no está en modo visor, usar el callback original
 				onActivityClick(activity);
 			}
 		},
-		[onActivityClick]
+		[onActivityClick, isInViewMode]
 	);
+
+	// Manejador para cerrar el modal de actividad
+	const handleActivityModalClose = useCallback(() => {
+		setIsActivityModalOpen(false);
+		setSelectedActivity(null);
+	}, []);
+
+	// Manejador para el éxito del modal de actividad (no debería usarse en modo solo lectura)
+	const handleActivityModalSuccess = useCallback(() => {
+		// En modo solo lectura esto no debería ejecutarse, pero lo incluimos por completitud
+		setIsActivityModalOpen(false);
+		setSelectedActivity(null);
+	}, []);
 
 	// Nuevo manejador para el evento dragOver
 	const handleDragOver = useCallback(
@@ -422,6 +445,26 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 				}}
 				onSuccess={handleExecutionDateSuccess}
 			/>
+
+			{/* Modal de actividad en solo lectura */}
+			{isActivityModalOpen && selectedActivity && (
+				<Dialog open={isActivityModalOpen} onOpenChange={setIsActivityModalOpen}>
+					<DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+						<DialogHeader>
+							<DialogTitle>Detalles de la Actividad</DialogTitle>
+							<DialogDescription>Vista detallada de la actividad (solo lectura)</DialogDescription>
+						</DialogHeader>
+						<CreateActivityModal
+							projectId={0} // No se usa en modo solo lectura
+							stages={stages}
+							activity={selectedActivity}
+							isReadOnly={true}
+							onClose={handleActivityModalClose}
+							onSuccess={handleActivityModalSuccess}
+						/>
+					</DialogContent>
+				</Dialog>
+			)}
 		</>
 	);
 }

@@ -41,8 +41,6 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 		return <EmptyState />;
 	}
 
-	const hasExecutedActivities = activities.some((activity) => activity.executedStartDate);
-
 	return (
 		<TooltipProvider>
 			<div className="h-full flex flex-col space-y-3">

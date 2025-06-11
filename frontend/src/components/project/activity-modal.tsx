@@ -57,6 +57,7 @@ type CreateActivityModalProps = {
 	projectId: number;
 	stages?: BaseStage[];
 	activity?: BaseActivity | null; // Nueva prop para modo edición
+	isReadOnly?: boolean; // Nueva prop para modo solo lectura
 	onClose: () => void;
 	onSuccess: (activity: BaseActivity) => void;
 };
@@ -66,7 +67,7 @@ type DateRange = {
 	to?: Date;
 };
 
-export default function CreateActivityModal({ projectId, stages: providedStages, activity, onClose, onSuccess }: CreateActivityModalProps) {
+export default function CreateActivityModal({ projectId, stages: providedStages, activity, isReadOnly = false, onClose, onSuccess }: CreateActivityModalProps) {
 	const { toast } = useToast();
 	const [users, setUsers] = useState<User[]>([]);
 	const isEditMode = !!activity;
@@ -272,7 +273,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 							<FormItem>
 								<FormLabel>Título</FormLabel>
 								<FormControl>
-									<Input placeholder="Título de la actividad" {...field} />
+									<Input placeholder="Título de la actividad" {...field} disabled={isReadOnly} />
 								</FormControl>
 								<FormMessage />
 							</FormItem>
@@ -286,7 +287,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 							<FormItem>
 								<FormLabel>Descripción</FormLabel>
 								<FormControl>
-									<Textarea placeholder="Describe la actividad" className="resize-none" {...field} />
+									<Textarea placeholder="Describe la actividad" className="resize-none" {...field} disabled={isReadOnly} />
 								</FormControl>
 								<FormMessage />
 							</FormItem>
@@ -296,32 +297,45 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 					<FormField
 						control={form.control}
 						name="stageId"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Etapa</FormLabel>
-								<Select onValueChange={field.onChange} defaultValue={field.value}>
-									<FormControl>
-										<SelectTrigger>
-											<SelectValue placeholder="Selecciona la etapa" />
-										</SelectTrigger>
-									</FormControl>
-									<SelectContent>
-										{stages
-											.filter((stage) => stage.id)
-											.map((stage) => (
-												<SelectItem key={stage.id} value={stage.id!}>
-													<div className="flex items-center">
-														<Badge variant="outline" className={getTagColorClass(stage.color)}>
-															{stage.name}
-														</Badge>
-													</div>
-												</SelectItem>
-											))}
-									</SelectContent>
-								</Select>
-								<FormMessage />
-							</FormItem>
-						)}
+						render={({ field }) => {
+							const selectedStage = stages.find((stage) => stage.id === field.value);
+							return (
+								<FormItem>
+									<FormLabel>Etapa</FormLabel>
+									{isReadOnly ? (
+										<div className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background items-center">
+											{selectedStage && (
+												<Badge variant="outline" className={getTagColorClass(selectedStage.color)}>
+													{selectedStage.name}
+												</Badge>
+											)}
+										</div>
+									) : (
+										<Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}>
+											<FormControl>
+												<SelectTrigger>
+													<SelectValue placeholder="Selecciona la etapa" />
+												</SelectTrigger>
+											</FormControl>
+											<SelectContent>
+												{stages
+													.filter((stage) => stage.id)
+													.map((stage) => (
+														<SelectItem key={stage.id} value={stage.id!}>
+															<div className="flex items-center">
+																<Badge variant="outline" className={getTagColorClass(stage.color)}>
+																	{stage.name}
+																</Badge>
+															</div>
+														</SelectItem>
+													))}
+											</SelectContent>
+										</Select>
+									)}
+									<FormMessage />
+								</FormItem>
+							);
+						}}
 					/>
 
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -329,51 +343,65 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 							<FormField
 								control={form.control}
 								name="status"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Estado</FormLabel>
-										<Select onValueChange={field.onChange} defaultValue={field.value}>
-											<FormControl>
-												<SelectTrigger>
-													<SelectValue placeholder="Seleccionar estado" />
-												</SelectTrigger>
-											</FormControl>
-											<SelectContent>
-												{statusOptions.map(({ label, value }) => (
-													<SelectItem key={value} value={value}>
-														{label}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-										<FormMessage />
-									</FormItem>
-								)}
+								render={({ field }) => {
+									const selectedStatus = statusOptions.find((option) => option.value === field.value);
+									return (
+										<FormItem>
+											<FormLabel>Estado</FormLabel>
+											{isReadOnly ? (
+												<div className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background items-center">{selectedStatus?.label}</div>
+											) : (
+												<Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}>
+													<FormControl>
+														<SelectTrigger>
+															<SelectValue placeholder="Seleccionar estado" />
+														</SelectTrigger>
+													</FormControl>
+													<SelectContent>
+														{statusOptions.map(({ label, value }) => (
+															<SelectItem key={value} value={value}>
+																{label}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+											)}
+											<FormMessage />
+										</FormItem>
+									);
+								}}
 							/>
 						)}
 						<FormField
 							control={form.control}
 							name="priority"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Prioridad</FormLabel>
-									<Select onValueChange={field.onChange} defaultValue={field.value}>
-										<FormControl>
-											<SelectTrigger>
-												<SelectValue placeholder="Seleccionar prioridad" />
-											</SelectTrigger>
-										</FormControl>
-										<SelectContent>
-											{priorityOptions.map(({ label, value }) => (
-												<SelectItem key={value} value={value}>
-													{label}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-									<FormMessage />
-								</FormItem>
-							)}
+							render={({ field }) => {
+								const selectedPriority = priorityOptions.find((option) => option.value === field.value);
+								return (
+									<FormItem>
+										<FormLabel>Prioridad</FormLabel>
+										{isReadOnly ? (
+											<div className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background items-center">{selectedPriority?.label}</div>
+										) : (
+											<Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}>
+												<FormControl>
+													<SelectTrigger>
+														<SelectValue placeholder="Seleccionar prioridad" />
+													</SelectTrigger>
+												</FormControl>
+												<SelectContent>
+													{priorityOptions.map(({ label, value }) => (
+														<SelectItem key={value} value={value}>
+															{label}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										)}
+										<FormMessage />
+									</FormItem>
+								);
+							}}
 						/>
 					</div>
 
@@ -383,28 +411,35 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 						render={({ field, fieldState }) => (
 							<FormItem>
 								<FormLabel>Asignar a</FormLabel>
-								<Select
-									onValueChange={(value) => {
-										const selectedUser = users.find((user) => user.id === value);
-										if (selectedUser) {
-											field.onChange(convertToActivityUser(selectedUser));
-										}
-									}}
-									value={field.value.id}
-								>
-									<FormControl>
-										<SelectTrigger>
-											<SelectValue placeholder="Seleccionar usuario" />
-										</SelectTrigger>
-									</FormControl>
-									<SelectContent>
-										{users.map((user) => (
-											<SelectItem key={user.id} value={user.id || ""}>
-												{user.name} {user.lastname}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+								{isReadOnly ? (
+									<div className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background">
+										{field.value.name} {field.value.lastname}
+									</div>
+								) : (
+									<Select
+										onValueChange={(value) => {
+											const selectedUser = users.find((user) => user.id === value);
+											if (selectedUser) {
+												field.onChange(convertToActivityUser(selectedUser));
+											}
+										}}
+										value={field.value.id}
+										disabled={isReadOnly}
+									>
+										<FormControl>
+											<SelectTrigger>
+												<SelectValue placeholder="Seleccionar usuario" />
+											</SelectTrigger>
+										</FormControl>
+										<SelectContent>
+											{users.map((user) => (
+												<SelectItem key={user.id} value={user.id || ""}>
+													{user.name} {user.lastname}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								)}
 								<FormMessage>{fieldState.error?.root?.message || fieldState.error?.message}</FormMessage>
 							</FormItem>
 						)}
@@ -413,8 +448,8 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 					<div className="space-y-2">
 						<FormLabel>Fechas planificadas</FormLabel>
 						<Popover>
-							<PopoverTrigger asChild>
-								<Button id="date-range" variant={"outline"} className={cn("w-full justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
+							<PopoverTrigger asChild disabled={isReadOnly}>
+								<Button id="date-range" variant={"outline"} className={cn("w-full justify-start text-left font-normal", !dateRange && "text-muted-foreground")} disabled={isReadOnly}>
 									<CalendarIcon className="mr-2 h-4 w-4" />
 									{dateRange?.from ? (
 										dateRange.to && dateRange.from.getTime() !== dateRange.to.getTime() ? (
@@ -429,25 +464,27 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 									)}
 								</Button>
 							</PopoverTrigger>
-							<PopoverContent className="w-auto p-0" align="start">
-								<div className="p-2 text-xs text-muted-foreground">Puedes seleccionar un solo día o un rango de fechas</div>
-								<Calendar
-									initialFocus
-									mode="range"
-									defaultMonth={dateRange?.from}
-									selected={dateRange}
-									onSelect={(range) => {
-										if (range?.from) {
-											setDateRange({
-												from: range.from,
-												to: range.to || range.from,
-											});
-										}
-									}}
-									locale={es}
-									numberOfMonths={2}
-								/>
-							</PopoverContent>
+							{!isReadOnly && (
+								<PopoverContent className="w-auto p-0" align="start">
+									<div className="p-2 text-xs text-muted-foreground">Puedes seleccionar un solo día o un rango de fechas</div>
+									<Calendar
+										initialFocus
+										mode="range"
+										defaultMonth={dateRange?.from}
+										selected={dateRange}
+										onSelect={(range) => {
+											if (range?.from) {
+												setDateRange({
+													from: range.from,
+													to: range.to || range.from,
+												});
+											}
+										}}
+										locale={es}
+										numberOfMonths={2}
+									/>
+								</PopoverContent>
+							)}
 						</Popover>
 						<div className="flex justify-between text-xs text-muted-foreground">
 							<p>Inicio: {dateRange.from ? format(dateRange.from, "PPP", { locale: es }) : "No seleccionada"}</p>
@@ -462,15 +499,15 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 						<div className="space-y-2">
 							<div className="flex items-center justify-between">
 								<FormLabel>Fechas reales de ejecución (opcional)</FormLabel>
-								{executedDateRange && (
+								{executedDateRange && !isReadOnly && (
 									<Button type="button" variant="ghost" size="sm" onClick={clearExecutedDates} className="h-8 text-xs">
 										Limpiar fechas
 									</Button>
 								)}
 							</div>
 							<Popover>
-								<PopoverTrigger asChild>
-									<Button id="executed-date-range" variant={"outline"} className={cn("w-full justify-start text-left font-normal", !executedDateRange && "text-muted-foreground")}>
+								<PopoverTrigger asChild disabled={isReadOnly}>
+									<Button id="executed-date-range" variant={"outline"} className={cn("w-full justify-start text-left font-normal", !executedDateRange && "text-muted-foreground")} disabled={isReadOnly}>
 										<CalendarIcon className="mr-2 h-4 w-4" />
 										{executedDateRange?.from ? (
 											executedDateRange.to && executedDateRange.from.getTime() !== executedDateRange.to.getTime() ? (
@@ -485,27 +522,29 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 										)}
 									</Button>
 								</PopoverTrigger>
-								<PopoverContent className="w-auto p-0" align="start">
-									<div className="p-2 text-xs text-muted-foreground">Selecciona las fechas reales en que se ejecutó la actividad</div>
-									<Calendar
-										initialFocus
-										mode="range"
-										defaultMonth={executedDateRange?.from || new Date()}
-										selected={executedDateRange || undefined}
-										onSelect={(range) => {
-											if (range?.from) {
-												setExecutedDateRange({
-													from: range.from,
-													to: range.to || range.from,
-												});
-											} else {
-												setExecutedDateRange(null);
-											}
-										}}
-										locale={es}
-										numberOfMonths={2}
-									/>
-								</PopoverContent>
+								{!isReadOnly && (
+									<PopoverContent className="w-auto p-0" align="start">
+										<div className="p-2 text-xs text-muted-foreground">Selecciona las fechas reales en que se ejecutó la actividad</div>
+										<Calendar
+											initialFocus
+											mode="range"
+											defaultMonth={executedDateRange?.from || new Date()}
+											selected={executedDateRange || undefined}
+											onSelect={(range) => {
+												if (range?.from) {
+													setExecutedDateRange({
+														from: range.from,
+														to: range.to || range.from,
+													});
+												} else {
+													setExecutedDateRange(null);
+												}
+											}}
+											locale={es}
+											numberOfMonths={2}
+										/>
+									</PopoverContent>
+								)}
 							</Popover>
 							{executedDateRange && (
 								<div className="flex justify-between text-xs text-muted-foreground">
@@ -526,9 +565,9 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 
 					<div className="flex justify-end space-x-2 pt-4">
 						<Button type="button" variant="outline" onClick={onClose}>
-							Cancelar
+							{isReadOnly ? "Cerrar" : "Cancelar"}
 						</Button>
-						<Button type="submit">{isEditMode ? "Actualizar Actividad" : "Crear Actividad"}</Button>
+						{!isReadOnly && <Button type="submit">{isEditMode ? "Actualizar Actividad" : "Crear Actividad"}</Button>}
 					</div>
 				</form>
 			</Form>
