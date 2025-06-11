@@ -6,7 +6,9 @@ const HOST = env.NEXT_PUBLIC_HOST || "http://localhost:4141";
 
 const getProjects = async (userId: string | null): Promise<ApiResponse> => {
 	try {
-		const petition = await fetch("/api/is/projects", { method: "GET" });
+		if (!userId) return { success: false, message: "User ID is required" };
+
+		const petition = await fetch(`/api/is/projects?userId=${userId}`, { method: "GET" });
 		return await petition.json();
 	} catch (error) {
 		return { success: false };

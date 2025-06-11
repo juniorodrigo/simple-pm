@@ -1,4 +1,5 @@
 import prisma from '../../services/prisma.service.js';
+import { Role } from '@prisma/client';
 
 // Función auxiliar para añadir métricas adicionales a un proyecto
 const enhanceProject = async (project) => {
@@ -37,41 +38,122 @@ const enhanceProject = async (project) => {
 	}
 };
 
-const getProjects = async () => {
-	const projects = await prisma.project.findMany({
-		include: {
-			category: true,
-			manager: {
-				select: {
-					id: true,
-					name: true,
-					lastname: true,
-					// username: true,
-					email: true,
-					role: true,
-					isActive: true,
+const getProjects = async (userId) => {
+	const user = await prisma.user.findFirst({
+		where: { id: userId },
+		select: {
+			role: true,
+			areaId: true,
+		},
+	});
+
+	let projects = [];
+
+	// En el caso de que pueda ver todo
+	if (user.role === Role.admin || user.role === Role.gerente_general) {
+		projects = await prisma.project.findMany({
+			include: {
+				category: true,
+				manager: {
+					select: {
+						id: true,
+						name: true,
+						lastname: true,
+						// username: true,
+						email: true,
+						role: true,
+						isActive: true,
+					},
 				},
-			},
-			ProjectMember: {
-				include: {
-					user: {
-						select: {
-							id: true,
-							name: true,
-							lastname: true,
-							// username: true,
-							email: true,
-							role: true,
-							isActive: true,
+				ProjectMember: {
+					include: {
+						user: {
+							select: {
+								id: true,
+								name: true,
+								lastname: true,
+								// username: true,
+								email: true,
+								role: true,
+								isActive: true,
+							},
 						},
 					},
 				},
 			},
-		},
-		where: {
-			// archived: false, // Solo proyectos activos
-		},
-	});
+			where: {
+				// archived: false, // Solo proyectos activos
+			},
+		});
+	} else if (user.role === Role.gerente_area) {
+		projects = await prisma.project.findMany({
+			include: {
+				category: true,
+				manager: {
+					select: {
+						id: true,
+						name: true,
+						lastname: true,
+						// username: true,
+						email: true,
+						role: true,
+						isActive: true,
+					},
+				},
+				ProjectMember: {
+					include: {
+						user: {
+							select: {
+								id: true,
+								name: true,
+								lastname: true,
+								// username: true,
+								email: true,
+								role: true,
+								isActive: true,
+							},
+						},
+					},
+				},
+			},
+			where: {
+				areaId: user.areaId,
+			},
+		});
+	} else {
+		projects = await prisma.project.findMany({
+			include: {
+				category: true,
+				manager: {
+					select: {
+						id: true,
+						name: true,
+						lastname: true,
+						email: true,
+						role: true,
+						isActive: true,
+					},
+				},
+				ProjectMember: {
+					include: {
+						user: {
+							select: {
+								id: true,
+								name: true,
+								lastname: true,
+								email: true,
+								role: true,
+								isActive: true,
+							},
+						},
+					},
+				},
+			},
+			where: {
+				OR: [{ managerUserId: userId }, { ProjectMember: { some: { userId: userId } } }],
+			},
+		});
+	}
 
 	// Enriquecer cada proyecto con métricas adicionales
 	const enhancedProjects = await Promise.all(projects.map((project) => enhanceProject(project)));
@@ -155,7 +237,7 @@ const getProjectById = async (projectId) => {
 
 const createProject = async (projectData) => {
 	// Extraer los campos necesarios y excluir el 'id' si viene en los datos
-	const { name, description, startDate, endDate, status, managerUserId, categoryId, teamMembers } = projectData;
+	const { name, description, startDate, endDate, status, managerUserId, categoryId, team } = projectData;
 
 	// console.log('Creando proyecto con datos:', { name, description, managerUserId, categoryId });
 
@@ -189,8 +271,8 @@ const createProject = async (projectData) => {
 		});
 
 		const members =
-			teamMembers?.map((member) => {
-				const newMemberObject = { userId: member, projectId: project.id, role: 'member' };
+			team?.map((member) => {
+				const newMemberObject = { userId: member.id, projectId: project.id, role: 'member' };
 				if (member == managerUserId) newMemberObject.role = 'manager';
 				return newMemberObject;
 			}) || [];
@@ -224,7 +306,7 @@ const createProject = async (projectData) => {
 };
 
 const updateProject = async (projectId, projectData) => {
-	const { name, description, startDate, endDate, status, managerUserId, categoryId, archived } = projectData;
+	const { name, description, startDate, endDate, status, managerUserId, categoryId, archived, team } = projectData;
 
 	// Verificar si el proyecto existe
 	const existingProject = await prisma.project.findUnique({
@@ -252,7 +334,6 @@ const updateProject = async (projectId, projectData) => {
 	}
 
 	console.log(projectData);
-
 	const updatedProject = await prisma.project.update({
 		where: { id: parseInt(projectId) },
 		data: {
@@ -280,6 +361,28 @@ const updateProject = async (projectId, projectData) => {
 			},
 		},
 	});
+
+	// Actualizar miembros del proyecto si se proporciona el array team
+	if (team !== undefined) {
+		// Eliminar todos los miembros actuales del proyecto
+		await prisma.projectMember.deleteMany({
+			where: { projectId: parseInt(projectId) },
+		});
+
+		// Crear los nuevos miembros si hay alguno
+		const members =
+			team?.map((member) => {
+				const newMemberObject = { userId: member.id, projectId: parseInt(projectId), role: 'member' };
+				if (member.id == managerUserId) newMemberObject.role = 'manager';
+				return newMemberObject;
+			}) || [];
+
+		if (members.length > 0) {
+			await prisma.projectMember.createMany({
+				data: members,
+			});
+		}
+	}
 
 	// Enriquecer el proyecto actualizado con métricas adicionales
 	const enhancedProject = await enhanceProject(updatedProject);

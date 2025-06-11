@@ -19,7 +19,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { ApiResponse } from "@/types/api-response.type";
 
 export default function KanbanPage() {
-	const { user } = useAuth();
+	const { user, isLoading: authLoading } = useAuth();
 	const isViewer = user?.role === "viewer";
 	const [selectedCategory, setSelectedCategory] = useState<string>("all");
 	const [projects, setProjects] = useState<Project[]>([]);
@@ -34,11 +34,13 @@ export default function KanbanPage() {
 
 	// Cargar proyectos
 	useEffect(() => {
+		// No hacer peticiones mientras se está cargando la autenticación
+		if (authLoading) return;
+
 		const loadData = async () => {
 			setLoading(true);
 
 			try {
-				// Cargar proyectos
 				const projectResponse: ApiResponse = await ProjectsService.getProjects(user?.id || null);
 
 				if (projectResponse.success && projectResponse.data) {
@@ -84,7 +86,7 @@ export default function KanbanPage() {
 		};
 
 		loadData();
-	}, [toast]);
+	}, [toast, user, authLoading]);
 
 	// Filtrar proyectos por categoría y término de búsqueda
 	const filteredProjects = projects.filter((project) => {

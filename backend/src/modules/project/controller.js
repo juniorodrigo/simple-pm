@@ -1,13 +1,9 @@
 import { Service } from './service.js';
 
 const getProjects = async (req, res) => {
-	try {
-		const { data } = await Service.getProjects();
-		res.success(data, 'Proyectos obtenidos correctamente');
-	} catch (error) {
-		console.error(error);
-		res.error(`Error al obtener los proyectos: ${error.message}`);
-	}
+	const { userId } = req.query;
+	const { data } = await Service.getProjects(userId);
+	res.success(data, 'Proyectos obtenidos correctamente');
 };
 
 const getProjectById = async (req, res) => {
@@ -31,7 +27,8 @@ const createProject = async (req, res) => {
 		}
 
 		// Extraer solo los campos permitidos, excluyendo 'id' para evitar conflictos con autoincrement
-		const { startDate, endDate, status, teamMembers, ...otherFields } = req.body;
+		const { startDate, endDate, status, team, ...otherFields } = req.body;
+		console.log('Datos del proyecto:', req.body);
 		const projectData = {
 			name,
 			description,
@@ -40,7 +37,7 @@ const createProject = async (req, res) => {
 			...(startDate && { startDate }),
 			...(endDate && { endDate }),
 			...(status && { status }),
-			...(teamMembers && { teamMembers }),
+			...(team && { team }),
 		};
 
 		const { success, data } = await Service.createProject(projectData);
