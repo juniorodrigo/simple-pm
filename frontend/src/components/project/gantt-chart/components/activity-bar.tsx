@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { AlertTriangleIcon, ClockIcon } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { BaseActivity } from "@/types/activity.type";
 import { BarPosition, ExecutionStatus } from "../types";
 import { isPast } from "../utils";
@@ -91,9 +92,11 @@ export const ActivityBar = memo(({ activity, barPosition, executedBarPos, execut
 						</div>
 					</div>
 				</TooltipTrigger>
-				<TooltipContent className="z-[50]">
-					<ActivityTooltipContent activity={activity} executionStatus={executionStatus} />
-				</TooltipContent>
+				<TooltipPrimitive.Portal>
+					<TooltipContent>
+						<ActivityTooltipContent activity={activity} executionStatus={executionStatus} />
+					</TooltipContent>
+				</TooltipPrimitive.Portal>
 			</Tooltip>
 
 			{/* Barra ejecutada (siempre verde, con indicadores) */}
@@ -127,9 +130,11 @@ export const ActivityBar = memo(({ activity, barPosition, executedBarPos, execut
 							</div>
 						</div>
 					</TooltipTrigger>
-					<TooltipContent className="z-[50]">
-						<ExecutedBarTooltipContent activity={activity} executionStatus={executionStatus} />
-					</TooltipContent>
+					<TooltipPrimitive.Portal>
+						<TooltipContent>
+							<ExecutedBarTooltipContent activity={activity} executionStatus={executionStatus} />
+						</TooltipContent>
+					</TooltipPrimitive.Portal>
 				</Tooltip>
 			)}
 		</div>
