@@ -2,7 +2,7 @@ import { ApiResponse } from "@/types/api-response.type";
 import { Project, ProjectCreate, ProjectUpdate } from "../types/new/project.type";
 import { env } from "@/env.mjs";
 
-const HOST = env.NEXT_PUBLIC_HOST || "http://localhost:4141";
+const HOST = env.NEXT_PUBLIC_HOST;
 
 const getProjects = async (userId: string | null): Promise<ApiResponse> => {
 	try {
