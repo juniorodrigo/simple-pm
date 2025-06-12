@@ -59,7 +59,7 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 
 				<div className="border rounded-md shadow relative flex-1 flex flex-col min-h-0">
 					<div className="flex sticky top-0 bg-background border-b flex-shrink-0" style={{ maxWidth: "100%" }}>
-						<div className="w-64 min-w-64 p-3 border-r font-medium bg-background z-30 shadow-sm sticky left-0">Actividad</div>
+						<div className="w-64 min-w-64 p-3 border-r font-medium bg-background z-20 shadow-sm sticky left-0">Actividad</div>
 						<div ref={headerScrollRef} className="flex-1 overflow-x-auto scrollbar-hide" onScroll={handleHeaderScroll} style={{ maxWidth: "calc(100% - 256px)" }}>
 							<DateHeader dateRange={dateRange} chartWidth={chartWidth} viewMode={viewMode} />
 						</div>
@@ -82,7 +82,7 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 
 										<ActivityInfo activity={activity} executionStatus={executionStatus} stages={stages} />
 										<div className="flex-1 relative ">
-											<div className="relative z-10 h-20 flex items-center justify-center">
+											<div className="relative z-[0] h-20 flex items-center justify-center">
 												<div className="flex items-center w-full h-full">
 													<ActivityBar
 														activity={activity}

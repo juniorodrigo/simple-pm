@@ -123,12 +123,14 @@
 
 /* Tooltip z-index override para que aparezca encima del header del gantt */
 [data-radix-tooltip-content] {
-  z-index: 100 !important;
+  z-index: 99999 !important;
+  position: fixed !important;
 }
 
 /* Alternativamente, para todos los tooltips */
 .tooltip-high-z {
-  z-index: 100 !important;
+  z-index: 99999 !important;
+  position: fixed !important;
 }
 
 /* Modal (Dialog) z-index override para que aparezca encima del header del gantt */

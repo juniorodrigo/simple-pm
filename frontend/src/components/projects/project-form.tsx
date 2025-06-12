@@ -77,8 +77,8 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 			description: isEditing && projectData ? projectData.description || "" : "",
 			startDate: isEditing && projectData && projectData.startDate ? new Date(projectData.startDate) : new Date(),
 			endDate: isEditing && projectData && projectData.endDate ? new Date(projectData.endDate) : addDays(new Date(), 30),
-			managerUserId: isEditing && projectData ? projectData.managerUserId || "" : "",
-			teamMembers: isEditing && projectData && projectData.team ? projectData.team.map((member) => member.id || "") : [],
+			managerUserId: isEditing && projectData ? projectData.managerUserId || "" : user?.id || "",
+			teamMembers: isEditing && projectData && projectData.team ? projectData.team.map((member) => member.id || "") : user?.id ? [user.id] : [],
 			categoryId: isEditing && projectData ? projectData.categoryId || "" : "",
 			previousProjectId: isEditing && projectData ? projectData.previousProjectId || "" : "",
 		},
@@ -118,6 +118,16 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 
 		loadData();
 	}, []);
+
+	// Efecto para asegurar que el usuario actual esté siempre en el equipo cuando se crea un nuevo proyecto
+	useEffect(() => {
+		if (!isEditing && user?.id) {
+			const currentTeamMembers = form.getValues("teamMembers");
+			if (!currentTeamMembers.includes(user.id)) {
+				form.setValue("teamMembers", [...currentTeamMembers, user.id]);
+			}
+		}
+	}, [user, isEditing, form]);
 
 	// Sincronizar el rango de fechas con los campos del formulario
 	useEffect(() => {
@@ -307,21 +317,28 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 							<FormItem>
 								<FormLabel>Miembros del Equipo</FormLabel>
 								<MultiSelect
-									options={users.map((user) => ({
-										value: user.id || "",
-										label: `${user.name} ${user.lastname}`,
+									options={users.map((userOption) => ({
+										value: userOption.id || "",
+										label: `${userOption.name} ${userOption.lastname}${!isEditing && userOption.id === user?.id ? " (Tú - Manager)" : ""}`,
 									}))}
 									selected={field.value}
 									onChange={(value) => {
-										field.onChange(value);
-										// Reset manager if not in team anymore
+										// En modo creación, asegurar que el usuario actual siempre esté incluido
+										let newValue = value;
+										if (!isEditing && user?.id && !value.includes(user.id)) {
+											newValue = [...value, user.id];
+										}
+
+										field.onChange(newValue);
+										// Reset manager if not in team anymore (solo en modo edición)
 										const currentManager = form.getValues("managerUserId");
-										if (currentManager && !value.includes(currentManager)) {
+										if (isEditing && currentManager && !newValue.includes(currentManager)) {
 											form.setValue("managerUserId", "");
 										}
 									}}
-									placeholder="Primero selecciona los miembros del equipo"
+									placeholder={!isEditing ? "Selecciona miembros adicionales del equipo" : "Primero selecciona los miembros del equipo"}
 								/>
+								{!isEditing && <p className="text-xs text-muted-foreground">Nota: Como creador del proyecto, serás automáticamente el Project Manager y no puedes removerte del equipo.</p>}
 								<FormMessage />
 							</FormItem>
 						)}
@@ -333,20 +350,28 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 						render={({ field }) => (
 							<FormItem>
 								<FormLabel>Project Manager</FormLabel>
-								<Select onValueChange={field.onChange} value={field.value} disabled={watchTeamMembers.length === 0}>
-									<FormControl>
-										<SelectTrigger>
-											<SelectValue placeholder={watchTeamMembers.length === 0 ? "Primero selecciona el equipo" : "Selecciona el Project Manager"} />
-										</SelectTrigger>
-									</FormControl>
-									<SelectContent>
-										{availableManagers.map((user) => (
-											<SelectItem key={user.id} value={user.id || ""}>
-												{`${user.name} ${user.lastname}`}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+								{!isEditing ? (
+									// En modo creación, mostrar solo el usuario actual como manager (no editable)
+									<div className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-muted px-3 py-2 text-sm ring-offset-background">
+										<span>{user ? `${user.name} ${user.lastname} (Tú)` : "Usuario actual"}</span>
+									</div>
+								) : (
+									// En modo edición, permitir cambiar el manager
+									<Select onValueChange={field.onChange} value={field.value} disabled={watchTeamMembers.length === 0}>
+										<FormControl>
+											<SelectTrigger>
+												<SelectValue placeholder={watchTeamMembers.length === 0 ? "Primero selecciona el equipo" : "Selecciona el Project Manager"} />
+											</SelectTrigger>
+										</FormControl>
+										<SelectContent>
+											{availableManagers.map((user) => (
+												<SelectItem key={user.id} value={user.id || ""}>
+													{`${user.name} ${user.lastname}`}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								)}
 								<FormMessage />
 							</FormItem>
 						)}

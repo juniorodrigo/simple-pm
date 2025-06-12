@@ -91,7 +91,7 @@ export const ActivityBar = memo(({ activity, barPosition, executedBarPos, execut
 						</div>
 					</div>
 				</TooltipTrigger>
-				<TooltipContent className="z-[100] tooltip-high-z">
+				<TooltipContent className="tooltip-high-z">
 					<ActivityTooltipContent activity={activity} executionStatus={executionStatus} />
 				</TooltipContent>
 			</Tooltip>
@@ -134,7 +134,7 @@ export const ActivityBar = memo(({ activity, barPosition, executedBarPos, execut
 							</div>
 						</div>
 					</TooltipTrigger>
-					<TooltipContent className="z-[100] tooltip-high-z">
+					<TooltipContent className="tooltip-high-z">
 						<ExecutedBarTooltipContent activity={activity} executionStatus={executionStatus} />
 					</TooltipContent>
 				</Tooltip>

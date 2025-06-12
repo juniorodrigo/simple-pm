@@ -15,7 +15,7 @@ type ActivityInfoProps = {
 };
 
 export const ActivityInfo = memo(({ activity, executionStatus, stages }: ActivityInfoProps) => (
-	<div className="w-64 min-w-64 p-3 border-r border-l-1 bg-background/100 shadow-sm sticky left-0 z-20">
+	<div className="w-64 min-w-64 p-3 border-r border-l-1 bg-background/100 shadow-sm sticky left-0 z-[1]">
 		<div className="font-medium">{activity.title}</div>
 		<div className="flex items-center space-x-2 mt-2">
 			<div className="text-xs mt-2 flex items-center gap-1">
