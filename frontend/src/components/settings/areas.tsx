@@ -188,7 +188,7 @@ export default function AreasSettings() {
 			console.error("Error eliminando área:", error);
 			toast({
 				title: "Error al eliminar",
-				description: "No se pudo eliminar el área. Por favor, intenta de nuevo.",
+				description: error instanceof Error ? error.message : "No se pudo eliminar el área. Por favor, intenta de nuevo.",
 				variant: "destructive",
 			});
 		} finally {

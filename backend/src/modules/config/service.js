@@ -54,6 +54,13 @@ async function deleteArea(id) {
 	});
 	if (!existingArea) throw new AppError('Área no encontrada');
 
+	const usersInArea = await prisma.user.findMany({
+		where: { areaId: id },
+	});
+	if (usersInArea.length > 0) {
+		throw new AppError('No se puede eliminar el área porque hay usuarios asignados a ella');
+	}
+
 	await prisma.area.delete({
 		where: { id: id },
 	});
