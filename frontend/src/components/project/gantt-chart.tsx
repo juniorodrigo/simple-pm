@@ -5,8 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { getStageColorValue } from "@/lib/colors";
 
 // Importaciones locales
-import { GanttChartProps, WEEK_WIDTH } from "./gantt-chart/types";
-import { useDateRange, useChartDimensions } from "./gantt-chart/hooks";
+import { GanttChartProps, WEEK_WIDTH, DAY_WIDTH } from "./gantt-chart/types";
+import { useDateRange } from "./gantt-chart/hooks";
 import { getBarPosition, getExecutedBarPosition, getExecutionStatus, getStageColor } from "./gantt-chart/utils";
 import { Legend, DateHeader, ActivityInfo, GridLines, ActivityBar, EmptyState } from "./gantt-chart/components";
 
@@ -17,8 +17,7 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 	const headerScrollRef = useRef<HTMLDivElement>(null);
 
 	const dateRange = useDateRange(activities, viewMode);
-	const chartWidthDays = useChartDimensions(dateRange, viewMode);
-	const chartWidth = viewMode === "weeks" ? dateRange.length * WEEK_WIDTH : chartWidthDays;
+	const chartWidth = viewMode === "weeks" ? dateRange.length * WEEK_WIDTH : dateRange.length * DAY_WIDTH;
 
 	const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
 		const container = e.currentTarget;
@@ -47,6 +46,14 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 				{showLegend && (
 					<div className="flex-shrink-0">
 						<Legend showLegend={showLegend} setShowLegend={setShowLegend} />
+					</div>
+				)}
+
+				{!showLegend && (
+					<div className="flex-shrink-0">
+						<button onClick={() => setShowLegend(true)} className="px-3 py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md border border-dashed transition-colors">
+							Mostrar leyenda
+						</button>
 					</div>
 				)}
 

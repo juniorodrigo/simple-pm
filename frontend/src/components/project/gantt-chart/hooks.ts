@@ -8,6 +8,7 @@ export const useDateRange = (activities: BaseActivity[], viewMode: "days" | "wee
 	return useMemo(() => {
 		if (activities.length === 0) return [];
 
+		const today = new Date();
 		let earliestDate = new Date(activities[0].startDate);
 		let latestDate = new Date(activities[0].endDate);
 
@@ -29,8 +30,20 @@ export const useDateRange = (activities: BaseActivity[], viewMode: "days" | "wee
 			latestDate = dueDate > latestDate ? dueDate : latestDate;
 		});
 
-		earliestDate = addDays(earliestDate, -2);
-		latestDate = addDays(latestDate, 2);
+		// Asegurar que hoy siempre esté incluido
+		const todayStart = startOfDay(today);
+		if (todayStart < earliestDate) {
+			earliestDate = todayStart;
+		}
+		if (todayStart > latestDate) {
+			latestDate = todayStart;
+		}
+
+		// Agregar padding al inicio (una semana antes del día más temprano)
+		earliestDate = addDays(earliestDate, -7);
+
+		// Agregar como máximo 20 días después de la mayor fecha
+		latestDate = addDays(latestDate, 20);
 
 		if (viewMode === "weeks") {
 			earliestDate = startOfWeek(earliestDate, { weekStartsOn: 1 });
@@ -39,6 +52,17 @@ export const useDateRange = (activities: BaseActivity[], viewMode: "days" | "wee
 			const numWeeks = Math.ceil((latestDate.getTime() - earliestDate.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
 			if (numWeeks < MIN_WEEKS) {
 				latestDate = addDays(earliestDate, (MIN_WEEKS - 1) * 7);
+			}
+		} else {
+			// Para vista de días, asegurar que tengamos suficientes días para llenar el contenedor
+			const daysDifference = Math.ceil((latestDate.getTime() - earliestDate.getTime()) / (24 * 60 * 60 * 1000));
+			// Calculamos un ancho mínimo que sea suficiente para mostrar bien el gantt
+			// Considerando que el contenedor disponible suele ser de al menos 1200px después de restar la columna de actividades
+			const minContainerWidth = 1200; // Ancho mínimo deseado para el área del gantt
+			const minDays = Math.ceil(minContainerWidth / DAY_WIDTH);
+
+			if (daysDifference < minDays) {
+				latestDate = addDays(earliestDate, minDays - 1);
 			}
 		}
 

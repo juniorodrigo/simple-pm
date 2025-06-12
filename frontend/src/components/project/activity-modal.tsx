@@ -70,6 +70,7 @@ type DateRange = {
 export default function CreateActivityModal({ projectId, stages: providedStages, activity, isReadOnly = false, onClose, onSuccess }: CreateActivityModalProps) {
 	const { toast } = useToast();
 	const [users, setUsers] = useState<User[]>([]);
+	const [isSubmitting, setIsSubmitting] = useState(false); // Estado para prevenir doble envío
 	const isEditMode = !!activity;
 	const [dateRange, setDateRange] = useState<DateRange>({
 		from: new Date(),
@@ -193,53 +194,68 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 	});
 
 	const onSubmit = async (values: z.infer<typeof formSchema>) => {
-		if (isEditMode && activity) {
-			// Modo edición - actualizar actividad existente
-			const updatedActivity: BaseActivity = {
-				...activity,
-				...values,
-			};
+		// Prevenir múltiples envíos
+		if (isSubmitting) return;
 
-			const response = await ActivitysService.updateActivity(updatedActivity.id, updatedActivity);
+		setIsSubmitting(true);
 
-			if (response.success) {
-				onSuccess(updatedActivity);
-				toast({
-					title: "Actividad actualizada",
-					description: "La actividad ha sido actualizada correctamente.",
-				});
-				onClose();
+		try {
+			if (isEditMode && activity) {
+				// Modo edición - actualizar actividad existente
+				const updatedActivity: BaseActivity = {
+					...activity,
+					...values,
+				};
+
+				const response = await ActivitysService.updateActivity(updatedActivity.id, updatedActivity);
+
+				if (response.success) {
+					onSuccess(updatedActivity);
+					toast({
+						title: "Actividad actualizada",
+						description: "La actividad ha sido actualizada correctamente.",
+					});
+					onClose();
+				} else {
+					toast({
+						title: "Error",
+						description: "Hubo un error al actualizar la actividad.",
+						variant: "destructive",
+					});
+				}
 			} else {
-				toast({
-					title: "Error",
-					description: "Hubo un error al actualizar la actividad.",
-					variant: "destructive",
-				});
-			}
-		} else {
-			// Modo creación - crear nueva actividad
-			const newActivity: BaseActivity = {
-				id: `a${Math.floor(Math.random() * 1000)}`,
-				...values,
-			};
+				// Modo creación - crear nueva actividad
+				const newActivity: BaseActivity = {
+					id: `a${Math.floor(Math.random() * 1000)}`,
+					...values,
+				};
 
-			const response = await ActivitysService.createActivity(values.stageId, newActivity);
+				const response = await ActivitysService.createActivity(values.stageId, newActivity);
 
-			if (response.success) {
-				const createdActivity = response.data?.id ? { ...newActivity, id: response.data.id } : newActivity;
-				onSuccess(createdActivity);
-				toast({
-					title: "Actividad Creada",
-					description: "La actividad ha sido creada correctamente.",
-				});
-				onClose();
-			} else {
-				toast({
-					title: "Error",
-					description: "Hubo un error al crear la actividad.",
-					variant: "destructive",
-				});
+				if (response.success) {
+					const createdActivity = response.data?.id ? { ...newActivity, id: response.data.id } : newActivity;
+					onSuccess(createdActivity);
+					toast({
+						title: "Actividad Creada",
+						description: "La actividad ha sido creada correctamente.",
+					});
+					onClose();
+				} else {
+					toast({
+						title: "Error",
+						description: "Hubo un error al crear la actividad.",
+						variant: "destructive",
+					});
+				}
 			}
+		} catch (error) {
+			toast({
+				title: "Error",
+				description: "Ocurrió un error inesperado. Por favor, inténtalo nuevamente.",
+				variant: "destructive",
+			});
+		} finally {
+			setIsSubmitting(false);
 		}
 	};
 
@@ -564,10 +580,14 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 					</div>
 
 					<div className="flex justify-end space-x-2 pt-4">
-						<Button type="button" variant="outline" onClick={onClose}>
+						<Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
 							{isReadOnly ? "Cerrar" : "Cancelar"}
 						</Button>
-						{!isReadOnly && <Button type="submit">{isEditMode ? "Actualizar Actividad" : "Crear Actividad"}</Button>}
+						{!isReadOnly && (
+							<Button type="submit" disabled={isSubmitting}>
+								{isSubmitting ? (isEditMode ? "Actualizando..." : "Creando...") : isEditMode ? "Actualizar Actividad" : "Crear Actividad"}
+							</Button>
+						)}
 					</div>
 				</form>
 			</Form>

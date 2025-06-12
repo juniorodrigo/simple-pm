@@ -19,7 +19,7 @@ export const DateHeader = memo(({ dateRange, chartWidth, viewMode }: DateHeaderP
 			<div style={{ width: `${dateRange.length * WEEK_WIDTH}px` }} className="relative">
 				<div className="flex">
 					{monthGroups.map((group, idx) => (
-						<div key={group.month + idx} className="text-center text-sm font-semibold border-b bg-background" style={{ width: `${group.span * WEEK_WIDTH}px` }}>
+						<div key={group.month + idx} className="text-center text-sm font-semibold border-b border-r bg-background" style={{ width: `${group.span * WEEK_WIDTH}px` }}>
 							{group.month.charAt(0).toUpperCase() + group.month.slice(1)}
 						</div>
 					))}
@@ -51,7 +51,7 @@ export const DateHeader = memo(({ dateRange, chartWidth, viewMode }: DateHeaderP
 		<div style={{ width: `${chartWidth}px` }}>
 			<div className="flex">
 				{monthGroups.map((group, idx) => (
-					<div key={group.month + idx} className="text-center text-sm font-semibold border-b bg-background" style={{ width: `${group.span * DAY_WIDTH}px` }}>
+					<div key={group.month + idx} className="text-center text-sm font-semibold border-b border-r bg-background" style={{ width: `${group.span * DAY_WIDTH}px` }}>
 						{group.month.charAt(0).toUpperCase() + group.month.slice(1)}
 					</div>
 				))}
@@ -64,7 +64,6 @@ export const DateHeader = memo(({ dateRange, chartWidth, viewMode }: DateHeaderP
 							${isToday(date) ? "bg-primary/20 font-bold" : ""}`}
 					>
 						<div className="font-medium">{format(date, "d")}</div>
-						<div>{format(date, "MMM", { locale: es })}</div>
 						{isToday(date) && <div className="h-1 w-full bg-primary mt-1"></div>}
 					</div>
 				))}

@@ -1,12 +1,12 @@
 import { AlertTriangleIcon, ClockIcon } from "lucide-react";
 import { memo } from "react";
 
-type LegendProps = {
+type ProjectsLegendProps = {
 	showLegend: boolean;
 	setShowLegend: (show: boolean) => void;
 };
 
-export const Legend = memo(({ showLegend, setShowLegend }: LegendProps) => (
+export const ProjectsLegend = memo(({ showLegend, setShowLegend }: ProjectsLegendProps) => (
 	<div className="flex flex-wrap items-center gap-4 text-xs p-3 bg-muted/30 rounded-lg border">
 		<h4 className="font-medium text-foreground">Leyenda:</h4>
 
@@ -17,8 +17,8 @@ export const Legend = memo(({ showLegend, setShowLegend }: LegendProps) => (
 				<span className="text-muted-foreground">Planificado</span>
 			</div>
 			<div className="flex items-center gap-2">
-				<div className="h-3 w-6 rounded bg-green-600"></div>
-				<span className="text-muted-foreground">Completado</span>
+				<div className="h-3 w-6 rounded" style={{ backgroundColor: "rgba(34, 197, 94, 0.8)" }}></div>
+				<span className="text-muted-foreground">Ejecutado</span>
 			</div>
 		</div>
 
@@ -60,4 +60,4 @@ export const Legend = memo(({ showLegend, setShowLegend }: LegendProps) => (
 	</div>
 ));
 
-Legend.displayName = "Legend";
+ProjectsLegend.displayName = "ProjectsLegend";

@@ -27,7 +27,7 @@ export const ActivityInfo = memo(({ activity, executionStatus, stages }: Activit
 			<div className="flex-grow"></div>
 			<Avatar className="h-6 w-6">
 				<AvatarImage src="/placeholder-user.jpg" alt={activity.assignedToUser.name} />
-				<AvatarFallback>{getInitials(activity.assignedToUser.name + " " + activity.assignedToUser.lastname)}</AvatarFallback>
+				<AvatarFallback className="text-sm">{getInitials(activity.assignedToUser.name + " " + activity.assignedToUser.lastname)} </AvatarFallback>
 			</Avatar>
 		</div>
 
