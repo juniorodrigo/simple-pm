@@ -1,7 +1,7 @@
 // app/projects/[id]/ClientView.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -31,9 +31,9 @@ import CreateProjectForm from "@/components/projects/project-form";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
-import { ProjectStatus, ProjectStatusLabels } from "@/types/enums";
+import { ProjectStatus, ProjectStatusLabels, ActivityStatus } from "@/types/enums";
 import { ProjectsService } from "@/services/project.service";
-import { ArchiveRestore, RotateCcw, Check } from "lucide-react";
+import { ArchiveRestore, RotateCcw, Check, CheckCircle } from "lucide-react";
 
 interface ClientViewProps {
 	project: ExtendedProject;
@@ -70,6 +70,12 @@ export default function ClientView({ project: initialProject, activities: initia
 	const isProjectArchived = project.archived === true;
 	const isProjectInReview = project.status === "review";
 
+	// Verificar si todas las actividades están completadas
+	const allActivitiesCompleted = useMemo(() => {
+		if (projectActivities.length === 0) return false;
+		return projectActivities.every((activity) => activity.status === ActivityStatus.DONE);
+	}, [projectActivities]);
+
 	// Variable unificada para control de acceso - combina todas las condiciones que requieren modo vista
 	const isInViewMode = isViewer || isProjectCompleted || isProjectArchived;
 
@@ -89,7 +95,7 @@ export default function ClientView({ project: initialProject, activities: initia
 			}));
 		}
 		const total = updated.length;
-		updatedProject.progressPercentage = total > 0 ? Math.round((updated.filter((a) => a.status === "completed").length / total) * 100) : 0;
+		updatedProject.progressPercentage = total > 0 ? Math.round((updated.filter((a) => a.status === ActivityStatus.DONE).length / total) * 100) : 0;
 		setProject(updatedProject);
 	};
 
@@ -296,11 +302,11 @@ export default function ClientView({ project: initialProject, activities: initia
 									</AlertDialog>
 								)}
 
-								{/* Botón Completar - solo si está en revisión */}
-								{isProjectInReview && !isProjectArchived && isEditor && (
+								{/* Botón Completar - mostrar si está en revisión O si todas las actividades están completadas */}
+								{((isProjectInReview && !isProjectArchived) || (allActivitiesCompleted && projectActivities.length > 0 && !isProjectCompleted && !isProjectArchived)) && isEditor && (
 									<AlertDialog>
 										<AlertDialogTrigger asChild>
-											<Button variant="outline" size="sm" disabled={isUpdating}>
+											<Button variant="outline" size="sm" disabled={isUpdating} className="bg-green-50 border-green-200 text-green-800 hover:bg-green-100">
 												<Check className="mr-2 h-4 w-4" />
 												{isUpdating ? "Completando..." : "Completar"}
 											</Button>
@@ -324,7 +330,7 @@ export default function ClientView({ project: initialProject, activities: initia
 								{isProjectCompleted && !isProjectArchived && isEditor && (
 									<AlertDialog>
 										<AlertDialogTrigger asChild>
-											<Button variant="outline" size="sm" disabled={isUpdating}>
+											<Button variant="outline" size="sm" disabled={isUpdating} className="bg-orange-50 border-orange-200 text-orange-800 hover:bg-orange-100">
 												<RotateCcw className="mr-2 h-4 w-4" />
 												{isUpdating ? "Regresando..." : "Regresar a revisión"}
 											</Button>
@@ -467,6 +473,14 @@ export default function ClientView({ project: initialProject, activities: initia
 			{/* Tablero / Gantt */}
 			<div className="flex-1 min-h-0">
 				<div className="border rounded-lg px-4 py-2 h-full">
+					{/* Mensaje de todas las actividades completadas */}
+					{allActivitiesCompleted && projectActivities.length > 0 && !isProjectCompleted && !isProjectArchived && activeView === "kanban" && (
+						<div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2 text-green-800 flex-shrink-0">
+							<CheckCircle className="h-4 w-4" />
+							<span className="text-sm font-medium">¡Todas las actividades han sido completadas! El proyecto está listo para ser finalizado.</span>
+						</div>
+					)}
+
 					{activeView === "kanban" ? (
 						<KanbanBoard
 							activities={filteredActivities}
