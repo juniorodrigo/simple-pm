@@ -54,9 +54,10 @@ interface CreateProjectFormProps {
 	isEditing?: boolean;
 	projectData?: ExtendedProject;
 	onSuccess?: () => void;
+	onCancel?: () => void;
 }
 
-export default function CreateProjectForm({ isEditing = false, projectData, onSuccess }: CreateProjectFormProps) {
+export default function CreateProjectForm({ isEditing = false, projectData, onSuccess, onCancel }: CreateProjectFormProps) {
 	const { toast } = useToast();
 	const [users, setUsers] = useState<User[]>([]);
 	const [availableTags, setAvailableTags] = useState<Tag[]>([]);
@@ -402,7 +403,7 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 					/>
 
 					<div className="flex justify-end space-x-2 pt-4">
-						<Button type="button" variant="outline">
+						<Button type="button" variant="outline" onClick={onCancel}>
 							Cancelar
 						</Button>
 						<Button type="submit" disabled={loading}>

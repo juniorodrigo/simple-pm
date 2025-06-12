@@ -68,11 +68,11 @@ export default function KanbanPage() {
 					});
 					setCategories(Array.from(uniqueCategories.values()));
 				} else {
-					toast({
-						title: "Error",
-						description: "No se recibieron datos de proyectos",
-						variant: "destructive",
-					});
+					// toast({
+					// 	title: "Error",
+					// 	description: "No se recibieron datos de proyectos",
+					// 	variant: "destructive",
+					// });
 				}
 			} catch (error) {
 				toast({
@@ -199,7 +199,7 @@ export default function KanbanPage() {
 										<DialogHeader>
 											<DialogTitle>Crear nuevo proyecto</DialogTitle>
 										</DialogHeader>
-										<CreateProjectForm onSuccess={handleProjectCreated} />
+										<CreateProjectForm onSuccess={handleProjectCreated} onCancel={() => setIsDialogOpen(false)} />
 									</DialogContent>
 								</Dialog>
 							</div>

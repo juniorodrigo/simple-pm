@@ -13,16 +13,16 @@ const getUsers = async () => {
 const getUsersByProjectId = async (projectId) => {
 	let users = [];
 
-	const managerUser = await prisma.project.findFirst({
-		where: {
-			id: Number(projectId),
-		},
-		select: {
-			manager: true,
-		},
-	});
+	// const managerUser = await prisma.project.findFirst({
+	// 	where: {
+	// 		id: Number(projectId),
+	// 	},
+	// 	select: {
+	// 		manager: true,
+	// 	},
+	// });
 
-	users.push(managerUser.manager);
+	// users.push(managerUser.manager);
 
 	let members = await prisma.projectMember.findMany({
 		where: {
