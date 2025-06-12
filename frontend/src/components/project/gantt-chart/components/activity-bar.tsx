@@ -91,7 +91,7 @@ export const ActivityBar = memo(({ activity, barPosition, executedBarPos, execut
 						</div>
 					</div>
 				</TooltipTrigger>
-				<TooltipContent className="tooltip-high-z">
+				<TooltipContent className="z-[50]">
 					<ActivityTooltipContent activity={activity} executionStatus={executionStatus} />
 				</TooltipContent>
 			</Tooltip>
@@ -124,17 +124,10 @@ export const ActivityBar = memo(({ activity, barPosition, executedBarPos, execut
 										<AlertTriangleIcon className="h-3 w-3 text-white" />
 									</div>
 								)}
-
-								{/* Ícono de alerta general si hay retraso (mantener lógica existente para casos no cubiertos) */}
-								{/* {executionStatus?.late && !showLateCompletion && !showExecutionDelay && (
-									<div className="bg-amber-500 rounded-full p-0.5">
-										<AlertTriangleIcon className="h-3 w-3 text-white" />
-									</div>
-								)} */}
 							</div>
 						</div>
 					</TooltipTrigger>
-					<TooltipContent className="tooltip-high-z">
+					<TooltipContent className="z-[50]">
 						<ExecutedBarTooltipContent activity={activity} executionStatus={executionStatus} />
 					</TooltipContent>
 				</Tooltip>

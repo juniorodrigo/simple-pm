@@ -42,7 +42,7 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 
 	return (
 		<TooltipProvider>
-			<div className="h-full flex flex-col space-y-3">
+			<div className="h-full flex flex-col space-y-3 overflow-hidden">
 				{showLegend && (
 					<div className="flex-shrink-0">
 						<Legend showLegend={showLegend} setShowLegend={setShowLegend} />
@@ -57,16 +57,18 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 					</div>
 				)}
 
-				<div className="border rounded-md shadow relative flex-1 flex flex-col min-h-0">
-					<div className="flex sticky top-0 bg-background border-b flex-shrink-0" style={{ maxWidth: "100%" }}>
-						<div className="w-64 min-w-64 p-3 border-r font-medium bg-background z-20 shadow-sm sticky left-0">Actividad</div>
-						<div ref={headerScrollRef} className="flex-1 overflow-x-auto scrollbar-hide" onScroll={handleHeaderScroll} style={{ maxWidth: "calc(100% - 256px)" }}>
+				<div className="border rounded-md shadow relative flex-1 flex flex-col min-h-0 overflow-hidden">
+					{/* Header fijo */}
+					<div className="flex sticky top-0 bg-background border-b flex-shrink-0 z-[20]">
+						<div className="w-64 min-w-64 p-3 border-r font-medium bg-background z-[21] shadow-sm sticky left-0">Actividad</div>
+						<div ref={headerScrollRef} className="flex-1 overflow-x-auto scrollbar-hide" onScroll={handleHeaderScroll}>
 							<DateHeader dateRange={dateRange} chartWidth={chartWidth} viewMode={viewMode} />
 						</div>
 					</div>
 
-					<div ref={contentRef} className="overflow-x-auto overflow-y-auto flex-1" style={{ maxWidth: "100%" }} onScroll={handleScroll}>
-						<div style={{ width: `${chartWidth + 256}px` }}>
+					{/* Contenido con scroll */}
+					<div ref={contentRef} className="flex-1 overflow-x-auto overflow-y-auto" onScroll={handleScroll}>
+						<div className="relative" style={{ width: `${chartWidth + 256}px`, minHeight: "100%" }}>
 							{activities.map((activity) => {
 								const executedBarPos = getExecutedBarPosition(activity, dateRange, viewMode);
 								const executionStatus = getExecutionStatus(activity);
@@ -76,13 +78,19 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 
 								return (
 									<div key={activity.id} className="flex border-b hover:bg-secondary/20 items-center relative">
-										<div className="absolute inset-0 left-64">
+										{/* Grid lines con ancho limitado */}
+										<div className="absolute inset-0 left-64 z-[1]" style={{ width: `${chartWidth}px` }}>
 											<GridLines dateRange={dateRange} viewMode={viewMode} />
 										</div>
 
-										<ActivityInfo activity={activity} executionStatus={executionStatus} stages={stages} />
-										<div className="flex-1 relative ">
-											<div className="relative z-[0] h-20 flex items-center justify-center">
+										{/* Activity info sticky */}
+										<div className="sticky left-0 z-[19] bg-background">
+											<ActivityInfo activity={activity} executionStatus={executionStatus} stages={stages} />
+										</div>
+
+										{/* Activity bar con z-index apropiado */}
+										<div className="flex-1 relative">
+											<div className="relative z-[10] h-20 flex items-center justify-center">
 												<div className="flex items-center w-full h-full">
 													<ActivityBar
 														activity={activity}

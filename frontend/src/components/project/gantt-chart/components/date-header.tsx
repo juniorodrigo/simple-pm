@@ -38,7 +38,7 @@ export const DateHeader = memo(({ dateRange, chartWidth, viewMode }: DateHeaderP
 
 				{/* Línea vertical para indicar el día actual */}
 				{todayPosition !== null && (
-					<div className="absolute top-0 bottom-0 w-0.5 bg-primary z-10" style={{ left: `${todayPosition}px` }}>
+					<div className="absolute top-0 bottom-0 w-0.5 bg-primary z-[5]" style={{ left: `${todayPosition}px` }}>
 						<div className="absolute -top-1 -left-1 w-2 h-2 bg-primary rounded-full"></div>
 					</div>
 				)}
