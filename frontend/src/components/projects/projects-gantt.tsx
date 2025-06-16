@@ -1,7 +1,7 @@
 "use client";
 
 import { Project } from "@/types/new/project.type";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { addDays, differenceInDays, format, startOfDay } from "date-fns";
@@ -11,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { getStageColorValue, STATUS_COLORS } from "@/lib/colors";
 import { ProjectStatusLabels } from "@/types/enums";
 import { useRouter } from "next/navigation";
-import { ProjectsLegend } from "./components/projects-legend";
+import { ProjectsLegend, FilterState, FilterGroup } from "./components/projects-legend";
 
 interface ProjectsGanttProps {
 	projects: Project[];
@@ -22,6 +22,85 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 	const [dateRange, setDateRange] = useState<Date[]>([]);
 	const [chartWidth, setChartWidth] = useState(0);
 	const [showLegend, setShowLegend] = useState(true);
+	const [filters, setFilters] = useState<FilterState>({
+		lateStart: false,
+		inProgressLate: false,
+		completedLate: false,
+	});
+
+	const handleFilterChange = (group: FilterGroup, value: boolean) => {
+		console.log(`Filtro ${group} ${value ? "activado" : "desactivado"}`);
+		setFilters((prev) => ({ ...prev, [group]: value }));
+	};
+
+	// Filtrar proyectos basado en los filtros activos
+	const filteredProjects = useMemo(() => {
+		if (!filters.lateStart && !filters.inProgressLate && !filters.completedLate) {
+			return projects;
+		}
+
+		const now = new Date();
+		now.setHours(0, 0, 0, 0);
+
+		return projects.filter((project) => {
+			// Convertir fechas a inicio del día para comparación
+			const startDate = new Date(project.startDate);
+			startDate.setHours(0, 0, 0, 0);
+			const endDate = new Date(project.endDate);
+			endDate.setHours(0, 0, 0, 0);
+			const realStartDate = project.realStartDate ? new Date(project.realStartDate) : null;
+			if (realStartDate) realStartDate.setHours(0, 0, 0, 0);
+			const realEndDate = project.realEndDate ? new Date(project.realEndDate) : null;
+			if (realEndDate) realEndDate.setHours(0, 0, 0, 0);
+
+			// Determinar el estado más avanzado del proyecto
+			let projectStatus: "lateStart" | "inProgressLate" | "completedLate" | null = null;
+
+			// 1. Verificar si está completado con retraso (estado más avanzado)
+			if (realEndDate && realEndDate > endDate) {
+				projectStatus = "completedLate";
+			}
+			// 2. Si no está completado con retraso, verificar si está en progreso con retraso
+			else if (realStartDate && !realEndDate && now > endDate) {
+				projectStatus = "inProgressLate";
+			}
+			// 3. Si no está en ninguno de los anteriores, verificar si tiene inicio tardío
+			else if ((!realStartDate && now > startDate) || (realStartDate && realStartDate > startDate)) {
+				projectStatus = "lateStart";
+			}
+
+			// Si el proyecto tiene un estado y el filtro correspondiente está activo, incluirlo
+			if (projectStatus && filters[projectStatus]) {
+				console.log(`Proyecto "${project.name}" clasificado como ${projectStatus}:`, {
+					planificado: {
+						inicio: startDate.toLocaleDateString(),
+						fin: endDate.toLocaleDateString(),
+					},
+					real: {
+						inicio: realStartDate?.toLocaleDateString() || "No iniciado",
+						fin: realEndDate?.toLocaleDateString() || "No finalizado",
+					},
+					actual: now.toLocaleDateString(),
+				});
+				return true;
+			}
+
+			return false;
+		});
+	}, [projects, filters]);
+
+	// Log de resumen de filtrado
+	useEffect(() => {
+		if (filters.lateStart || filters.inProgressLate || filters.completedLate) {
+			console.log("Resumen de filtrado:", {
+				totalProyectos: projects.length,
+				proyectosFiltrados: filteredProjects.length,
+				filtrosActivos: Object.entries(filters)
+					.filter(([_, value]) => value)
+					.map(([key]) => key),
+			});
+		}
+	}, [filters, filteredProjects.length, projects.length]);
 
 	// Find the earliest start date and latest end date
 	useEffect(() => {
@@ -211,7 +290,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 			<div className="space-y-3">
 				{showLegend && (
 					<div className="flex-shrink-0">
-						<ProjectsLegend showLegend={showLegend} setShowLegend={setShowLegend} />
+						<ProjectsLegend showLegend={showLegend} setShowLegend={setShowLegend} filters={filters} onFilterChange={handleFilterChange} />
 					</div>
 				)}
 
@@ -222,6 +301,14 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 						</button>
 					</div>
 				)}
+
+				{/* Mostrar contador de proyectos filtrados si hay filtros activos */}
+				{(filters.lateStart || filters.inProgressLate || filters.completedLate) && (
+					<div className="text-sm text-muted-foreground">
+						Mostrando {filteredProjects.length} de {projects.length} proyectos
+					</div>
+				)}
+
 				<div className="overflow-x-auto border rounded-md shadow">
 					<div style={{ minWidth: `${chartWidth}px` }} className="relative">
 						{/* Header with dates */}
@@ -264,7 +351,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 
 							{/* Fila de semanas */}
 							<div className="flex">
-								<div className="w-72 min-w-72 p-3 border-r font-medium sticky left-0 z-15 bg-background">Actividades</div>
+								<div className="w-72 min-w-72 p-3 border-r font-medium sticky left-0 z-15 bg-background">Proyectos</div>
 								<div className="flex-1 flex">
 									{dateRange.map((date, index) => (
 										<div
@@ -285,7 +372,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 
 						{/* Project rows */}
 						<div>
-							{projects.map((project) => {
+							{filteredProjects.map((project) => {
 								const barPosition = getBarPosition(project);
 								const realBarPosition = getRealBarPosition(project);
 								const categoryColor = project.categoryColor ? getStageColorValue(project.categoryColor) : "#6366f1";

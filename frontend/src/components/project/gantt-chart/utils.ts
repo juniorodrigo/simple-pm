@@ -155,3 +155,28 @@ export const isTodayInWeek = (weekStart: Date): boolean => {
 
 	return todayStart >= monday && todayStart <= sunday;
 };
+
+export const hasLateStart = (activity: BaseActivity): boolean => {
+	if (!activity.executedStartDate) {
+		const now = new Date();
+		const startDate = new Date(activity.startDate);
+		return now > startDate;
+	}
+	return new Date(activity.executedStartDate) > new Date(activity.startDate);
+};
+
+export const hasLateCompletion = (activity: BaseActivity): boolean => {
+	if (!activity.executedStartDate) return false;
+
+	const now = new Date();
+	const endDate = new Date(activity.endDate);
+
+	if (!activity.executedEndDate) {
+		// Está en progreso pero ya pasó la fecha de fin planificada
+		return now > endDate;
+	}
+
+	// Ya terminó, verificar si se terminó tarde
+	const actualEndDate = new Date(activity.executedEndDate);
+	return actualEndDate > endDate;
+};

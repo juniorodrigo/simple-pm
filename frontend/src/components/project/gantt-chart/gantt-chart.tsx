@@ -3,14 +3,13 @@
 import { useState, useRef, useCallback, useMemo } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getStageColorValue } from "@/lib/colors";
-import { FilterGroup, FilterState } from "./gantt-chart/types";
-import { BaseActivity } from "@/types/activity.type";
 
 // Importaciones locales
-import { GanttChartProps, WEEK_WIDTH, DAY_WIDTH } from "./gantt-chart/types";
-import { useDateRange } from "./gantt-chart/hooks";
-import { getBarPosition, getExecutedBarPosition, getExecutionStatus, getStageColor } from "./gantt-chart/utils";
-import { Legend, DateHeader, ActivityInfo, GridLines, ActivityBar, EmptyState } from "./gantt-chart/components";
+import { GanttChartProps, WEEK_WIDTH, DAY_WIDTH, FilterGroup, FilterState } from "./types";
+import { useDateRange } from "./hooks";
+import { getBarPosition, getExecutedBarPosition, getExecutionStatus, getStageColor, hasLateStart, hasLateCompletion } from "./utils";
+import { Legend, DateHeader, ActivityInfo, GridLines, ActivityBar, EmptyState } from "./components";
+import { BaseActivity } from "@/types/activity.type";
 
 export default function GanttChart({ activities, stages, viewMode }: GanttChartProps) {
 	const [showLegend, setShowLegend] = useState(true);
@@ -23,78 +22,42 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 	const contentRef = useRef<HTMLDivElement>(null);
 	const headerScrollRef = useRef<HTMLDivElement>(null);
 
+	const dateRange = useDateRange(activities, viewMode);
+	const chartWidth = viewMode === "weeks" ? dateRange.length * WEEK_WIDTH : dateRange.length * DAY_WIDTH;
+
 	const handleFilterChange = useCallback((group: FilterGroup, value: boolean) => {
-		setFilters((prev) => {
-			const newFilters = { ...prev, [group]: value };
-			console.log(`Filtro ${group} ${value ? "activado" : "desactivado"}`);
+		setFilters((prev: FilterState) => {
+			const newFilters = { ...prev };
+			// Si se selecciona un filtro, deseleccionar los otros grupos
+			if (value) {
+				Object.keys(newFilters).forEach((key) => {
+					if (key !== group) {
+						newFilters[key as FilterGroup] = false;
+					}
+				});
+			}
+			newFilters[group] = value;
 			return newFilters;
 		});
 	}, []);
-
-	const dateRange = useDateRange(activities, viewMode);
-	const chartWidth = viewMode === "weeks" ? dateRange.length * WEEK_WIDTH : dateRange.length * DAY_WIDTH;
 
 	const filteredActivities = useMemo(() => {
 		if (!filters.lateStart && !filters.inProgressLate && !filters.completedLate) {
 			return activities;
 		}
 
-		const filtered = activities.filter((activity: BaseActivity) => {
-			const now = new Date();
-			now.setHours(0, 0, 0, 0);
-			const startDate = new Date(activity.startDate);
-			startDate.setHours(0, 0, 0, 0);
-			const endDate = new Date(activity.endDate);
-			endDate.setHours(0, 0, 0, 0);
-			const executedStartDate = activity.executedStartDate ? new Date(activity.executedStartDate) : null;
-			if (executedStartDate) executedStartDate.setHours(0, 0, 0, 0);
-			const executedEndDate = activity.executedEndDate ? new Date(activity.executedEndDate) : null;
-			if (executedEndDate) executedEndDate.setHours(0, 0, 0, 0);
-
-			// Determinar el estado más avanzado de la actividad
-			let activityStatus: "lateStart" | "inProgressLate" | "completedLate" | null = null;
-
-			// 1. Verificar si está completada con retraso (estado más avanzado)
-			if (executedEndDate && executedEndDate > endDate) {
-				activityStatus = "completedLate";
+		return activities.filter((activity: BaseActivity) => {
+			if (filters.lateStart) {
+				return hasLateStart(activity);
 			}
-			// 2. Si no está completada con retraso, verificar si está en progreso con retraso
-			else if (executedStartDate && !executedEndDate && now > endDate) {
-				activityStatus = "inProgressLate";
+			if (filters.inProgressLate) {
+				return hasLateCompletion(activity) && !activity.executedEndDate;
 			}
-			// 3. Si no está en ninguno de los anteriores, verificar si tiene inicio tardío
-			else if ((!executedStartDate && now > startDate) || (executedStartDate && executedStartDate > startDate)) {
-				activityStatus = "lateStart";
+			if (filters.completedLate) {
+				return hasLateCompletion(activity) && !!activity.executedEndDate;
 			}
-
-			// Si la actividad tiene un estado y el filtro correspondiente está activo, incluirla
-			if (activityStatus && filters[activityStatus]) {
-				console.log(`Actividad "${activity.title}" clasificada como ${activityStatus}:`, {
-					planificado: {
-						inicio: startDate.toLocaleDateString(),
-						fin: endDate.toLocaleDateString(),
-					},
-					real: {
-						inicio: executedStartDate?.toLocaleDateString() || "No iniciada",
-						fin: executedEndDate?.toLocaleDateString() || "No finalizada",
-					},
-					actual: now.toLocaleDateString(),
-				});
-				return true;
-			}
-
-			return false;
+			return true;
 		});
-
-		console.log("Resumen de filtrado:", {
-			totalActividades: activities.length,
-			actividadesFiltradas: filtered.length,
-			filtrosActivos: Object.entries(filters)
-				.filter(([_, value]) => value)
-				.map(([key]) => key),
-		});
-
-		return filtered;
 	}, [activities, filters]);
 
 	const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {

@@ -5,7 +5,8 @@ import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { BaseActivity } from "@/types/activity.type";
 import { BarPosition, ExecutionStatus } from "../types";
 import { isPast } from "../utils";
-import { ActivityTooltipContent, ExecutedBarTooltipContent } from "./tooltip-content";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 type ActivityBarProps = {
 	activity: BaseActivity;
@@ -19,11 +20,20 @@ type ActivityBarProps = {
 const shouldShowDelayIcon = (activity: BaseActivity): boolean => {
 	const now = new Date();
 	const startDate = new Date(activity.startDate);
+	const endDate = new Date(activity.endDate);
 
-	// Mostrar ícono de retraso en barra planificada si:
-	// 1. Ya pasó la fecha de inicio planificada
-	// 2. No tiene fecha de inicio de ejecución
-	return now > startDate && !activity.executedStartDate;
+	// Si no ha iniciado, mantener la lógica original
+	if (!activity.executedStartDate) {
+		return now > startDate;
+	}
+
+	// Si inició después de la fecha planificada
+	const executedStartDate = new Date(activity.executedStartDate);
+	const startedLate = executedStartDate > startDate;
+	const notFinished = !activity.executedEndDate;
+	const notInExecutionDelay = now <= endDate;
+
+	return startedLate && notFinished && notInExecutionDelay;
 };
 
 const shouldShowExecutionDelayIcon = (activity: BaseActivity): boolean => {
@@ -47,30 +57,132 @@ const isLateCompletion = (activity: BaseActivity): boolean => {
 	return actualEndDate > plannedEndDate;
 };
 
+const UnifiedTooltipContent = memo(({ activity, executionStatus }: { activity: BaseActivity; executionStatus: ExecutionStatus | null }) => {
+	const lateStart = shouldShowDelayIcon(activity);
+	const lateCompletion = isLateCompletion(activity);
+	const showExecutionDelay = shouldShowExecutionDelayIcon(activity);
+
+	const getStatusInfo = () => {
+		if (!executionStatus) return { color: "bg-gray-500", text: "No iniciada" };
+		if (activity.executedEndDate) return { color: "bg-green-500", text: "Completada" };
+		return { color: "bg-blue-500", text: "En progreso" };
+	};
+
+	const statusInfo = getStatusInfo();
+
+	return (
+		<div className="text-sm space-y-3 p-1">
+			{/* Header */}
+			<div>
+				<h3 className="font-semibold text-base">{activity.title}</h3>
+				<p className="text-xs text-muted-foreground">Asignado a: {activity.assignedToUser.name}</p>
+			</div>
+
+			{/* Estado de la actividad */}
+			<div className="space-y-2">
+				<div className="flex items-center gap-2">
+					<div className={`w-2 h-2 rounded-full ${statusInfo.color}`} />
+					<span className="text-xs font-medium">{statusInfo.text}</span>
+				</div>
+
+				{/* Alertas */}
+				{(lateStart || showExecutionDelay || lateCompletion) && (
+					<div className="space-y-1">
+						{lateStart && (
+							<div className="flex items-center gap-1 text-red-600">
+								<ClockIcon className="h-3 w-3" />
+								<span className="text-xs">Retraso en inicio</span>
+							</div>
+						)}
+						{showExecutionDelay && (
+							<div className="flex items-center gap-1 text-red-600">
+								<ClockIcon className="h-3 w-3" />
+								<span className="text-xs">Retraso en ejecución</span>
+							</div>
+						)}
+						{lateCompletion && (
+							<div className="flex items-center gap-1 text-amber-600">
+								<AlertTriangleIcon className="h-3 w-3" />
+								<span className="text-xs">Completada con retraso</span>
+							</div>
+						)}
+					</div>
+				)}
+			</div>
+
+			{/* Fechas */}
+			<div className="space-y-2 border-t pt-2">
+				<div>
+					<p className="text-xs font-medium text-muted-foreground">Fechas planificadas</p>
+					<p className="text-xs">
+						{format(new Date(activity.startDate), "dd MMM yyyy", { locale: es })} - {format(new Date(activity.endDate), "dd MMM yyyy", { locale: es })}
+					</p>
+				</div>
+
+				{activity.executedStartDate && (
+					<div>
+						<p className="text-xs font-medium text-muted-foreground">Fechas reales</p>
+						<p className="text-xs">
+							{format(new Date(activity.executedStartDate), "dd MMM yyyy", { locale: es })}
+							{activity.executedEndDate && ` - ${format(new Date(activity.executedEndDate), "dd MMM yyyy", { locale: es })}`}
+						</p>
+					</div>
+				)}
+			</div>
+		</div>
+	);
+});
+
+UnifiedTooltipContent.displayName = "UnifiedTooltipContent";
+
 export const ActivityBar = memo(({ activity, barPosition, executedBarPos, executionStatus, stageColor, stageOriginalColor }: ActivityBarProps) => {
 	const isShortBar = barPosition.width < 120;
 	const showDelayInPlanned = shouldShowDelayIcon(activity);
 	const showExecutionDelay = shouldShowExecutionDelayIcon(activity);
 	const showLateCompletion = isLateCompletion(activity);
 
+	// Función para renderizar los íconos de alerta en la barra planificada (azul)
+	const renderPlannedAlertIcons = () => (
+		<div className="absolute top-1 right-1 flex items-center space-x-1">
+			{showDelayInPlanned && (
+				<div className="bg-red-500 rounded-full p-0.5" title="Retraso en inicio">
+					<ClockIcon className="h-3 w-3 text-white" />
+				</div>
+			)}
+		</div>
+	);
+
+	// Función para renderizar los íconos de alerta en la barra ejecutada (verde)
+	const renderExecutedAlertIcons = () => (
+		<div className="absolute top-1 right-1 flex items-center space-x-1">
+			{showExecutionDelay && (
+				<div className="bg-red-500 rounded-full p-0.5" title="Retraso en ejecución">
+					<ClockIcon className="h-3 w-3 text-white" />
+				</div>
+			)}
+			{showLateCompletion && (
+				<div className="bg-amber-500 rounded-full p-0.5" title="Completada con retraso">
+					<AlertTriangleIcon className="h-3 w-3 text-white" />
+				</div>
+			)}
+		</div>
+	);
+
 	return (
-		<div
-			className="relative flex flex-col justify-center gap-1"
-			style={{
-				left: `${barPosition.left}px`,
-				width: `${barPosition.width}px`,
-				height: "auto",
-			}}
-		>
-			{/* Barra planificada (azul) */}
-			<Tooltip>
-				<TooltipTrigger asChild>
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<div
+					className="relative flex flex-col justify-center gap-1 cursor-pointer"
+					style={{
+						left: `${barPosition.left}px`,
+						width: `${barPosition.width}px`,
+						height: "auto",
+					}}
+				>
+					{/* Barra planificada (azul) */}
 					<div
 						className={`
-							rounded-md shadow-md hover:shadow-lg transition-shadow cursor-pointer overflow-hidden group relative
-							${isPast(new Date(activity.endDate)) ? "border-2 border-dashed border-muted" : "border-2 border-transparent"}
-							bg-blue-500 hover:bg-blue-600
-						`}
+							rounded-md shadow-md hover:shadow-lg transition-shadow overflow-hidden group relative bg-blue-500 hover:bg-blue-600 border-2 border-transparent`}
 						style={{
 							height: "32px",
 						}}
@@ -80,64 +192,31 @@ export const ActivityBar = memo(({ activity, barPosition, executedBarPos, execut
 								<div className="font-medium truncate text-xs flex-1">{activity.title}</div>
 							</div>
 						)}
-
-						{/* Íconos en la esquina superior derecha */}
-						<div className="absolute top-1 right-1 flex items-center space-x-1">
-							{/* Ícono de retraso si estamos en rango pero no hay ejecución */}
-							{showDelayInPlanned && (
-								<div className="bg-red-500 rounded-full p-0.5">
-									<ClockIcon className="h-3 w-3 text-white" />
-								</div>
-							)}
-						</div>
+						{renderPlannedAlertIcons()}
 					</div>
-				</TooltipTrigger>
-				<TooltipPrimitive.Portal>
-					<TooltipContent>
-						<ActivityTooltipContent activity={activity} executionStatus={executionStatus} />
-					</TooltipContent>
-				</TooltipPrimitive.Portal>
-			</Tooltip>
 
-			{/* Barra ejecutada (siempre verde, con indicadores) */}
-			{executedBarPos && (
-				<Tooltip>
-					<TooltipTrigger asChild>
+					{/* Barra ejecutada */}
+					{executedBarPos && (
 						<div
-							className="relative rounded-md overflow-hidden cursor-pointer transition-shadow flex items-center"
+							className="relative rounded-md overflow-hidden transition-shadow flex items-center"
 							style={{
 								width: `${(executedBarPos.width / barPosition.width) * 100}%`,
-								backgroundColor: "rgba(34, 197, 94, 0.8)", // Siempre verde
+								backgroundColor: "rgba(34, 197, 94, 0.8)",
 								height: "32px",
 								marginLeft: `${((executedBarPos.left - barPosition.left) / barPosition.width) * 100}%`,
 							}}
 						>
-							{/* Íconos en la esquina superior derecha */}
-							<div className="absolute top-1 right-1 flex items-center space-x-1">
-								{/* Ícono de retraso en ejecución (no ha cerrado a tiempo) */}
-								{showExecutionDelay && (
-									<div className="bg-red-500 rounded-full p-0.5">
-										<ClockIcon className="h-3 w-3 text-white" />
-									</div>
-								)}
-
-								{/* Ícono de terminación tardía */}
-								{showLateCompletion && (
-									<div className="bg-amber-500 rounded-full p-0.5">
-										<AlertTriangleIcon className="h-3 w-3 text-white" />
-									</div>
-								)}
-							</div>
+							{renderExecutedAlertIcons()}
 						</div>
-					</TooltipTrigger>
-					<TooltipPrimitive.Portal>
-						<TooltipContent>
-							<ExecutedBarTooltipContent activity={activity} executionStatus={executionStatus} />
-						</TooltipContent>
-					</TooltipPrimitive.Portal>
-				</Tooltip>
-			)}
-		</div>
+					)}
+				</div>
+			</TooltipTrigger>
+			<TooltipPrimitive.Portal>
+				<TooltipContent className="max-w-[300px]">
+					<UnifiedTooltipContent activity={activity} executionStatus={executionStatus} />
+				</TooltipContent>
+			</TooltipPrimitive.Portal>
+		</Tooltip>
 	);
 });
 

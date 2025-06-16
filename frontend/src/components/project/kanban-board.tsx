@@ -320,12 +320,22 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 		if (!rollbackActivity) return;
 
 		try {
-			const updatedActivities = activities.map((activity) => (activity.id === rollbackActivity.activity.id ? { ...activity, status: rollbackActivity.newStatus } : activity));
+			// Limpiar las fechas de ejecución cuando se retrocede el estado
+			const updatedActivity = {
+				...rollbackActivity.activity,
+				status: rollbackActivity.newStatus,
+				executedEndDate: undefined, // Limpiar la fecha de finalización
+			};
+
+			const updatedActivities = activities.map((activity) => (activity.id === rollbackActivity.activity.id ? updatedActivity : activity));
+
 			setActivities(updatedActivities);
 			if (onActivityChange) {
 				onActivityChange(updatedActivities);
 			}
-			const response = await ActivitysService.updateActivityStatus(rollbackActivity.activity.id, rollbackActivity.newStatus);
+
+			// Actualizar en el backend
+			const response = await ActivitysService.updateActivity(rollbackActivity.activity.id, updatedActivity);
 			if (!response.success) throw new Error("Error al actualizar el estado");
 
 			toast({
