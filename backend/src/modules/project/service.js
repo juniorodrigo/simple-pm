@@ -86,6 +86,8 @@ const getProjects = async (userId) => {
 			},
 		});
 	} else if (user.role === Role.gerente_area) {
+		console.log('El usuario es gerente de área, obteniendo proyectos de su área', user.areaId);
+
 		projects = await prisma.project.findMany({
 			include: {
 				category: true,
@@ -120,6 +122,8 @@ const getProjects = async (userId) => {
 				areaId: user.areaId,
 			},
 		});
+
+		console.log('Proyectos obtenidos:', projects.length);
 	} else {
 		projects = await prisma.project.findMany({
 			include: {
