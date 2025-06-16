@@ -17,13 +17,19 @@ import { useRouter } from "next/navigation";
 import ProjectsGantt from "@/components/projects/projects-gantt";
 import { useAuth } from "@/contexts/auth-context";
 import { ApiResponse } from "@/types/api-response.type";
+import { SelectService } from "@/services/select.service";
 
 export default function KanbanPage() {
 	const { user, isLoading: authLoading } = useAuth();
 	const isViewer = user?.role === "viewer";
+	const isGerenteGeneral = user?.role === "gerente_general";
 	const [selectedCategory, setSelectedCategory] = useState<string>("all");
+	const [selectedArea, setSelectedArea] = useState<string>("all");
+	const [selectedManager, setSelectedManager] = useState<string>("all");
 	const [projects, setProjects] = useState<Project[]>([]);
 	const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+	const [areas, setAreas] = useState<{ id: string; name: string }[]>([]);
+	const [managers, setManagers] = useState<{ id: string; name: string }[]>([]);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [showArchived, setShowArchived] = useState(false);
 	const [loading, setLoading] = useState(true);
@@ -32,7 +38,7 @@ export default function KanbanPage() {
 	const { toast } = useToast();
 	const router = useRouter();
 
-	// Cargar proyectos
+	// Cargar proyectos y áreas
 	useEffect(() => {
 		// No hacer peticiones mientras se está cargando la autenticación
 		if (authLoading) return;
@@ -41,20 +47,47 @@ export default function KanbanPage() {
 			setLoading(true);
 
 			try {
-				const projectResponse: ApiResponse = await ProjectsService.getProjects(user?.id || null);
+				const [projectResponse, areasResponse] = await Promise.all([
+					ProjectsService.getProjects(user?.id || null),
+					isGerenteGeneral ? SelectService.getAreas() : Promise.resolve({ success: true, data: [] }),
+				]);
+
+				console.log("Respuesta de áreas:", areasResponse);
 
 				if (projectResponse.success && projectResponse.data) {
 					const projectsData = Array.isArray(projectResponse.data) ? projectResponse.data : [projectResponse.data];
+					console.log(
+						"Proyectos recibidos:",
+						projectsData.map((p) => ({
+							id: p.id,
+							name: p.name,
+							areaId: p.areaId,
+							manager: p.manager,
+						}))
+					);
 
 					// Validar y convertir cada proyecto
 					const validProjects: Project[] = [];
+					const uniqueManagers = new Map<string, { id: string; name: string }>();
+
 					projectsData.forEach((project: Project) => {
 						if (project.categoryId && project.categoryName) {
 							validProjects.push(project);
+
+							// Extraer managers únicos del objeto manager
+							if (project.manager) {
+								const managerName = `${project.manager.name} ${project.manager.lastname}`.trim();
+								uniqueManagers.set(project.manager.id, {
+									id: project.manager.id,
+									name: managerName,
+								});
+							}
 						}
 					});
 
+					console.log("Managers únicos encontrados:", Array.from(uniqueManagers.values()));
 					setProjects(validProjects);
+					setManagers(Array.from(uniqueManagers.values()));
 
 					// Extraer categorías únicas de los proyectos
 					const uniqueCategories = new Map();
@@ -67,17 +100,16 @@ export default function KanbanPage() {
 						}
 					});
 					setCategories(Array.from(uniqueCategories.values()));
-				} else {
-					// toast({
-					// 	title: "Error",
-					// 	description: "No se recibieron datos de proyectos",
-					// 	variant: "destructive",
-					// });
+				}
+
+				if (areasResponse.success && areasResponse.data) {
+					console.log("Áreas cargadas:", areasResponse.data);
+					setAreas(areasResponse.data);
 				}
 			} catch (error) {
 				toast({
 					title: "Error",
-					description: "No se pudieron cargar los proyectos",
+					description: "No se pudieron cargar los datos",
 					variant: "destructive",
 				});
 			} finally {
@@ -86,15 +118,28 @@ export default function KanbanPage() {
 		};
 
 		loadData();
-	}, [toast, user, authLoading]);
+	}, [toast, user, authLoading, isGerenteGeneral]);
 
-	// Filtrar proyectos por categoría y término de búsqueda
+	// Filtrar proyectos por categoría, área, manager y término de búsqueda
 	const filteredProjects = projects.filter((project) => {
 		const matchesCategory = selectedCategory === "all" || project.categoryId === selectedCategory;
+		const matchesArea = selectedArea === "all" || project.areaId === selectedArea;
+		const matchesManager = selectedManager === "all" || (project.manager && project.manager.id === selectedManager);
 		const matchesSearch = searchTerm === "" || project.name.toLowerCase().includes(searchTerm.toLowerCase()) || project.description?.toLowerCase().includes(searchTerm.toLowerCase());
 		const matchesArchived = showArchived || !project.archived;
 
-		return matchesCategory && matchesSearch && matchesArchived;
+		console.log("Filtrado de proyecto:", {
+			projectName: project.name,
+			projectAreaId: project.areaId,
+			selectedArea,
+			matchesArea,
+			matchesCategory,
+			matchesManager,
+			matchesSearch,
+			matchesArchived,
+		});
+
+		return matchesCategory && matchesArea && matchesManager && matchesSearch && matchesArchived;
 	});
 
 	// Manejar cambios en proyectos (después de arrastrar)
@@ -167,7 +212,7 @@ export default function KanbanPage() {
 
 	// Función para manejar el clic en un proyecto
 	const handleProjectClick = (project: Project) => {
-		router.push(`/projects/${project.id}`);
+		router.push(`/proyectos/${project.id}`);
 	};
 
 	return (
@@ -209,7 +254,7 @@ export default function KanbanPage() {
 			</div>
 
 			<div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between flex-shrink-0">
-				<div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+				<div className="flex flex-col md:flex-row gap-4 items-start md:items-center flex-wrap">
 					<div className="w-full md:w-64">
 						<Select value={selectedCategory} onValueChange={setSelectedCategory}>
 							<SelectTrigger>
@@ -225,6 +270,43 @@ export default function KanbanPage() {
 							</SelectContent>
 						</Select>
 					</div>
+
+					{isGerenteGeneral && (
+						<>
+							<div className="w-full md:w-64">
+								<Select value={selectedArea} onValueChange={setSelectedArea}>
+									<SelectTrigger>
+										<SelectValue placeholder="Filtrar por área" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="all">Todas las áreas</SelectItem>
+										{areas.map((area) => (
+											<SelectItem key={area.id} value={area.id}>
+												{area.name}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+
+							<div className="w-full md:w-64">
+								<Select value={selectedManager} onValueChange={setSelectedManager}>
+									<SelectTrigger>
+										<SelectValue placeholder="Filtrar por manager" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="all">Todos los managers</SelectItem>
+										{managers.map((manager) => (
+											<SelectItem key={manager.id} value={manager.id}>
+												{manager.name}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+						</>
+					)}
+
 					<div className="relative w-full md:w-64">
 						<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
 						<Input type="search" placeholder="Buscar proyectos..." className="w-full pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />

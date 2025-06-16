@@ -43,18 +43,18 @@ export default function Sidebar() {
 	const navigation = [
 		{
 			name: "Proyectos",
-			href: "/projects",
+			href: "/proyectos",
 			icon: KanbanSquare,
-			current: pathname === "/projects" || pathname.startsWith("/projects/"),
+			current: pathname === "/proyectos" || pathname.startsWith("/proyectos/"),
 		},
 	];
 
 	if (user?.role != Role.VIEWER) {
 		navigation.push({
 			name: "Configuración",
-			href: "/settings",
+			href: "/configuracion",
 			icon: Settings,
-			current: pathname === "/settings",
+			current: pathname === "/configuracion",
 		});
 	}
 

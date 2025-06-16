@@ -36,18 +36,18 @@ const ProjectCard = memo(({ project, onDelete, onClick, isDragging, onProjectUpd
 	const [isUpdating, setIsUpdating] = useState(false);
 
 	// Log de comparación con ClientView
-	console.log("📋 ProjectCard - Estado del proyecto:", {
-		projectId: project.id,
-		projectName: project.name,
-		rawStatus: project.status,
-		archived: project.archived,
-		// Comparaciones que funcionan en project-card
-		isStatusReview: project.status === "review",
-		isStatusCompleted: project.status === "completed",
-		isArchived: project.archived,
-		shouldShowCompleteButton: project.status === "review" && !isViewer,
-		shouldShowArchiveButton: project.status === "completed" && !project.archived && !isViewer,
-	});
+	// console.log("📋 ProjectCard - Estado del proyecto:", {
+	// 	projectId: project.id,
+	// 	projectName: project.name,
+	// 	rawStatus: project.status,
+	// 	archived: project.archived,
+	// 	// Comparaciones que funcionan en project-card
+	// 	isStatusReview: project.status === "review",
+	// 	isStatusCompleted: project.status === "completed",
+	// 	isArchived: project.archived,
+	// 	shouldShowCompleteButton: project.status === "review" && !isViewer,
+	// 	shouldShowArchiveButton: project.status === "completed" && !project.archived && !isViewer,
+	// });
 
 	const formattedStartDate = new Date(project.startDate).toLocaleDateString();
 	const formattedEndDate = new Date(project.endDate).toLocaleDateString();

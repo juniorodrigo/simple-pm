@@ -12,6 +12,7 @@ import { getStageColorValue, STATUS_COLORS } from "@/lib/colors";
 import { ProjectStatusLabels } from "@/types/enums";
 import { useRouter } from "next/navigation";
 import { ProjectsLegend, FilterState, FilterGroup } from "./components/projects-legend";
+import { ProjectBarTooltip } from "./components/project-bar-tooltip";
 
 interface ProjectsGanttProps {
 	projects: Project[];
@@ -474,31 +475,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 															</div>
 														</div>
 													</TooltipTrigger>
-													<TooltipContent>
-														<div className="text-sm">
-															<p className="font-medium">{project.name}</p>
-															<p className="text-xs mt-2">Categoría: {project.categoryName || "Sin categoría"}</p>
-															<p className="text-xs">Estado: {ProjectStatusLabels[project.status as keyof typeof ProjectStatusLabels] || "No definido"}</p>
-															<p className="text-xs">Responsable: {project.managerUserName}</p>
-															<p className="text-xs">Avance: {project.progressPercentage}%</p>
-															{project.team && <p className="text-xs">Equipo: {project.team.length} miembros</p>}
-															{project.activitiesCount !== undefined && <p className="text-xs">Actividades: {project.activitiesCount}</p>}
-
-															{/* Alertas */}
-															{showDelayInPlanned && (
-																<div className="border-t border-border mt-2 pt-2">
-																	<p className="text-xs text-red-600 font-medium">⚠️ Proyecto no iniciado</p>
-																	<p className="text-xs text-red-600">El proyecto debería haber comenzado el {format(new Date(project.startDate), "dd MMM yyyy", { locale: es })}</p>
-																</div>
-															)}
-
-															<div className="border-t border-border mt-2 pt-1">
-																<p className="text-xs">
-																	Plan: {format(new Date(project.startDate), "dd MMM yyyy", { locale: es })} - {format(new Date(project.endDate), "dd MMM yyyy", { locale: es })}
-																</p>
-															</div>
-														</div>
-													</TooltipContent>
+													<ProjectBarTooltip project={project} type="planned" showDelayInPlanned={showDelayInPlanned} />
 												</Tooltip>
 
 												{/* Barra ejecutada (verde) */}
@@ -539,35 +516,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 																</div>
 															</div>
 														</TooltipTrigger>
-														<TooltipContent>
-															<div className="text-sm">
-																<p className="font-medium">{project.name} - Ejecución Real</p>
-																<p className="text-xs mt-2">Avance: {project.progressPercentage}%</p>
-
-																{/* Alertas */}
-																{showExecutionDelay && (
-																	<div className="border-t border-border mt-2 pt-2">
-																		<p className="text-xs text-red-600 font-medium">⚠️ Proyecto atrasado</p>
-																		<p className="text-xs text-red-600">El proyecto debería haber terminado el {format(new Date(project.endDate), "dd MMM yyyy", { locale: es })}</p>
-																	</div>
-																)}
-
-																{showLateCompletion && (
-																	<div className="border-t border-border mt-2 pt-2">
-																		<p className="text-xs text-amber-600 font-medium">⚠️ Terminado con retraso</p>
-																		<p className="text-xs text-amber-600">
-																			Terminó tarde: {format(new Date(project.realEndDate!), "dd MMM yyyy", { locale: es })} (planificado: {format(new Date(project.endDate), "dd MMM yyyy", { locale: es })})
-																		</p>
-																	</div>
-																)}
-
-																<div className="border-t border-border mt-2 pt-1">
-																	<p className="text-xs">
-																		Real: {format(new Date(project.realStartDate!), "dd MMM yyyy", { locale: es })} - {project.realEndDate ? format(new Date(project.realEndDate), "dd MMM yyyy", { locale: es }) : "hoy"}
-																	</p>
-																</div>
-															</div>
-														</TooltipContent>
+														<ProjectBarTooltip project={project} type="real" showExecutionDelay={showExecutionDelay} showLateCompletion={showLateCompletion} />
 													</Tooltip>
 												)}
 											</div>
