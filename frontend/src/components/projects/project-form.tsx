@@ -201,6 +201,7 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 					team: teamMembers,
 					progressPercentage: 0, // Proyectos nuevos inician en 0%
 					categoryId: values.categoryId,
+					areaId: user?.area.id,
 				};
 
 				response = await ProjectsService.createProject(newProject);

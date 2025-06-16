@@ -237,7 +237,7 @@ const getProjectById = async (projectId) => {
 
 const createProject = async (projectData) => {
 	// Extraer los campos necesarios y excluir el 'id' si viene en los datos
-	const { name, description, startDate, endDate, status, managerUserId, categoryId, team } = projectData;
+	const { name, description, startDate, endDate, status, managerUserId, categoryId, team, areaId } = projectData;
 
 	// console.log('Creando proyecto con datos:', { name, description, managerUserId, categoryId });
 
@@ -250,6 +250,7 @@ const createProject = async (projectData) => {
 		status: status || 'pending', // valor por defecto
 		managerUserId,
 		categoryId,
+		areaId: areaId || null, // Asegurarse de que areaId sea opcional
 	};
 
 	try {

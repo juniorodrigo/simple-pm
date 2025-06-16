@@ -35,7 +35,7 @@ function LoginContent() {
 
 				// Redirigiendo a /kanban con recarga completa
 				setTimeout(() => {
-					window.location.href = "/projects";
+					window.location.href = "/proyectos";
 				}, 100);
 			} else {
 				toast({

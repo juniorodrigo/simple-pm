@@ -19,7 +19,10 @@ const getProjectById = async (req, res) => {
 
 const createProject = async (req, res) => {
 	try {
-		const { name, description, managerUserId, categoryId } = req.body;
+		const { name, description, managerUserId, categoryId, areaId } = req.body;
+
+		console.log('Datos del proyecto:', req.body);
+
 		const requiredFields = { name, description, managerUserId, categoryId };
 
 		if (Object.values(requiredFields).some((field) => !field)) {
@@ -34,6 +37,7 @@ const createProject = async (req, res) => {
 			description,
 			managerUserId,
 			categoryId,
+			areaId,
 			...(startDate && { startDate }),
 			...(endDate && { endDate }),
 			...(status && { status }),
