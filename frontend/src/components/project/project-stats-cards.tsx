@@ -150,7 +150,7 @@ export default function ProjectStatsCards({ project, activities }: ProjectStatsC
 				<CardContent className="py-2 px-3">
 					<div className="flex items-center mb-2 justify-between">
 						<div className="bg-amber-50 text-amber-700 font-medium rounded-full px-2 py-0.5 text-xs border border-amber-200">
-							{project.team.length + 1} {project.team.length + 1 === 1 ? "miembro" : "miembros"}
+							{project.team.length} {project.team.length + 1 === 1 ? "miembro" : "miembros"}
 						</div>
 						<div className="flex -space-x-1.5">
 							{project.team.slice(0, 3).map((member, i) => (

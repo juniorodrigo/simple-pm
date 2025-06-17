@@ -324,6 +324,7 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 			const updatedActivity = {
 				...rollbackActivity.activity,
 				status: rollbackActivity.newStatus,
+				executedStartDate: undefined, // Limpiar la fecha de inicio de ejecución
 				executedEndDate: undefined, // Limpiar la fecha de finalización
 			};
 

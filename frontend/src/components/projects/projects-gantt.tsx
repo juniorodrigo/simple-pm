@@ -450,7 +450,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 																width: "100%",
 																height: "32px",
 															}}
-															onClick={() => router.push(`/projects/${project.id}`)}
+															onClick={() => router.push(`/proyectos/${project.id}`)}
 														>
 															{!isShortBar(project) && (
 																<div className="h-full px-2 py-1 text-white flex items-center justify-between">
@@ -490,7 +490,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 																	height: "32px",
 																	marginLeft: `${((realBarPosition.left - barPosition.left) / barPosition.width) * 100}%`,
 																}}
-																onClick={() => router.push(`/projects/${project.id}`)}
+																onClick={() => router.push(`/proyectos/${project.id}`)}
 															>
 																{!isShortBar(project) && (
 																	<div className="h-full px-2 py-1 text-white flex items-center">

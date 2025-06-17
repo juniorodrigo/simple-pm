@@ -157,26 +157,46 @@ export const isTodayInWeek = (weekStart: Date): boolean => {
 };
 
 export const hasLateStart = (activity: BaseActivity): boolean => {
-	if (!activity.executedStartDate) {
-		const now = new Date();
-		const startDate = new Date(activity.startDate);
-		return now > startDate;
-	}
-	return new Date(activity.executedStartDate) > new Date(activity.startDate);
+	const now = new Date();
+	const startDate = new Date(activity.startDate);
+	// Inicio tardío: llegado el día de inicio planificado, aún no tiene fecha de inicio real
+	return now > startDate && !activity.executedStartDate;
 };
 
 export const hasLateCompletion = (activity: BaseActivity): boolean => {
+	// Solo aplica si ya tiene fecha de inicio ejecutada
 	if (!activity.executedStartDate) return false;
 
 	const now = new Date();
 	const endDate = new Date(activity.endDate);
 
 	if (!activity.executedEndDate) {
-		// Está en progreso pero ya pasó la fecha de fin planificada
+		// Progreso con retraso: ya inició, ya pasó la fecha de fin planificada y aún no terminó
 		return now > endDate;
 	}
 
-	// Ya terminó, verificar si se terminó tarde
+	// Completado con retraso: ya terminó pero después de la fecha planificada
 	const actualEndDate = new Date(activity.executedEndDate);
 	return actualEndDate > endDate;
+};
+
+export const hasInProgressDelay = (activity: BaseActivity): boolean => {
+	// Solo aplica si ya tiene fecha de inicio ejecutada pero no terminó
+	if (!activity.executedStartDate || activity.executedEndDate) return false;
+
+	const now = new Date();
+	const endDate = new Date(activity.endDate);
+
+	// Progreso con retraso: ya inició, ya pasó la fecha de fin planificada y aún no terminó
+	return now > endDate;
+};
+
+export const hasCompletedLate = (activity: BaseActivity): boolean => {
+	// Solo aplica si ya terminó
+	if (!activity.executedEndDate) return false;
+
+	// Completado con retraso: ya terminó pero después de la fecha planificada
+	const plannedEndDate = new Date(activity.endDate);
+	const actualEndDate = new Date(activity.executedEndDate);
+	return actualEndDate > plannedEndDate;
 };

@@ -4,7 +4,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { BaseActivity } from "@/types/activity.type";
 import { BarPosition, ExecutionStatus } from "../types";
-import { isPast } from "../utils";
+import { isPast, hasCompletedLate, hasInProgressDelay } from "../utils";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -20,41 +20,16 @@ type ActivityBarProps = {
 const shouldShowDelayIcon = (activity: BaseActivity): boolean => {
 	const now = new Date();
 	const startDate = new Date(activity.startDate);
-	const endDate = new Date(activity.endDate);
-
-	// Si no ha iniciado, mantener la lógica original
-	if (!activity.executedStartDate) {
-		return now > startDate;
-	}
-
-	// Si inició después de la fecha planificada
-	const executedStartDate = new Date(activity.executedStartDate);
-	const startedLate = executedStartDate > startDate;
-	const notFinished = !activity.executedEndDate;
-	const notInExecutionDelay = now <= endDate;
-
-	return startedLate && notFinished && notInExecutionDelay;
+	// Inicio tardío: llegado el día de inicio planificado, aún no tiene fecha de inicio real
+	return now > startDate && !activity.executedStartDate;
 };
 
 const shouldShowExecutionDelayIcon = (activity: BaseActivity): boolean => {
-	const now = new Date();
-	const endDate = new Date(activity.endDate);
-
-	// Mostrar ícono de retraso en barra ejecutada si:
-	// 1. Ya pasó la fecha de fin planificada
-	// 2. Tiene fecha de inicio ejecutada (está en progreso)
-	// 3. No tiene fecha de fin de ejecución
-	return now > endDate && !!activity.executedStartDate && !activity.executedEndDate;
+	return hasInProgressDelay(activity);
 };
 
 const isLateCompletion = (activity: BaseActivity): boolean => {
-	// Verificar si se terminó tarde (la fecha de fin ejecutada es posterior a la planificada)
-	if (!activity.executedEndDate) return false;
-
-	const plannedEndDate = new Date(activity.endDate);
-	const actualEndDate = new Date(activity.executedEndDate);
-
-	return actualEndDate > plannedEndDate;
+	return hasCompletedLate(activity);
 };
 
 const UnifiedTooltipContent = memo(({ activity, executionStatus }: { activity: BaseActivity; executionStatus: ExecutionStatus | null }) => {

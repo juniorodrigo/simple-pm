@@ -20,7 +20,7 @@ import KanbanBoard from "@/components/project/kanban-board";
 import GanttChart from "@/components/project/gantt-chart";
 import CreateActivityModal from "@/components/project/activity-modal";
 import ProjectStagesModal from "@/components/project/project-stages-modal";
-import ProjectStatsCards from "@/components/projects/project-stats-cards";
+import ProjectStatsCards from "@/components/project/project-stats-cards";
 import { BaseActivity } from "@/types/activity.type";
 import { BaseStage } from "@/types/stage.type";
 import { ExtendedProject } from "@/types/new/project.type";

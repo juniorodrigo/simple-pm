@@ -409,13 +409,14 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 						render={({ field }) => (
 							<FormItem>
 								<FormLabel>Proyecto previo</FormLabel>
-								<Select onValueChange={field.onChange} defaultValue={field.value}>
+								<Select onValueChange={field.onChange} value={field.value || ""}>
 									<FormControl>
 										<SelectTrigger>
 											<SelectValue placeholder="Seleccionar proyecto previo" />
 										</SelectTrigger>
 									</FormControl>
 									<SelectContent>
+										<SelectItem value="null">Sin proyecto previo</SelectItem>
 										{projects.map((project) => (
 											<SelectItem key={project.id} value={String(project.id)}>
 												{project.name}

@@ -7,7 +7,7 @@ import { getStageColorValue } from "@/lib/colors";
 // Importaciones locales
 import { GanttChartProps, WEEK_WIDTH, DAY_WIDTH, FilterGroup, FilterState } from "./types";
 import { useDateRange } from "./hooks";
-import { getBarPosition, getExecutedBarPosition, getExecutionStatus, getStageColor, hasLateStart, hasLateCompletion } from "./utils";
+import { getBarPosition, getExecutedBarPosition, getExecutionStatus, getStageColor, hasLateStart, hasInProgressDelay, hasCompletedLate } from "./utils";
 import { Legend, DateHeader, ActivityInfo, GridLines, ActivityBar, EmptyState } from "./components";
 import { BaseActivity } from "@/types/activity.type";
 
@@ -51,10 +51,10 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 				return hasLateStart(activity);
 			}
 			if (filters.inProgressLate) {
-				return hasLateCompletion(activity) && !activity.executedEndDate;
+				return hasInProgressDelay(activity);
 			}
 			if (filters.completedLate) {
-				return hasLateCompletion(activity) && !!activity.executedEndDate;
+				return hasCompletedLate(activity);
 			}
 			return true;
 		});
