@@ -13,12 +13,13 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format, addDays } from "date-fns";
 import { es } from "date-fns/locale";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import type { BaseStage } from "@/types/stage.type";
-import { BaseActivity } from "@/types/activity.type";
+import { BaseActivity, TodoItem } from "@/types/activity.type";
 import { ActivityPriority, ActivityStatus, ActivitiesLabels, ActivityPriorityLabels } from "@/types/enums";
 import { UsersService } from "@/services/users.service";
 import type { User } from "@/types/new/usuario.type";
@@ -52,7 +53,17 @@ const formSchema = z.object({
 	executedEndDate: z.date().optional(),
 	priority: z.nativeEnum(ActivityPriority),
 	stageId: z.string(),
+	todoList: z
+		.array(
+			z.object({
+				status: z.enum(["pending", "done"]),
+				description: z.string().min(1, "La descripción del todo es obligatoria"),
+			})
+		)
+		.default([]),
 });
+
+type FormData = z.infer<typeof formSchema>;
 
 type CreateActivityModalProps = {
 	projectId: number;
@@ -81,6 +92,10 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 	// Nuevo estado para las fechas ejecutadas
 	const [executedDateRange, setExecutedDateRange] = useState<DateRange | null>(null);
 
+	// Estado para la lista de todos
+	const [todoList, setTodoList] = useState<TodoItem[]>(activity?.todoList || []);
+	const [newTodoText, setNewTodoText] = useState("");
+
 	useEffect(() => {
 		const loadUsers = async () => {
 			const response = await UsersService.getUsersByProjectId(String(projectId));
@@ -93,8 +108,8 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 
 	const stages = providedStages || [];
 
-	const form = useForm<z.infer<typeof formSchema>>({
-		resolver: zodResolver(formSchema),
+	const form = useForm<FormData>({
+		resolver: zodResolver(formSchema) as any,
 		defaultValues: activity
 			? {
 					title: activity.title,
@@ -126,6 +141,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 					executedEndDate: undefined,
 					priority: ActivityPriority.MEDIUM,
 					stageId: stages[0]?.id || "",
+					todoList: [],
 			  },
 	});
 
@@ -144,6 +160,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 				executedEndDate: activity.executedEndDate ? new Date(activity.executedEndDate) : undefined,
 				priority: activity.priority,
 				stageId: activity.stageId,
+				todoList: activity.todoList || [],
 			});
 
 			setDateRange({
@@ -158,6 +175,9 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 					to: activity.executedEndDate ? new Date(activity.executedEndDate) : undefined,
 				});
 			}
+
+			// Actualizar la lista de todos
+			setTodoList(activity.todoList || []);
 		}
 	}, [activity, form]);
 
@@ -181,6 +201,11 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 		}
 	}, [executedDateRange, form]);
 
+	// Sincronizar la lista de todos con el formulario
+	useEffect(() => {
+		form.setValue("todoList", todoList);
+	}, [todoList, form]);
+
 	// Limpia las fechas ejecutadas cuando el estado cambia a algo diferente de DONE
 	useEffect(() => {
 		const status = form.watch("status");
@@ -197,7 +222,27 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 		projectRole: undefined, // Se puede asignar más tarde si es necesario
 	});
 
-	const onSubmit = async (values: z.infer<typeof formSchema>) => {
+	// Funciones para manejar la lista de todos
+	const addTodo = () => {
+		if (newTodoText.trim()) {
+			setTodoList([...todoList, { status: "pending", description: newTodoText.trim() }]);
+			setNewTodoText("");
+		}
+	};
+
+	const removeTodo = (index: number) => {
+		setTodoList(todoList.filter((_, i) => i !== index));
+	};
+
+	const toggleTodoStatus = (index: number) => {
+		setTodoList(todoList.map((todo, i) => (i === index ? { ...todo, status: todo.status === "pending" ? "done" : "pending" } : todo)));
+	};
+
+	const updateTodoDescription = (index: number, description: string) => {
+		setTodoList(todoList.map((todo, i) => (i === index ? { ...todo, description } : todo)));
+	};
+
+	const onSubmit = async (values: FormData) => {
 		// Prevenir múltiples envíos
 		if (isSubmitting) return;
 
@@ -211,9 +256,10 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 					...values,
 				};
 
-				// Preparar datos para la petición de edición incluyendo secondaryUserId
+				// Preparar datos para la petición de edición incluyendo secondaryUserId y todoList
 				const updateData = {
 					...updatedActivity,
+					todoList: values.todoList,
 					...(values.secondaryUserId && values.secondaryUserId !== "" && values.secondaryUserId !== "none" && { secondaryUserId: values.secondaryUserId }),
 				};
 
@@ -240,9 +286,10 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 					...values,
 				};
 
-				// Preparar datos para la petición incluyendo secondaryUserId si está presente
+				// Preparar datos para la petición incluyendo secondaryUserId y todoList si está presente
 				const activityData = {
 					...newActivity,
+					todoList: values.todoList,
 					...(values.secondaryUserId && values.secondaryUserId !== "" && values.secondaryUserId !== "none" && { secondaryUserId: values.secondaryUserId }),
 				};
 
@@ -297,9 +344,9 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 	return (
 		<div className="space-y-4 px-4">
 			<Form {...form}>
-				<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+				<form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-4">
 					<FormField
-						control={form.control}
+						control={form.control as any}
 						name="title"
 						render={({ field }) => (
 							<FormItem>
@@ -313,7 +360,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 					/>
 
 					<FormField
-						control={form.control}
+						control={form.control as any}
 						name="description"
 						render={({ field }) => (
 							<FormItem>
@@ -327,7 +374,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 					/>
 
 					<FormField
-						control={form.control}
+						control={form.control as any}
 						name="stageId"
 						render={({ field }) => {
 							const selectedStage = stages.find((stage) => stage.id === field.value);
@@ -383,7 +430,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 						{isEditMode && (
 							<FormField
-								control={form.control}
+								control={form.control as any}
 								name="status"
 								render={({ field }) => {
 									const selectedStatus = statusOptions.find((option) => option.value === field.value);
@@ -415,7 +462,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 							/>
 						)}
 						<FormField
-							control={form.control}
+							control={form.control as any}
 							name="priority"
 							render={({ field }) => {
 								const selectedPriority = priorityOptions.find((option) => option.value === field.value);
@@ -449,7 +496,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 						<FormField
-							control={form.control}
+							control={form.control as any}
 							name="assignedToUser"
 							render={({ field, fieldState }) => (
 								<FormItem>
@@ -489,7 +536,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 						/>
 
 						<FormField
-							control={form.control}
+							control={form.control as any}
 							name="secondaryUserId"
 							render={({ field }) => {
 								const selectedSecondaryUser = users.find((user) => user.id === field.value);
@@ -575,6 +622,59 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 						{(form.formState.errors.startDate || form.formState.errors.endDate) && <p className="text-sm font-medium text-destructive">Por favor selecciona un rango de fechas válido</p>}
 					</div>
 
+					{/* Lista de TODOs */}
+					<div className="space-y-3">
+						<FormLabel>Lista de Tareas (Opcional)</FormLabel>
+
+						{/* Input para agregar nuevo TODO */}
+						{!isReadOnly && (
+							<div className="flex gap-2">
+								<Input
+									value={newTodoText}
+									onChange={(e) => setNewTodoText(e.target.value)}
+									placeholder="Agregar nueva tarea..."
+									onKeyPress={(e) => {
+										if (e.key === "Enter") {
+											e.preventDefault();
+											addTodo();
+										}
+									}}
+									className="flex-1"
+								/>
+								<Button type="button" variant="outline" size="sm" onClick={addTodo} disabled={!newTodoText.trim()}>
+									<Plus className="h-4 w-4" />
+								</Button>
+							</div>
+						)}
+
+						{/* Lista de TODOs existentes */}
+						{todoList.length > 0 && (
+							<div className="space-y-2 max-h-48 overflow-y-auto">
+								{todoList.map((todo, index) => (
+									<div key={index} className="flex items-center gap-2 p-2 border rounded-md">
+										<Checkbox checked={todo.status === "done"} onCheckedChange={() => toggleTodoStatus(index)} disabled={isReadOnly} />
+										{isReadOnly ? (
+											<span className={cn("flex-1 text-sm", todo.status === "done" && "line-through text-muted-foreground")}>{todo.description}</span>
+										) : (
+											<Input
+												value={todo.description}
+												onChange={(e) => updateTodoDescription(index, e.target.value)}
+												className={cn("flex-1 text-sm border-none shadow-none p-0 h-auto focus-visible:ring-0", todo.status === "done" && "line-through text-muted-foreground")}
+											/>
+										)}
+										{!isReadOnly && (
+											<Button type="button" variant="ghost" size="sm" onClick={() => removeTodo(index)} className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive">
+												<X className="h-3 w-3" />
+											</Button>
+										)}
+									</div>
+								))}
+							</div>
+						)}
+
+						{todoList.length === 0 && <p className="text-sm text-muted-foreground italic">{isReadOnly ? "No hay tareas definidas" : "No hay tareas. Agrega una nueva tarea arriba."}</p>}
+					</div>
+
 					{/* Nuevos campos para fechas ejecutadas - solo visibles cuando el estado es DONE */}
 					{form.watch("status") === ActivityStatus.DONE && (
 						<div className="space-y-2">
@@ -638,10 +738,11 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 
 					{/* Campos ocultos para mantener la compatibilidad con el esquema */}
 					<div className="hidden">
-						<FormField control={form.control} name="startDate" render={({ field }) => <input type="hidden" {...field} value={field.value?.toISOString()} />} />
-						<FormField control={form.control} name="endDate" render={({ field }) => <input type="hidden" {...field} value={field.value?.toISOString()} />} />
-						<FormField control={form.control} name="executedStartDate" render={({ field }) => <>{field.value && <input type="hidden" {...field} value={field.value?.toISOString()} />}</>} />
-						<FormField control={form.control} name="executedEndDate" render={({ field }) => <>{field.value && <input type="hidden" {...field} value={field.value?.toISOString()} />}</>} />
+						<FormField control={form.control as any} name="startDate" render={({ field }) => <input type="hidden" {...field} value={field.value?.toISOString()} />} />
+						<FormField control={form.control as any} name="endDate" render={({ field }) => <input type="hidden" {...field} value={field.value?.toISOString()} />} />
+						<FormField control={form.control as any} name="executedStartDate" render={({ field }) => <>{field.value && <input type="hidden" {...field} value={field.value?.toISOString()} />}</>} />
+						<FormField control={form.control as any} name="executedEndDate" render={({ field }) => <>{field.value && <input type="hidden" {...field} value={field.value?.toISOString()} />}</>} />
+						<FormField control={form.control as any} name="todoList" render={({ field }) => <input type="hidden" {...field} value={JSON.stringify(field.value)} />} />
 					</div>
 
 					<div className="flex justify-end space-x-2 pt-4">

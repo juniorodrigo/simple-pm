@@ -6,6 +6,11 @@ export type ActivityUser = Pick<User, "id" | "name" | "lastname"> & {
 	projectRole?: string;
 };
 
+export type TodoItem = {
+	status: 'pending' | 'done';
+	description: string;
+};
+
 export type BaseActivity = {
 	id: string;
 	title: string;
@@ -20,4 +25,5 @@ export type BaseActivity = {
 	endDate: Date;
 	executedStartDate?: Date | undefined;
 	executedEndDate?: Date | undefined;
+	todoList?: TodoItem[];
 };
