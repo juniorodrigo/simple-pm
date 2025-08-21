@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format, addDays } from "date-fns";
+import { format, addDays, parse, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -63,6 +63,8 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 	const [availableTags, setAvailableTags] = useState<Tag[]>([]);
 	const [projects, setProjects] = useState<Project[]>([]);
 	const [loading, setLoading] = useState(false);
+	const [startDateInput, setStartDateInput] = useState("");
+	const [endDateInput, setEndDateInput] = useState("");
 	const { user } = useAuth();
 	const [dateRange, setDateRange] = useState<DateRange>({
 		from: new Date(),
@@ -94,6 +96,15 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 				from: start,
 				to: end,
 			});
+
+			setStartDateInput(format(start, "dd/MM/yyyy"));
+			setEndDateInput(format(end, "dd/MM/yyyy"));
+		} else {
+			// Inicializar con fechas por defecto
+			const defaultStart = new Date();
+			const defaultEnd = addDays(defaultStart, 30);
+			setStartDateInput(format(defaultStart, "dd/MM/yyyy"));
+			setEndDateInput(format(defaultEnd, "dd/MM/yyyy"));
 		}
 	}, [isEditing, projectData]);
 
@@ -133,11 +144,68 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 	useEffect(() => {
 		if (dateRange.from) {
 			form.setValue("startDate", dateRange.from);
+			setStartDateInput(format(dateRange.from, "dd/MM/yyyy"));
 		}
 		if (dateRange.to) {
 			form.setValue("endDate", dateRange.to || dateRange.from);
+			setEndDateInput(format(dateRange.to || dateRange.from, "dd/MM/yyyy"));
 		}
 	}, [dateRange, form]);
+
+	// Función para validar y parsear fecha en formato DD/MM/YYYY
+	const parseDate = (dateString: string): Date | null => {
+		if (!dateString || dateString.length !== 10) return null;
+		try {
+			const parsed = parse(dateString, "dd/MM/yyyy", new Date());
+			return isValid(parsed) ? parsed : null;
+		} catch {
+			return null;
+		}
+	};
+
+	// Función para formatear automáticamente la fecha con barras
+	const formatDateInput = (value: string): string => {
+		// Remover todo lo que no sean números
+		const numbers = value.replace(/\D/g, "");
+
+		// Aplicar formato DD/MM/YYYY
+		if (numbers.length <= 2) {
+			return numbers;
+		} else if (numbers.length <= 4) {
+			return `${numbers.slice(0, 2)}/${numbers.slice(2)}`;
+		} else {
+			return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4, 8)}`;
+		}
+	};
+
+	// Manejar cambio en input de fecha de inicio
+	const handleStartDateChange = (value: string) => {
+		const formattedValue = formatDateInput(value);
+		setStartDateInput(formattedValue);
+		const parsedDate = parseDate(formattedValue);
+		if (parsedDate) {
+			const newDateRange = {
+				from: parsedDate,
+				to: dateRange.to && dateRange.to >= parsedDate ? dateRange.to : parsedDate,
+			};
+			setDateRange(newDateRange);
+		}
+	};
+
+	// Manejar cambio en input de fecha de fin
+	const handleEndDateChange = (value: string) => {
+		const formattedValue = formatDateInput(value);
+		setEndDateInput(formattedValue);
+		const parsedDate = parseDate(formattedValue);
+		if (parsedDate && dateRange.from) {
+			if (parsedDate >= dateRange.from) {
+				setDateRange({
+					from: dateRange.from,
+					to: parsedDate,
+				});
+			}
+		}
+	};
 
 	const watchTeamMembers = form.watch("teamMembers");
 	const availableManagers = users.filter((user) => watchTeamMembers.includes(user.id || ""));
@@ -260,44 +328,78 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 						)}
 					/>
 
-					<div className="space-y-2">
+					<div className="space-y-4">
 						<FormLabel>Duración del Proyecto</FormLabel>
-						<Popover>
-							<PopoverTrigger asChild>
-								<Button id="date-range" variant={"outline"} className={cn("w-full justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
-									<CalendarIcon className="mr-2 h-4 w-4" />
-									{dateRange?.from ? (
-										dateRange.to ? (
-											<>
-												{format(dateRange.from, "PPP", { locale: es })} - {format(dateRange.to, "PPP", { locale: es })}
-											</>
-										) : (
-											format(dateRange.from, "PPP", { locale: es })
-										)
-									) : (
-										<span>Selecciona un rango de fechas</span>
-									)}
-								</Button>
-							</PopoverTrigger>
-							<PopoverContent className="w-auto p-0" align="start">
-								<Calendar
-									initialFocus
-									mode="range"
-									defaultMonth={dateRange?.from}
-									selected={dateRange}
-									onSelect={(range) => {
-										if (range?.from) {
-											setDateRange({
-												from: range.from,
-												to: range.to || range.from,
-											});
-										}
-									}}
-									locale={es}
-									numberOfMonths={2}
+
+						{/* Inputs manuales para fechas */}
+						<div className="grid grid-cols-2 gap-4">
+							<div className="space-y-2">
+								<label className="text-sm font-medium">Fecha de inicio</label>
+								<Input
+									type="text"
+									placeholder="DD/MM/YYYY"
+									value={startDateInput}
+									onChange={(e) => handleStartDateChange(e.target.value)}
+									className={cn("text-center", !parseDate(startDateInput) && startDateInput.length === 10 && "border-red-500")}
+									maxLength={10}
 								/>
-							</PopoverContent>
-						</Popover>
+								{!parseDate(startDateInput) && startDateInput.length === 10 && <p className="text-xs text-red-500">Formato inválido</p>}
+							</div>
+							<div className="space-y-2">
+								<label className="text-sm font-medium">Fecha de fin</label>
+								<Input
+									type="text"
+									placeholder="DD/MM/YYYY"
+									value={endDateInput}
+									onChange={(e) => handleEndDateChange(e.target.value)}
+									className={cn("text-center", !parseDate(endDateInput) && endDateInput.length === 10 && "border-red-500")}
+									maxLength={10}
+								/>
+								{!parseDate(endDateInput) && endDateInput.length === 10 && <p className="text-xs text-red-500">Formato inválido</p>}
+							</div>
+						</div>
+
+						{/* Selector de calendario */}
+						<div className="space-y-2">
+							<label className="text-sm font-medium">O selecciona desde el calendario</label>
+							<Popover>
+								<PopoverTrigger asChild>
+									<Button id="date-range" variant={"outline"} className={cn("w-full justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
+										<CalendarIcon className="mr-2 h-4 w-4" />
+										{dateRange?.from ? (
+											dateRange.to ? (
+												<>
+													{format(dateRange.from, "PPP", { locale: es })} - {format(dateRange.to, "PPP", { locale: es })}
+												</>
+											) : (
+												format(dateRange.from, "PPP", { locale: es })
+											)
+										) : (
+											<span>Selecciona un rango de fechas</span>
+										)}
+									</Button>
+								</PopoverTrigger>
+								<PopoverContent className="w-auto p-0" align="start">
+									<Calendar
+										initialFocus
+										mode="range"
+										defaultMonth={dateRange?.from}
+										selected={dateRange}
+										onSelect={(range) => {
+											if (range?.from) {
+												setDateRange({
+													from: range.from,
+													to: range.to || range.from,
+												});
+											}
+										}}
+										locale={es}
+										numberOfMonths={2}
+									/>
+								</PopoverContent>
+							</Popover>
+						</div>
+
 						<div className="flex justify-between text-xs text-muted-foreground">
 							<p>Inicio: {dateRange.from ? format(dateRange.from, "PPP", { locale: es }) : "No seleccionada"}</p>
 							<p>Fin: {dateRange.to ? format(dateRange.to, "PPP", { locale: es }) : "No seleccionada"}</p>

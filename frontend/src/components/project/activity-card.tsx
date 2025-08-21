@@ -91,7 +91,18 @@ ActivityCardContent.displayName = "ActivityCardContent";
 export const ActivityCard = memo(
 	({ activity, stages, onDelete, onClick }: { activity: BaseActivity; stages: BaseStage[]; onDelete?: (id: string) => void; onClick?: (activity: BaseActivity) => void }) => {
 		const activityStage = stages.find((s) => s.id === activity.stageId);
-		const borderColor = activityStage ? getStageColorValue(activityStage.color) : undefined;
+
+		// Manejar correctamente los colores personalizados o predefinidos
+		let borderColor: string | undefined = undefined;
+		if (activityStage) {
+			if (activityStage.color === null && activityStage.colorHex) {
+				// Usar el colorHex personalizado
+				borderColor = activityStage.colorHex;
+			} else {
+				// Usar el color predefinido
+				borderColor = getStageColorValue(activityStage.color ?? "blue");
+			}
+		}
 		// Obtener el usuario para saber si es viewer
 		const { user } = useAuth();
 		const isViewer = user?.role === "viewer";
