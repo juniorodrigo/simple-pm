@@ -369,11 +369,11 @@ export default function ClientView({ project: initialProject, activities: initia
 										{/* Gestionar etapas */}
 										<Dialog open={isStagesModalOpen} onOpenChange={setIsStagesModalOpen}>
 											<Button variant="outline" size="sm" onClick={() => setIsStagesModalOpen(true)}>
-												<ListPlus className="mr-2 h-4 w-4" /> Etapas
+												<ListPlus className="mr-2 h-4 w-4" /> Hitos
 											</Button>
 											<DialogContent className="sm:max-w-[700px]">
-												<DialogTitle>Gestionar Etapas del Proyecto</DialogTitle>
-												<DialogDescription>Crea y gestiona las etapas del proyecto</DialogDescription>
+												<DialogTitle>Gestionar Hitos del Proyecto</DialogTitle>
+												<DialogDescription>Crea y gestiona los hitos del proyecto</DialogDescription>
 												<ProjectStagesModal projectId={project.id} stages={projectStages} onClose={() => setIsStagesModalOpen(false)} onSave={handleUpdateStages} />
 											</DialogContent>
 										</Dialog>
@@ -446,7 +446,7 @@ export default function ClientView({ project: initialProject, activities: initia
 							<SelectValue placeholder="Filtrar por etapa" />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="all">Todas las etapas</SelectItem>
+							<SelectItem value="all">Todos los hitos</SelectItem>
 							{projectStages.map((s) => (
 								<SelectItem key={s.id} value={s.id}>
 									<Badge variant="outline" className={getTagColorClass(s.color)}>

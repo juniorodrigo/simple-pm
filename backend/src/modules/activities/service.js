@@ -22,6 +22,7 @@ const createActivity = async (stageId, activityData) => {
 					id: activityData.assignedToUser.id,
 				},
 			},
+			secondaryUserId: activityData.secondaryUserId,
 			startDate: activityData.startDate,
 			endDate: activityData.endDate,
 			executedStartDate: activityData.executedStartDate,
@@ -32,7 +33,6 @@ const createActivity = async (stageId, activityData) => {
 	await updateProjectStatusByActivityId(data.id);
 	return { success: true, data };
 };
-
 const updateActivity = async (activityId, activityData) => {
 	const data = await prisma.projectActivity.update({
 		where: {
@@ -48,6 +48,7 @@ const updateActivity = async (activityId, activityData) => {
 					id: activityData.assignedToUser.id,
 				},
 			},
+			secondaryUserId: activityData.secondaryUserId,
 			startDate: activityData.startDate,
 			endDate: activityData.endDate,
 			executedStartDate: activityData.executedStartDate,
@@ -59,7 +60,6 @@ const updateActivity = async (activityId, activityData) => {
 
 	return { success: true, data };
 };
-
 const deleteActivity = async (activityId) => {
 	await updateProjectStatusByActivityId(activityId);
 
@@ -71,7 +71,6 @@ const deleteActivity = async (activityId) => {
 
 	return { success: true, data };
 };
-
 const changeStatus = async (activityId, newStatus) => {
 	const newDates = {};
 	if (newStatus === ActivityStatus.pending) {

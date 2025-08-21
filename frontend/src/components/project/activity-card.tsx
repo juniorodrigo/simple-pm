@@ -39,6 +39,7 @@ export const ActivityCardContent = memo(({ activity, stages, onDelete }: { activ
 	const isViewer = user?.role === "viewer";
 	const priorityClass = getPriorityColor(activity.priority);
 	const userInitials = getInitials(`${activity.assignedToUser.name} ${activity.assignedToUser.lastname}`);
+	const startDate = new Date(activity.startDate).toLocaleDateString();
 	const dueDate = new Date(activity.endDate).toLocaleDateString();
 
 	return (
@@ -67,12 +68,18 @@ export const ActivityCardContent = memo(({ activity, stages, onDelete }: { activ
 			<div className="font-medium pt-6">{activity.title}</div>
 			<p className="text-xs text-muted-foreground line-clamp-2">{activity.description}</p>
 
-			{/* Footer con usuario y fecha */}
+			{/* Footer con usuario y fechas */}
 			<div className="flex items-center justify-between">
 				<UserAvatar name={`${activity.assignedToUser.name} ${activity.assignedToUser.lastname}`} initials={userInitials} />
-				<div className="flex items-center text-xs text-muted-foreground">
-					<CalendarClock className="mr-1 h-3 w-3" />
-					<span>Vence: {dueDate}</span>
+				<div className="flex flex-col items-end text-xs text-muted-foreground">
+					<div className="flex items-center">
+						<CalendarClock className="mr-1 h-3 w-3" />
+						<span>Inicio: {startDate}</span>
+					</div>
+					<div className="flex items-center">
+						<CalendarClock className="mr-1 h-3 w-3" />
+						<span>Vence: {dueDate}</span>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -127,9 +134,15 @@ export const ActivityCard = memo(
 					{/* Footer */}
 					<div className="flex items-center justify-between pt-2 border-t ">
 						<UserAvatar name={`${activity.assignedToUser.name} ${activity.assignedToUser.lastname}`} initials={getInitials(`${activity.assignedToUser.name} ${activity.assignedToUser.lastname}`)} />
-						<div className="flex items-center text-xs text-zinc-400">
-							<CalendarClock className="mr-1 h-3 w-3" />
-							<span>Vence: {new Date(activity.endDate).toLocaleDateString()}</span>
+						<div className="flex flex-col items-end text-xs text-zinc-400">
+							<div className="flex items-center">
+								<CalendarClock className="mr-1 h-3 w-3" />
+								<span>Inicio: {new Date(activity.startDate).toLocaleDateString()}</span>
+							</div>
+							<div className="flex items-center">
+								<CalendarClock className="mr-1 h-3 w-3" />
+								<span>Vence: {new Date(activity.endDate).toLocaleDateString()}</span>
+							</div>
 						</div>
 					</div>
 				</CardContent>

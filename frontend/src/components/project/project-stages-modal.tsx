@@ -240,7 +240,7 @@ export default function ProjectStagesModal({ projectId, stages: initialStages, o
 					) : (
 						<>
 							<Plus className="mr-2 h-4 w-4" />
-							Añadir Etapa
+							Añadir Hito
 						</>
 					)}
 				</Button>

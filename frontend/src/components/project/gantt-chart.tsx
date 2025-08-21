@@ -35,66 +35,72 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 	const chartWidth = viewMode === "weeks" ? dateRange.length * WEEK_WIDTH : dateRange.length * DAY_WIDTH;
 
 	const filteredActivities = useMemo(() => {
-		if (!filters.lateStart && !filters.inProgressLate && !filters.completedLate) {
-			return activities;
+		let activitiesToProcess = activities;
+
+		// Aplicar filtros si están activos
+		if (filters.lateStart || filters.inProgressLate || filters.completedLate) {
+			activitiesToProcess = activities.filter((activity: BaseActivity) => {
+				const now = new Date();
+				now.setHours(0, 0, 0, 0);
+				const startDate = new Date(activity.startDate);
+				startDate.setHours(0, 0, 0, 0);
+				const endDate = new Date(activity.endDate);
+				endDate.setHours(0, 0, 0, 0);
+				const executedStartDate = activity.executedStartDate ? new Date(activity.executedStartDate) : null;
+				if (executedStartDate) executedStartDate.setHours(0, 0, 0, 0);
+				const executedEndDate = activity.executedEndDate ? new Date(activity.executedEndDate) : null;
+				if (executedEndDate) executedEndDate.setHours(0, 0, 0, 0);
+
+				// Determinar el estado más avanzado de la actividad
+				let activityStatus: "lateStart" | "inProgressLate" | "completedLate" | null = null;
+
+				// 1. Verificar si está completada con retraso (estado más avanzado)
+				if (executedEndDate && executedEndDate > endDate) {
+					activityStatus = "completedLate";
+				}
+				// 2. Si no está completada con retraso, verificar si está en progreso con retraso
+				else if (executedStartDate && !executedEndDate && now > endDate) {
+					activityStatus = "inProgressLate";
+				}
+				// 3. Si no está en ninguno de los anteriores, verificar si tiene inicio tardío
+				else if ((!executedStartDate && now > startDate) || (executedStartDate && executedStartDate > startDate)) {
+					activityStatus = "lateStart";
+				}
+
+				// Si la actividad tiene un estado y el filtro correspondiente está activo, incluirla
+				if (activityStatus && filters[activityStatus]) {
+					console.log(`Actividad "${activity.title}" clasificada como ${activityStatus}:`, {
+						planificado: {
+							inicio: startDate.toLocaleDateString(),
+							fin: endDate.toLocaleDateString(),
+						},
+						real: {
+							inicio: executedStartDate?.toLocaleDateString() || "No iniciada",
+							fin: executedEndDate?.toLocaleDateString() || "No finalizada",
+						},
+						actual: now.toLocaleDateString(),
+					});
+					return true;
+				}
+
+				return false;
+			});
+
+			console.log("Resumen de filtrado:", {
+				totalActividades: activities.length,
+				actividadesFiltradas: activitiesToProcess.length,
+				filtrosActivos: Object.entries(filters)
+					.filter(([_, value]) => value)
+					.map(([key]) => key),
+			});
 		}
 
-		const filtered = activities.filter((activity: BaseActivity) => {
-			const now = new Date();
-			now.setHours(0, 0, 0, 0);
-			const startDate = new Date(activity.startDate);
-			startDate.setHours(0, 0, 0, 0);
-			const endDate = new Date(activity.endDate);
-			endDate.setHours(0, 0, 0, 0);
-			const executedStartDate = activity.executedStartDate ? new Date(activity.executedStartDate) : null;
-			if (executedStartDate) executedStartDate.setHours(0, 0, 0, 0);
-			const executedEndDate = activity.executedEndDate ? new Date(activity.executedEndDate) : null;
-			if (executedEndDate) executedEndDate.setHours(0, 0, 0, 0);
-
-			// Determinar el estado más avanzado de la actividad
-			let activityStatus: "lateStart" | "inProgressLate" | "completedLate" | null = null;
-
-			// 1. Verificar si está completada con retraso (estado más avanzado)
-			if (executedEndDate && executedEndDate > endDate) {
-				activityStatus = "completedLate";
-			}
-			// 2. Si no está completada con retraso, verificar si está en progreso con retraso
-			else if (executedStartDate && !executedEndDate && now > endDate) {
-				activityStatus = "inProgressLate";
-			}
-			// 3. Si no está en ninguno de los anteriores, verificar si tiene inicio tardío
-			else if ((!executedStartDate && now > startDate) || (executedStartDate && executedStartDate > startDate)) {
-				activityStatus = "lateStart";
-			}
-
-			// Si la actividad tiene un estado y el filtro correspondiente está activo, incluirla
-			if (activityStatus && filters[activityStatus]) {
-				console.log(`Actividad "${activity.title}" clasificada como ${activityStatus}:`, {
-					planificado: {
-						inicio: startDate.toLocaleDateString(),
-						fin: endDate.toLocaleDateString(),
-					},
-					real: {
-						inicio: executedStartDate?.toLocaleDateString() || "No iniciada",
-						fin: executedEndDate?.toLocaleDateString() || "No finalizada",
-					},
-					actual: now.toLocaleDateString(),
-				});
-				return true;
-			}
-
-			return false;
+		// Ordenar cronológicamente por fecha de inicio (más antiguas primero)
+		return activitiesToProcess.sort((a, b) => {
+			const dateA = new Date(a.startDate);
+			const dateB = new Date(b.startDate);
+			return dateA.getTime() - dateB.getTime();
 		});
-
-		console.log("Resumen de filtrado:", {
-			totalActividades: activities.length,
-			actividadesFiltradas: filtered.length,
-			filtrosActivos: Object.entries(filters)
-				.filter(([_, value]) => value)
-				.map(([key]) => key),
-		});
-
-		return filtered;
 	}, [activities, filters]);
 
 	const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {

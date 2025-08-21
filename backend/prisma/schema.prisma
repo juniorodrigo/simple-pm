@@ -105,6 +105,7 @@ model ProjectActivity {
   status            ActivityStatus   @default(pending)
   priority          ActivityPriority @default(medium)
   assignedToUserId  String
+  secondaryUserId   String?
   startDate         DateTime?        @db.Timestamp(6)
   endDate           DateTime?        @db.Timestamp(6)
   executedStartDate DateTime?        @db.Timestamp(6)

@@ -45,6 +45,7 @@ const formSchema = z.object({
 			message: "Debe asignar la actividad a un usuario",
 			path: ["id"],
 		}),
+	secondaryUserId: z.string().optional(),
 	startDate: z.date(),
 	endDate: z.date(),
 	executedStartDate: z.date().optional(),
@@ -100,6 +101,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 					description: activity.description,
 					status: activity.status,
 					assignedToUser: activity.assignedToUser,
+					secondaryUserId: activity.secondaryUserId || "",
 					startDate: new Date(activity.startDate),
 					endDate: new Date(activity.endDate),
 					executedStartDate: activity.executedStartDate ? new Date(activity.executedStartDate) : undefined,
@@ -117,6 +119,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 						lastname: "",
 						projectRole: "",
 					},
+					secondaryUserId: "",
 					startDate: new Date(),
 					endDate: new Date(),
 					executedStartDate: undefined,
@@ -134,6 +137,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 				description: activity.description,
 				status: activity.status,
 				assignedToUser: activity.assignedToUser,
+				secondaryUserId: activity.secondaryUserId || "",
 				startDate: new Date(activity.startDate),
 				endDate: new Date(activity.endDate),
 				executedStartDate: activity.executedStartDate ? new Date(activity.executedStartDate) : undefined,
@@ -207,7 +211,13 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 					...values,
 				};
 
-				const response = await ActivitysService.updateActivity(updatedActivity.id, updatedActivity);
+				// Preparar datos para la petición de edición incluyendo secondaryUserId
+				const updateData = {
+					...updatedActivity,
+					...(values.secondaryUserId && values.secondaryUserId !== "" && values.secondaryUserId !== "none" && { secondaryUserId: values.secondaryUserId }),
+				};
+
+				const response = await ActivitysService.updateActivity(updatedActivity.id, updateData);
 
 				if (response.success) {
 					onSuccess(updatedActivity);
@@ -230,7 +240,13 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 					...values,
 				};
 
-				const response = await ActivitysService.createActivity(values.stageId, newActivity);
+				// Preparar datos para la petición incluyendo secondaryUserId si está presente
+				const activityData = {
+					...newActivity,
+					...(values.secondaryUserId && values.secondaryUserId !== "" && values.secondaryUserId !== "none" && { secondaryUserId: values.secondaryUserId }),
+				};
+
+				const response = await ActivitysService.createActivity(values.stageId, activityData);
 
 				if (response.success) {
 					const createdActivity = response.data?.id ? { ...newActivity, id: response.data.id } : newActivity;
@@ -421,45 +437,84 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 						/>
 					</div>
 
-					<FormField
-						control={form.control}
-						name="assignedToUser"
-						render={({ field, fieldState }) => (
-							<FormItem>
-								<FormLabel>Asignar a</FormLabel>
-								{isReadOnly ? (
-									<div className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background">
-										{field.value.name} {field.value.lastname}
-									</div>
-								) : (
-									<Select
-										onValueChange={(value) => {
-											const selectedUser = users.find((user) => user.id === value);
-											if (selectedUser) {
-												field.onChange(convertToActivityUser(selectedUser));
-											}
-										}}
-										value={field.value.id}
-										disabled={isReadOnly}
-									>
-										<FormControl>
-											<SelectTrigger>
-												<SelectValue placeholder="Seleccionar usuario" />
-											</SelectTrigger>
-										</FormControl>
-										<SelectContent>
-											{users.map((user) => (
-												<SelectItem key={user.id} value={user.id || ""}>
-													{user.name} {user.lastname}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								)}
-								<FormMessage>{fieldState.error?.root?.message || fieldState.error?.message}</FormMessage>
-							</FormItem>
-						)}
-					/>
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<FormField
+							control={form.control}
+							name="assignedToUser"
+							render={({ field, fieldState }) => (
+								<FormItem>
+									<FormLabel>Asignar a (Principal)</FormLabel>
+									{isReadOnly ? (
+										<div className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background">
+											{field.value.name} {field.value.lastname}
+										</div>
+									) : (
+										<Select
+											onValueChange={(value) => {
+												const selectedUser = users.find((user) => user.id === value);
+												if (selectedUser) {
+													field.onChange(convertToActivityUser(selectedUser));
+												}
+											}}
+											value={field.value.id}
+											disabled={isReadOnly}
+										>
+											<FormControl>
+												<SelectTrigger>
+													<SelectValue placeholder="Seleccionar usuario principal" />
+												</SelectTrigger>
+											</FormControl>
+											<SelectContent>
+												{users.map((user) => (
+													<SelectItem key={user.id} value={user.id || ""}>
+														{user.name} {user.lastname}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									)}
+									<FormMessage>{fieldState.error?.root?.message || fieldState.error?.message}</FormMessage>
+								</FormItem>
+							)}
+						/>
+
+						<FormField
+							control={form.control}
+							name="secondaryUserId"
+							render={({ field }) => {
+								const selectedSecondaryUser = users.find((user) => user.id === field.value);
+								return (
+									<FormItem>
+										<FormLabel>Usuario Secundario (Opcional)</FormLabel>
+										{isReadOnly ? (
+											<div className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background">
+												{selectedSecondaryUser ? `${selectedSecondaryUser.name} ${selectedSecondaryUser.lastname}` : "No asignado"}
+											</div>
+										) : (
+											<Select onValueChange={field.onChange} value={field.value || ""} disabled={isReadOnly}>
+												<FormControl>
+													<SelectTrigger>
+														<SelectValue placeholder="Seleccionar usuario secundario" />
+													</SelectTrigger>
+												</FormControl>
+												<SelectContent>
+													<SelectItem value="none">Ninguno</SelectItem>
+													{users
+														.filter((user) => user.id !== form.watch("assignedToUser").id)
+														.map((user) => (
+															<SelectItem key={user.id} value={user.id || ""}>
+																{user.name} {user.lastname}
+															</SelectItem>
+														))}
+												</SelectContent>
+											</Select>
+										)}
+										<FormMessage />
+									</FormItem>
+								);
+							}}
+						/>
+					</div>
 
 					<div className="space-y-2">
 						<FormLabel>Fechas planificadas</FormLabel>

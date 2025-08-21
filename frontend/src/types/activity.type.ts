@@ -15,6 +15,7 @@ export type BaseActivity = {
 	status: ActivityStatus;
 	priority: ActivityPriority;
 	assignedToUser: ActivityUser;
+	secondaryUserId?: string;
 	startDate: Date;
 	endDate: Date;
 	executedStartDate?: Date | undefined;
