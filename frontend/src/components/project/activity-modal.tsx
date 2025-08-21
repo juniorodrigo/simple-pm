@@ -333,11 +333,17 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 							const selectedStage = stages.find((stage) => stage.id === field.value);
 							return (
 								<FormItem>
-									<FormLabel>Etapa</FormLabel>
+									<FormLabel>Hito</FormLabel>
 									{isReadOnly ? (
 										<div className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background items-center">
 											{selectedStage && (
-												<Badge variant="outline" className={getTagColorClass(selectedStage.color)}>
+												<Badge
+													variant="outline"
+													className={getTagColorClass(selectedStage.color, selectedStage.colorHex)}
+													style={
+														selectedStage.color === null && selectedStage.colorHex ? { backgroundColor: selectedStage.colorHex + "20", borderColor: selectedStage.colorHex, color: selectedStage.colorHex } : {}
+													}
+												>
 													{selectedStage.name}
 												</Badge>
 											)}
@@ -355,7 +361,11 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 													.map((stage) => (
 														<SelectItem key={stage.id} value={stage.id!}>
 															<div className="flex items-center">
-																<Badge variant="outline" className={getTagColorClass(stage.color)}>
+																<Badge
+																	variant="outline"
+																	className={getTagColorClass(stage.color, stage.colorHex)}
+																	style={stage.color === null && stage.colorHex ? { backgroundColor: stage.colorHex + "20", borderColor: stage.colorHex, color: stage.colorHex } : {}}
+																>
 																	{stage.name}
 																</Badge>
 															</div>

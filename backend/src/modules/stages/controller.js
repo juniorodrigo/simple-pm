@@ -16,7 +16,7 @@ const createStage = async (req, res) => {
 	try {
 		const projectId = parseInt(req.params.projectId);
 		const { name, description, color } = req.body;
-		const requiredFields = { name, description, color };
+		const requiredFields = { name, description };
 
 		if (Object.values(requiredFields).some((field) => !field)) {
 			return res.error('Faltan campos requeridos para crear el stage');

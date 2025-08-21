@@ -47,7 +47,15 @@ export function getStatusColor(status: string) {
 	return STATUS_COLORS[status as keyof typeof STATUS_COLORS] || STATUS_COLORS.default;
 }
 
-export function getTagColorClass(color: string) {
+export function getTagColorClass(color: string | null, colorHex?: string) {
+	// If color is null and we have a hex color, use neutral classes for custom styling
+	if (color === null && colorHex) {
+		return "border-gray-300";
+	}
+	
+	console.log('getTagColorClass recibió:', { color, colorHex, colorType: typeof color });
+	
+	// Use predefined color classes when color is specified
 	switch (color) {
 		case "red":
 			return "bg-red-100 text-red-800 border-red-200";
@@ -98,22 +106,22 @@ export function getStageColorTailwind(color: string) {
 
 	switch (color.toLowerCase()) {
 		case "red":
-			return "red-500";
+			return "bg-red-500";
 		case "green":
-			return "green-500";
+			return "bg-green-500";
 		case "blue":
-			return "blue-500";
+			return "bg-blue-500";
 		case "amber":
-			return "amber-500";
+			return "bg-amber-500";
 		case "violet":
-			return "violet-500";
+			return "bg-violet-500";
 		case "rose":
-			return "rose-500";
+			return "bg-rose-500";
 		case "gray":
-			return "gray-500";
+			return "bg-gray-500";
 		default:
 			// Si ya es una clase de Tailwind, devolverla directamente
 			if (color.startsWith("bg-")) return color;
-			return "bg-base";
+			return "bg-gray-500";
 	}
 }

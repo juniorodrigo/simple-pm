@@ -201,8 +201,6 @@ const getProjectById = async (projectId) => {
 		},
 	});
 
-	console.log(stages[0].ProjectActivity, '________________');
-
 	const enhancedProject = await enhanceProject(project);
 
 	const { id, name, description, startDate, endDate, progressPercentage, category, manager } = enhancedProject;
@@ -233,6 +231,7 @@ const getProjectById = async (projectId) => {
 			description: stage.description,
 			status: stage.status,
 			color: stage.color,
+			colorHex: stage.colorHex,
 			ordinalNumber: stage.ordinalNumber,
 			activities: stage.ProjectActivity,
 		})),

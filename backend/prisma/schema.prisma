@@ -120,10 +120,11 @@ model ProjectActivity {
 }
 
 model ProjectStage {
-  id            String @id @default(cuid())
+  id            String  @id @default(cuid())
   name          String
   description   String
-  color         String
+  color         String?
+  colorHex      String?
   ordinalNumber Int
   projectId     Int
 
