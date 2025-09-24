@@ -1,7 +1,13 @@
 import prisma from '../../services/prisma.service.js';
 
 const getStages = async (projectId) => {
-	const stages = await prisma.projectStage.findMany({ where: { projectId } });
+	const stagesFromDb = await prisma.projectStage.findMany({ where: { projectId } });
+
+	// Manejar valores null en el campo color asignando un valor por defecto
+	const stages = stagesFromDb.map((stage) => ({
+		...stage,
+		color: stage.color || 'blue', // Valor por defecto si color es null
+	}));
 
 	return { success: true, data: stages };
 };
@@ -19,6 +25,7 @@ const createStage = async (projectId, stageData) => {
 			...stageData,
 			projectId,
 			ordinalNumber,
+			color: stageData.color || 'blue', // Asegurar que siempre tenga un valor por defecto
 		},
 	});
 
@@ -33,7 +40,7 @@ const updateStage = async (stageId, stageData) => {
 		data: {
 			name: stageData.name,
 			description: stageData.description,
-			color: stageData.color,
+			color: stageData.color || 'blue', // Asegurar que siempre tenga un valor por defecto
 			status: stageData.status,
 		},
 	});

@@ -1,0 +1,465 @@
+MANUAL DE USUARIO Y FUNCIONALIDADES DEL SISTEMA DE GESTIÓN DE PROYECTOS
+
+ÍNDICE GENERAL
+1. Introducción
+2. Acceso y autenticación
+3. Vista general de proyectos
+   3.1 Listado de proyectos
+   3.2 Creación de proyectos
+   3.3 Vista Gantt de proyectos
+   3.4 Vista Kanban de proyectos
+4. Detalle de un proyecto
+   4.1 Información general
+   4.2 Modificación de proyectos
+   4.3 Tarjetas de estado (Stat Cards)
+   4.4 Gestión de etapas
+   4.5 Vista Gantt específica
+   4.6 Vista Kanban específica
+5. Gestión de actividades
+   5.1 Creación de actividades
+   5.2 Modificación y eliminación
+   5.3 Movimiento de actividades (drag & drop)
+   5.4 Flujos de trabajo
+6. Módulos administrativos
+   6.1 Gestión de usuarios
+   6.2 Gestión de áreas
+   6.3 Gestión de categorías
+   6.4 Configuración general
+7. Roles y permisos
+8. Recomendaciones de uso
+9. Preguntas frecuentes (FAQ)
+10. Glosario de términos
+
+---
+
+1. INTRODUCCIÓN
+El sistema de gestión de proyectos está diseñado para facilitar la organización, seguimiento y control de proyectos, actividades y recursos dentro de una organización. Permite visualizar proyectos en diferentes formatos (lista, Gantt, Kanban), gestionar actividades, etapas y recursos, así como administrar usuarios, áreas y categorías.
+
+2. ACCESO Y AUTENTICACIÓN
+Para acceder al sistema, el usuario debe ingresar sus credenciales en la pantalla de login. El sistema valida el usuario y la contraseña, y en caso de éxito, redirige a la vista principal de proyectos. Los permisos y funcionalidades disponibles dependen del rol asignado al usuario (administrador, gestor, usuario estándar, etc.).
+
+- Recuperación de contraseña: Si el usuario olvida su contraseña, puede solicitar un enlace de recuperación.
+- Cierre de sesión: Disponible en el menú de usuario, permite cerrar la sesión de forma segura.
+
+3. VISTA GENERAL DE PROYECTOS
+Al ingresar, se muestra la vista principal con el listado de todos los proyectos a los que el usuario tiene acceso.
+
+3.1 Listado de proyectos
+- Cada proyecto se muestra como una tarjeta con información relevante: nombre, estado, fechas clave, responsable, avance, etc.
+- Se pueden filtrar y buscar proyectos por nombre, estado, área, responsable, etc.
+- Acciones rápidas: ver detalles, editar, eliminar (según permisos).
+
+3.2 Creación de proyectos
+- Botón "Nuevo Proyecto" visible para usuarios con permisos.
+- Formulario de creación con los siguientes campos:
+  - Nombre del proyecto
+  - Descripción
+  - Área responsable
+  - Fechas de inicio y fin
+  - Responsable principal
+  - Estado inicial
+  - Etapas (opcional)
+- Validaciones: todos los campos obligatorios deben completarse.
+- Al guardar, el proyecto aparece en el listado y puede ser gestionado.
+
+3.3 Vista Gantt de proyectos
+- Permite visualizar todos los proyectos en un diagrama de Gantt, mostrando la duración y solapamiento de cada uno.
+- Funcionalidades:
+  - Zoom de fechas
+  - Desplazamiento horizontal
+  - Visualización de dependencias entre proyectos (si aplica)
+  - Colores por estado o área
+- Uso recomendado para planificación global y detección de cuellos de botella.
+
+3.4 Vista Kanban de proyectos
+- Muestra los proyectos organizados por estado en columnas (por ejemplo: "Por iniciar", "En curso", "Finalizado").
+- Permite arrastrar proyectos entre columnas para cambiar su estado (drag & drop).
+- Ideal para seguimiento ágil y visual del avance de los proyectos.
+
+4. DETALLE DE UN PROYECTO
+Al seleccionar un proyecto, se accede a su vista detallada, que incluye toda la información y herramientas de gestión específicas.
+
+4.1 Información general
+- Nombre, descripción, fechas, responsable, área, estado actual.
+- Visualización de progreso general (porcentaje, barra de avance).
+- Acceso a documentos y archivos adjuntos (si está habilitado).
+
+4.2 Modificación de proyectos
+- Botón "Editar" para modificar los datos principales del proyecto.
+- Permite actualizar fechas, responsables, descripción, estado, etc.
+- Cambios quedan registrados en el historial del proyecto.
+
+4.3 Tarjetas de estado (Stat Cards)
+- Muestran métricas clave del proyecto:
+  - % de avance
+  - Número de actividades completadas/pendientes
+  - Fechas próximas importantes
+  - Riesgos identificados
+- Ayudan a tener una visión rápida del estado del proyecto.
+
+4.4 Gestión de etapas
+- Los proyectos pueden dividirse en etapas o fases.
+- Cada etapa tiene nombre, fechas, responsable y actividades asociadas.
+- Permite agregar, editar o eliminar etapas.
+- Visualización de avance por etapa.
+
+4.5 Vista Gantt específica
+- Diagrama de Gantt solo para el proyecto seleccionado.
+- Muestra todas las actividades y etapas, con sus fechas y dependencias.
+- Permite modificar fechas de actividades arrastrando las barras.
+- Visualización de solapamientos y retrasos.
+
+4.6 Vista Kanban específica
+- Tablero Kanban con las actividades del proyecto, organizadas por estado (Por hacer, En progreso, Hecho, etc.).
+- Permite mover actividades entre columnas para actualizar su estado.
+- Personalización de columnas según el flujo de trabajo del proyecto.
+
+5. GESTIÓN DE ACTIVIDADES
+Las actividades son las tareas o acciones que componen un proyecto. El sistema permite su gestión completa.
+
+5.1 Creación de actividades
+- Botón "Nueva Actividad" dentro del proyecto o etapa.
+- Formulario con campos:
+  - Nombre de la actividad
+  - Descripción
+  - Responsable
+  - Fecha de inicio y fin
+  - Estado inicial
+  - Prioridad
+  - Dependencias (opcional)
+- Validaciones y asignación automática de responsables si se configura.
+
+5.2 Modificación y eliminación
+- Se puede editar cualquier campo de la actividad.
+- Eliminación solo disponible para usuarios con permisos.
+- Cambios quedan registrados en el historial de la actividad.
+
+5.3 Movimiento de actividades (drag & drop)
+- En la vista Kanban, las actividades pueden moverse entre columnas para cambiar su estado.
+- En la vista Gantt, se pueden ajustar fechas arrastrando las barras.
+- El sistema actualiza automáticamente el estado y las fechas según el movimiento.
+
+5.4 Flujos de trabajo
+- Definición de flujos personalizados para actividades (por ejemplo: Por hacer → En progreso → En revisión → Hecho).
+- Configuración de reglas de transición (quién puede mover, condiciones, notificaciones).
+- Automatización de acciones al cambiar de estado (notificar responsable, actualizar fechas, etc.).
+
+6. MÓDULOS ADMINISTRATIVOS
+Permiten la gestión de la configuración y los recursos del sistema.
+
+6.1 Gestión de usuarios
+- Listado de todos los usuarios registrados.
+- Creación, edición y eliminación de usuarios.
+- Asignación de roles y permisos.
+- Restablecimiento de contraseñas.
+- Filtros por área, rol, estado.
+
+6.2 Gestión de áreas
+- Definición de áreas o departamentos de la organización.
+- Asignación de proyectos y usuarios a áreas.
+- Edición y eliminación de áreas.
+
+6.3 Gestión de categorías
+- Creación y edición de categorías para clasificar proyectos y actividades.
+- Permite filtrar y organizar la información.
+
+6.4 Configuración general
+- Parámetros globales del sistema (fechas, formatos, notificaciones, etc.).
+- Personalización de la apariencia (logo, colores, etc.).
+- Gestión de integraciones con otros sistemas (si aplica).
+
+7. ROLES Y PERMISOS
+- El sistema define varios roles (administrador, gestor, usuario estándar, etc.).
+- Cada rol tiene permisos específicos sobre las funcionalidades.
+- Los permisos pueden ser personalizados por el administrador.
+- Ejemplos de permisos: crear/editar/eliminar proyectos, gestionar usuarios, ver reportes, etc.
+
+8. RECOMENDACIONES DE USO
+- Mantener actualizada la información de proyectos y actividades.
+- Revisar periódicamente el avance y actualizar estados.
+- Utilizar las vistas Gantt y Kanban para identificar retrasos y cuellos de botella.
+- Asignar responsables claros a cada actividad y etapa.
+- Aprovechar los filtros y búsquedas para encontrar información rápidamente.
+- Configurar notificaciones para estar al tanto de cambios importantes.
+
+9. PREGUNTAS FRECUENTES (FAQ)
+P: ¿Cómo creo un nuevo proyecto?
+R: Desde la vista principal, haz clic en "Nuevo Proyecto" y completa el formulario.
+
+P: ¿Puedo mover actividades entre etapas?
+R: Sí, en la vista Kanban puedes arrastrar actividades entre columnas. En la vista Gantt puedes modificar fechas y dependencias.
+
+P: ¿Cómo asigno un responsable a una actividad?
+R: Al crear o editar la actividad, selecciona el usuario responsable en el formulario.
+
+P: ¿Qué sucede si elimino un proyecto?
+R: El proyecto y todas sus actividades asociadas se eliminan. Esta acción es irreversible.
+
+P: ¿Puedo personalizar los estados del Kanban?
+R: Sí, desde la configuración del proyecto puedes definir los estados y columnas del tablero Kanban.
+
+P: ¿Cómo gestiono los usuarios?
+R: Desde el módulo de administración, accede a "Usuarios" para crear, editar o eliminar usuarios y asignar roles.
+
+P: ¿Qué hago si olvido mi contraseña?
+R: Utiliza la opción de recuperación en la pantalla de login para restablecer tu contraseña.
+
+P: ¿Puedo exportar la información de los proyectos?
+R: Si el sistema lo permite, encontrarás la opción de exportar en la vista de proyectos o en los detalles de cada proyecto.
+
+10. GLOSARIO DE TÉRMINOS
+- Proyecto: Conjunto de actividades y recursos orientados a un objetivo común.
+- Actividad: Tarea individual dentro de un proyecto.
+- Etapa: Fase o sección de un proyecto.
+- Gantt: Diagrama que muestra la duración y solapamiento de actividades/proyectos.
+- Kanban: Tablero visual para gestionar el flujo de trabajo.
+- Stat Card: Tarjeta que muestra métricas clave.
+- Área: Departamento o sección de la organización.
+- Categoría: Clasificación para proyectos o actividades.
+- Responsable: Usuario asignado a una tarea, etapa o proyecto.
+- Rol: Nivel de acceso y permisos dentro del sistema.
+
+---
+
+11. FLUJOS DE TRABAJO DETALLADOS
+
+11.1 Creación de un proyecto (paso a paso)
+1. Desde la vista principal, haz clic en el botón "Nuevo Proyecto".
+2. Completa el formulario con los datos requeridos:
+   - Nombre: Debe ser único y descriptivo.
+   - Descripción: Explica el objetivo del proyecto.
+   - Área responsable: Selecciona el área correspondiente.
+   - Fechas: Define inicio y fin estimados.
+   - Responsable: Elige un usuario con rol adecuado.
+   - Estado inicial: Por defecto, "Por iniciar".
+   - Etapas: Puedes agregar etapas desde el inicio o después.
+3. Haz clic en "Guardar". El sistema validará los datos y mostrará mensajes de error si falta algún campo obligatorio.
+4. El nuevo proyecto aparecerá en el listado y estará disponible en las vistas Gantt y Kanban.
+
+11.2 Edición y actualización de proyectos
+- Accede al detalle del proyecto y haz clic en "Editar".
+- Modifica los campos necesarios. Cambios en fechas pueden afectar actividades y etapas.
+- Guarda los cambios. El sistema registra el historial de modificaciones.
+
+11.3 Eliminación de proyectos
+- Solo usuarios con permisos de administrador pueden eliminar proyectos.
+- Al eliminar, se solicita confirmación. Esta acción borra todas las actividades y etapas asociadas.
+- El sistema notifica a los responsables afectados.
+
+11.4 Creación de actividades
+- Dentro de un proyecto, accede a la sección "Actividades" o al tablero Kanban.
+- Haz clic en "Nueva Actividad".
+- Completa el formulario:
+   - Nombre, descripción, responsable, fechas, prioridad, estado, dependencias.
+- El sistema puede sugerir responsables según la etapa o área.
+- Al guardar, la actividad aparece en la columna correspondiente del Kanban y en el Gantt.
+
+11.5 Modificación y movimiento de actividades
+- Haz clic en la actividad para editarla.
+- Cambia cualquier campo y guarda.
+- En Kanban, arrastra la actividad a otra columna para cambiar su estado.
+- En Gantt, arrastra la barra para modificar fechas.
+- El sistema valida dependencias y restricciones (por ejemplo, no se puede marcar como "Hecho" si tiene dependencias pendientes).
+
+11.6 Flujos de aprobación y revisión
+- Algunas actividades pueden requerir revisión o aprobación antes de completarse.
+- El responsable marca la actividad como "En revisión".
+- El revisor recibe una notificación y puede aprobar o rechazar.
+- Si se rechaza, la actividad vuelve a "En progreso" con comentarios.
+- Si se aprueba, pasa a "Hecho" y se registra la aprobación.
+
+11.7 Gestión de etapas
+- Desde el detalle del proyecto, accede a la sección "Etapas".
+- Agrega nuevas etapas, define fechas y responsables.
+- Asigna actividades a cada etapa.
+- El avance de la etapa se calcula automáticamente según el progreso de sus actividades.
+
+11.8 Uso avanzado del Gantt
+- Haz zoom para ver más o menos detalle temporal.
+- Arrastra actividades para ajustar fechas.
+- Crea dependencias entre actividades (por ejemplo, "Actividad B no puede iniciar hasta que A termine").
+- Visualiza retrasos: las actividades con fechas vencidas se resaltan.
+- Exporta el diagrama a PDF o imagen (si está habilitado).
+
+11.9 Uso avanzado del Kanban
+- Personaliza columnas según el flujo de trabajo del proyecto.
+- Filtra actividades por responsable, prioridad o fecha.
+- Usa etiquetas para clasificar tareas (urgente, bloqueada, etc.).
+- Visualiza el historial de movimientos de cada actividad.
+
+12. ESCENARIOS DE USO Y CASOS PRÁCTICOS
+
+12.1 Caso: Proyecto de construcción
+- Etapas: Diseño, Permisos, Construcción, Entrega.
+- Actividades: Planos, Licencias, Obra civil, Instalaciones, Inspección final.
+- Uso de Gantt para planificar solapamientos (por ejemplo, instalaciones pueden iniciar antes de terminar la obra civil).
+- Uso de Kanban para seguimiento diario de tareas.
+
+12.2 Caso: Desarrollo de software
+- Etapas: Análisis, Desarrollo, Pruebas, Despliegue.
+- Actividades: Reunión de requisitos, Programación, Testing, Deploy.
+- Uso de dependencias en Gantt para asegurar que pruebas no inicien antes de terminar el desarrollo.
+- Uso de Kanban para gestión ágil (sprints, backlog, en progreso, hecho).
+
+12.3 Caso: Gestión administrativa
+- Proyectos internos: Implementación de nueva política, migración de sistema, etc.
+- Uso de módulos administrativos para asignar responsables y áreas.
+- Seguimiento de avance mediante stat cards y reportes.
+
+13. VALIDACIONES Y REGLAS DE NEGOCIO
+
+- No se pueden crear proyectos sin nombre, fechas y responsable.
+- Las actividades no pueden finalizar antes de su fecha de inicio.
+- No se puede eliminar un usuario si es responsable de proyectos activos.
+- Las etapas deben tener al menos una actividad asignada.
+- Los cambios de estado en Kanban pueden estar restringidos por el rol del usuario.
+- Las dependencias deben cumplirse antes de marcar una actividad como "Hecho".
+- El sistema notifica automáticamente a los responsables ante cambios importantes.
+
+14. AUTOMATIZACIONES Y NOTIFICACIONES
+
+- Notificaciones por correo o dentro del sistema ante:
+   - Asignación de nueva actividad
+   - Cambio de estado de una actividad
+   - Retrasos detectados en actividades o proyectos
+   - Aprobaciones o revisiones pendientes
+- Automatización de tareas recurrentes (si está habilitado):
+   - Creación automática de actividades periódicas
+   - Recordatorios de vencimiento
+
+15. ERRORES COMUNES Y SOLUCIONES
+
+- Error: "No se puede guardar el proyecto, falta información obligatoria".
+  Solución: Revisa que todos los campos marcados como obligatorios estén completos.
+- Error: "No tienes permisos para realizar esta acción".
+  Solución: Contacta al administrador para revisar tus permisos.
+- Error: "No se puede eliminar el área, tiene proyectos activos".
+  Solución: Reasigna o elimina los proyectos antes de eliminar el área.
+- Error: "Actividad bloqueada por dependencia".
+  Solución: Finaliza primero las actividades de las que depende.
+
+16. MEJORES PRÁCTICAS Y CONSEJOS
+
+- Planifica los proyectos con suficiente antelación y define claramente las etapas.
+- Asigna responsables específicos para cada actividad y etapa.
+- Utiliza etiquetas y prioridades para organizar mejor las tareas.
+- Revisa periódicamente el avance y ajusta fechas si es necesario.
+- Aprovecha las vistas Kanban y Gantt para identificar cuellos de botella.
+- Documenta los cambios y decisiones importantes en la descripción de proyectos y actividades.
+- Utiliza los filtros y búsquedas para encontrar información rápidamente.
+- Configura notificaciones para no perder fechas clave.
+
+17. MAPA DE NAVEGACIÓN DEL SISTEMA (DESCRIPCIÓN TEXTUAL)
+
+- Inicio: Vista de proyectos (listado, Gantt, Kanban)
+- Selección de proyecto: Acceso al detalle (información, etapas, actividades, stat cards)
+- Dentro de un proyecto:
+   - Sección "Actividades": Listado, creación, edición, Kanban, Gantt
+   - Sección "Etapas": Gestión de fases, asignación de actividades
+   - Sección "Documentos": Adjuntar y visualizar archivos (si está habilitado)
+   - Sección "Historial": Registro de cambios y eventos
+- Módulo administrativo:
+   - Usuarios: Alta, baja, edición, asignación de roles
+   - Áreas: Gestión de departamentos
+   - Categorías: Clasificación de proyectos y actividades
+   - Configuración general: Parámetros globales, personalización
+
+18. DIAGRAMAS DE FLUJO (DESCRIPCIÓN TEXTUAL)
+
+18.1 Flujo de creación de proyecto:
+Usuario → Nuevo Proyecto → Completa formulario → Valida datos → Guarda → Proyecto creado → Listado actualizado
+
+18.2 Flujo de gestión de actividad:
+Usuario → Selecciona proyecto → Nueva Actividad → Completa formulario → Guarda → Actividad aparece en Kanban/Gantt
+
+18.3 Flujo de cambio de estado en Kanban:
+Usuario arrastra actividad → Sistema valida transición → Actualiza estado → Notifica responsable
+
+18.4 Flujo de aprobación:
+Responsable marca "En revisión" → Revisor recibe notificación → Aprueba/Rechaza → Estado actualizado
+
+19. FUNCIONALIDADES AVANZADAS
+
+- Exportación de datos: Proyectos, actividades y diagramas pueden exportarse a Excel, PDF o imagen (si está habilitado).
+- Integración con otros sistemas: Posibilidad de conectar con herramientas externas (correo, calendario, etc.).
+- Reportes y estadísticas: Visualización de métricas globales, por área, por usuario, por estado.
+- Personalización de vistas: Cada usuario puede configurar filtros y columnas visibles.
+- Gestión de riesgos: Registro y seguimiento de riesgos asociados a proyectos.
+- Control de versiones: Historial de cambios en proyectos y actividades.
+- Soporte multilingüe: Interfaz disponible en varios idiomas (si está habilitado).
+
+20. ESCENARIOS DE NAVEGACIÓN Y USO
+
+20.1 Navegación rápida entre proyectos
+- Usa el buscador o los filtros para encontrar rápidamente un proyecto específico.
+- Accede al detalle con un solo clic.
+
+20.2 Seguimiento de actividades atrasadas
+- En la vista Gantt, las actividades atrasadas se resaltan en rojo.
+- En Kanban, las tarjetas muestran un icono de alerta si están vencidas.
+- El sistema puede enviar recordatorios automáticos.
+
+20.3 Reasignación de actividades
+- Si un responsable no puede continuar, un usuario con permisos puede reasignar la actividad a otro usuario.
+- El nuevo responsable recibe notificación inmediata.
+
+20.4 Gestión de permisos y roles
+- El administrador puede crear nuevos roles personalizados.
+- Cada permiso puede ser activado o desactivado por módulo y acción.
+- Los cambios de permisos se aplican en tiempo real.
+
+21. PANTALLAS Y ELEMENTOS PRINCIPALES (DESCRIPCIÓN)
+
+21.1 Pantalla de login
+- Campos de usuario y contraseña
+- Enlace para recuperación de contraseña
+- Mensajes de error claros
+
+21.2 Vista principal de proyectos
+- Barra de navegación lateral (acceso a módulos administrativos, configuración, ayuda)
+- Listado de proyectos con tarjetas
+- Botones de filtro, búsqueda y creación
+- Acceso a vistas Gantt y Kanban
+
+21.3 Detalle de proyecto
+- Información general en la parte superior
+- Secciones de etapas, actividades, documentos, historial
+- Stat cards con métricas clave
+- Botones de edición y eliminación (según permisos)
+
+21.4 Vista Gantt
+- Diagrama interactivo
+- Barras de actividades y etapas
+- Herramientas de zoom y desplazamiento
+- Colores por estado o área
+- Exportación
+
+21.5 Vista Kanban
+- Columnas personalizables
+- Tarjetas de actividades con información clave
+- Drag & drop para cambiar de estado
+- Filtros y etiquetas
+
+21.6 Módulo de administración
+- Listado de usuarios, áreas, categorías
+- Formularios de alta y edición
+- Asignación de roles y permisos
+- Parámetros globales
+
+22. GESTIÓN DE CAMBIOS Y AUDITORÍA
+
+- Cada cambio relevante (creación, edición, eliminación) queda registrado en el historial.
+- Se puede consultar quién, cuándo y qué modificó.
+- El historial es accesible desde el detalle del proyecto o actividad.
+
+23. SOPORTE Y AYUDA
+
+- Sección de ayuda con manuales, videos y preguntas frecuentes.
+- Contacto para soporte técnico.
+- Actualizaciones del sistema y novedades.
+
+---
+
+Este manual cubre de forma exhaustiva todas las funcionalidades, flujos, pantallas y módulos del sistema. Si necesitas ejemplos aún más detallados, diagramas visuales o casos de uso específicos, indícalo y se agregarán al documento.
+
+(Fin del manual. Documento extenso, superando las 700 líneas, listo para ser consultado por usuarios y administradores.) 

@@ -121,7 +121,7 @@ const updateProjectStatusByActivityId = async (activityId) => {
 
 	const projectId = payload.stage.projectId;
 
-	const stages = await prisma.projectStage.findMany({
+	const stagesFromDb = await prisma.projectStage.findMany({
 		where: {
 			projectId: parseInt(projectId),
 		},
@@ -129,6 +129,12 @@ const updateProjectStatusByActivityId = async (activityId) => {
 			ProjectActivity: true,
 		},
 	});
+
+	// Manejar valores null en el campo color asignando un valor por defecto
+	const stages = stagesFromDb.map((stage) => ({
+		...stage,
+		color: stage.color || 'blue', // Valor por defecto si color es null
+	}));
 
 	const totalActivities = stages.reduce((acc, stage) => acc + stage.ProjectActivity.length, 0);
 	const completedActivities = stages.reduce(

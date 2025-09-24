@@ -10,7 +10,24 @@ const enhanceProject = async (project) => {
 	//TODO: Mejorar con include activities
 	const stages = await prisma.projectStage.findMany({
 		where: { projectId: project.id },
+		select: {
+			id: true,
+			name: true,
+			description: true,
+			color: true,
+			colorHex: true,
+			ordinalNumber: true,
+			projectId: true,
+			status: true,
+		},
 	});
+
+	// Manejar valores null en el campo color asignando un valor por defecto
+	const stagesWithDefaultColor = stages.map((stage) => ({
+		...stage,
+		color: stage.color || 'blue', // Valor por defecto si color es null
+	}));
+
 	const activities = await prisma.projectActivity.findMany({
 		where: { stageId: { in: stages.map((stage) => stage.id) } },
 	});
@@ -183,7 +200,7 @@ const getProjectById = async (projectId) => {
 		},
 	});
 
-	const stages = await prisma.projectStage.findMany({
+	const stagesFromDb = await prisma.projectStage.findMany({
 		where: { projectId: parseInt(projectId) },
 		include: {
 			ProjectActivity: {
@@ -200,6 +217,12 @@ const getProjectById = async (projectId) => {
 			},
 		},
 	});
+
+	// Manejar valores null en el campo color asignando un valor por defecto
+	const stages = stagesFromDb.map((stage) => ({
+		...stage,
+		color: stage.color || 'blue', // Valor por defecto si color es null
+	}));
 
 	const enhancedProject = await enhanceProject(project);
 
