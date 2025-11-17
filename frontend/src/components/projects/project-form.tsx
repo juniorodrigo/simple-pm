@@ -24,6 +24,7 @@ import { Project, ProjectCreate, ProjectUpdate, ExtendedProject } from "@/types/
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/auth-context";
+import { useRouter } from "next/navigation";
 
 const formSchema = z.object({
 	name: z.string().min(2, {
@@ -59,6 +60,7 @@ interface CreateProjectFormProps {
 
 export default function CreateProjectForm({ isEditing = false, projectData, onSuccess, onCancel }: CreateProjectFormProps) {
 	const { toast } = useToast();
+	const router = useRouter();
 	const [users, setUsers] = useState<User[]>([]);
 	const [availableTags, setAvailableTags] = useState<Tag[]>([]);
 	const [projects, setProjects] = useState<Project[]>([]);
@@ -274,13 +276,16 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 
 				response = await ProjectsService.createProject(newProject);
 
-				if (response.success) {
+				if (response.success && response.data) {
 					toast({
 						title: "Proyecto creado con éxito",
 						variant: "default",
 					});
 					form.reset();
-					window.location.reload();
+
+					// Redirigir a la ruta del proyecto recién creado
+					const projectId = response.data.id;
+					router.push(`/proyectos/${projectId}`);
 				}
 			}
 		} catch (error) {

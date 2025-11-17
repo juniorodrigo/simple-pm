@@ -309,7 +309,7 @@ export default function KanbanPage() {
 
 					<div className="relative w-full md:w-64">
 						<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-						<Input type="search" placeholder="Buscar proyectos..." className="w-full pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+						<Input type="search" placeholder="Buscar categorías..." className="w-full pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
 					</div>
 					<div className="flex items-center space-x-2">
 						<Switch id="show-archived" checked={showArchived} onCheckedChange={setShowArchived} />

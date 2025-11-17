@@ -92,6 +92,12 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 	// Nuevo estado para las fechas ejecutadas
 	const [executedDateRange, setExecutedDateRange] = useState<DateRange | null>(null);
 
+	// Estados locales para inputs manuales de fechas
+	const [manualStartDate, setManualStartDate] = useState("");
+	const [manualEndDate, setManualEndDate] = useState("");
+	const [manualExecutedStartDate, setManualExecutedStartDate] = useState("");
+	const [manualExecutedEndDate, setManualExecutedEndDate] = useState("");
+
 	// Estado para la lista de todos
 	const [todoList, setTodoList] = useState<TodoItem[]>(activity?.todoList || []);
 	const [newTodoText, setNewTodoText] = useState("");
@@ -187,6 +193,9 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 			form.setValue("startDate", dateRange.from);
 			// Si no hay fecha final o es la misma que la inicial, usar la fecha inicial para ambos
 			form.setValue("endDate", dateRange.to || dateRange.from);
+			// Actualizar inputs manuales cuando cambia el dateRange desde el calendario
+			setManualStartDate(format(dateRange.from, "dd/MM/yyyy"));
+			setManualEndDate(format(dateRange.to || dateRange.from, "dd/MM/yyyy"));
 		}
 	}, [dateRange, form]);
 
@@ -195,9 +204,14 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 		if (executedDateRange?.from) {
 			form.setValue("executedStartDate", executedDateRange.from);
 			form.setValue("executedEndDate", executedDateRange.to || executedDateRange.from);
+			// Actualizar inputs manuales cuando cambia el executedDateRange desde el calendario
+			setManualExecutedStartDate(format(executedDateRange.from, "dd/MM/yyyy"));
+			setManualExecutedEndDate(format(executedDateRange.to || executedDateRange.from, "dd/MM/yyyy"));
 		} else {
 			form.setValue("executedStartDate", undefined);
 			form.setValue("executedEndDate", undefined);
+			setManualExecutedStartDate("");
+			setManualExecutedEndDate("");
 		}
 	}, [executedDateRange, form]);
 
@@ -614,6 +628,100 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 								</PopoverContent>
 							)}
 						</Popover>
+
+						{/* Inputs manuales para fechas planificadas */}
+						{!isReadOnly && (
+							<div className="grid grid-cols-2 gap-2 pt-2">
+								<div className="space-y-1">
+									<label className="text-xs text-muted-foreground">Inicio (dd/mm/aaaa)</label>
+									<Input
+										type="text"
+										placeholder="17/11/2025"
+										value={manualStartDate}
+										onChange={(e) => {
+											const value = e.target.value;
+											setManualStartDate(value);
+
+											// Intentar parsear la fecha cuando tiene el formato completo
+											const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+											const match = value.match(dateRegex);
+											if (match) {
+												const [, day, month, year] = match;
+												const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+												if (!isNaN(date.getTime())) {
+													setDateRange({
+														...dateRange,
+														from: date,
+														to: dateRange.to || date,
+													});
+												}
+											}
+										}}
+										onBlur={(e) => {
+											// Al perder el foco, formatear correctamente si es una fecha válida
+											const value = e.target.value;
+											const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+											const match = value.match(dateRegex);
+											if (match) {
+												const [, day, month, year] = match;
+												const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+												if (!isNaN(date.getTime())) {
+													setManualStartDate(format(date, "dd/MM/yyyy"));
+												}
+											} else if (dateRange.from) {
+												// Si no es válida, restaurar la fecha actual
+												setManualStartDate(format(dateRange.from, "dd/MM/yyyy"));
+											}
+										}}
+										className="h-9"
+									/>
+								</div>
+								<div className="space-y-1">
+									<label className="text-xs text-muted-foreground">Fin (dd/mm/aaaa)</label>
+									<Input
+										type="text"
+										placeholder="17/11/2025"
+										value={manualEndDate}
+										onChange={(e) => {
+											const value = e.target.value;
+											setManualEndDate(value);
+
+											// Intentar parsear la fecha cuando tiene el formato completo
+											const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+											const match = value.match(dateRegex);
+											if (match) {
+												const [, day, month, year] = match;
+												const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+												if (!isNaN(date.getTime())) {
+													setDateRange({
+														...dateRange,
+														to: date,
+													});
+												}
+											}
+										}}
+										onBlur={(e) => {
+											// Al perder el foco, formatear correctamente si es una fecha válida
+											const value = e.target.value;
+											const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+											const match = value.match(dateRegex);
+											if (match) {
+												const [, day, month, year] = match;
+												const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+												if (!isNaN(date.getTime())) {
+													setManualEndDate(format(date, "dd/MM/yyyy"));
+												}
+											} else if (dateRange.to) {
+												// Si no es válida, restaurar la fecha actual
+												setManualEndDate(format(dateRange.to, "dd/MM/yyyy"));
+											}
+										}}
+										className="h-9"
+									/>
+								</div>
+							</div>
+						)}
+
 						<div className="flex justify-between text-xs text-muted-foreground">
 							<p>Inicio: {dateRange.from ? format(dateRange.from, "PPP", { locale: es }) : "No seleccionada"}</p>
 							<p>Fin: {dateRange.to ? format(dateRange.to, "PPP", { locale: es }) : "Igual que inicio"}</p>
@@ -727,6 +835,106 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 									</PopoverContent>
 								)}
 							</Popover>
+
+							{/* Inputs manuales para fechas ejecutadas */}
+							{!isReadOnly && (
+								<div className="grid grid-cols-2 gap-2 pt-2">
+									<div className="space-y-1">
+										<label className="text-xs text-muted-foreground">Inicio real (dd/mm/aaaa)</label>
+										<Input
+											type="text"
+											placeholder="17/11/2025"
+											value={manualExecutedStartDate}
+											onChange={(e) => {
+												const value = e.target.value;
+												setManualExecutedStartDate(value);
+
+												// Intentar parsear la fecha cuando tiene el formato completo
+												const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+												const match = value.match(dateRegex);
+												if (match) {
+													const [, day, month, year] = match;
+													const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+													if (!isNaN(date.getTime())) {
+														setExecutedDateRange({
+															from: date,
+															to: executedDateRange?.to || date,
+														});
+													}
+												}
+											}}
+											onBlur={(e) => {
+												// Al perder el foco, formatear correctamente si es una fecha válida
+												const value = e.target.value;
+												const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+												const match = value.match(dateRegex);
+												if (match) {
+													const [, day, month, year] = match;
+													const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+													if (!isNaN(date.getTime())) {
+														setManualExecutedStartDate(format(date, "dd/MM/yyyy"));
+													}
+												} else if (executedDateRange?.from) {
+													// Si no es válida, restaurar la fecha actual
+													setManualExecutedStartDate(format(executedDateRange.from, "dd/MM/yyyy"));
+												} else {
+													setManualExecutedStartDate("");
+												}
+											}}
+											className="h-9"
+										/>
+									</div>
+									<div className="space-y-1">
+										<label className="text-xs text-muted-foreground">Fin real (dd/mm/aaaa)</label>
+										<Input
+											type="text"
+											placeholder="17/11/2025"
+											value={manualExecutedEndDate}
+											onChange={(e) => {
+												const value = e.target.value;
+												setManualExecutedEndDate(value);
+
+												// Intentar parsear la fecha cuando tiene el formato completo
+												const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+												const match = value.match(dateRegex);
+												if (match) {
+													const [, day, month, year] = match;
+													const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+													if (!isNaN(date.getTime())) {
+														setExecutedDateRange({
+															...executedDateRange,
+															from: executedDateRange?.from || date,
+															to: date,
+														});
+													}
+												}
+											}}
+											onBlur={(e) => {
+												// Al perder el foco, formatear correctamente si es una fecha válida
+												const value = e.target.value;
+												const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+												const match = value.match(dateRegex);
+												if (match) {
+													const [, day, month, year] = match;
+													const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+													if (!isNaN(date.getTime())) {
+														setManualExecutedEndDate(format(date, "dd/MM/yyyy"));
+													}
+												} else if (executedDateRange?.to) {
+													// Si no es válida, restaurar la fecha actual
+													setManualExecutedEndDate(format(executedDateRange.to, "dd/MM/yyyy"));
+												} else if (executedDateRange?.from) {
+													setManualExecutedEndDate(format(executedDateRange.from, "dd/MM/yyyy"));
+												} else {
+													setManualExecutedEndDate("");
+												}
+											}}
+											className="h-9"
+										/>
+									</div>
+								</div>
+							)}
+
 							{executedDateRange && (
 								<div className="flex justify-between text-xs text-muted-foreground">
 									<p>Inicio real: {format(executedDateRange.from, "PPP", { locale: es })}</p>
