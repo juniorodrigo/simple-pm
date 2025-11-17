@@ -56,9 +56,10 @@ interface CreateProjectFormProps {
 	projectData?: ExtendedProject;
 	onSuccess?: () => void;
 	onCancel?: () => void;
+	defaultCategoryId?: string;
 }
 
-export default function CreateProjectForm({ isEditing = false, projectData, onSuccess, onCancel }: CreateProjectFormProps) {
+export default function CreateProjectForm({ isEditing = false, projectData, onSuccess, onCancel, defaultCategoryId }: CreateProjectFormProps) {
 	const { toast } = useToast();
 	const router = useRouter();
 	const [users, setUsers] = useState<User[]>([]);
@@ -83,7 +84,7 @@ export default function CreateProjectForm({ isEditing = false, projectData, onSu
 			endDate: isEditing && projectData && projectData.endDate ? new Date(projectData.endDate) : addDays(new Date(), 30),
 			managerUserId: isEditing && projectData ? projectData.managerUserId || "" : user?.id || "",
 			teamMembers: isEditing && projectData && projectData.team ? projectData.team.map((member) => member.id || "") : user?.id ? [user.id] : [],
-			categoryId: isEditing && projectData ? projectData.categoryId || "" : "",
+			categoryId: isEditing && projectData ? projectData.categoryId || "" : defaultCategoryId && defaultCategoryId !== "all" ? defaultCategoryId : "",
 			previousProjectId: isEditing && projectData ? projectData.previousProjectId || "" : "",
 		},
 	});

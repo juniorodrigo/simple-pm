@@ -244,7 +244,7 @@ export default function KanbanPage() {
 										<DialogHeader>
 											<DialogTitle>Crear nuevo proyecto</DialogTitle>
 										</DialogHeader>
-										<CreateProjectForm onSuccess={handleProjectCreated} onCancel={() => setIsDialogOpen(false)} />
+										<CreateProjectForm onSuccess={handleProjectCreated} onCancel={() => setIsDialogOpen(false)} defaultCategoryId={selectedCategory} />
 									</DialogContent>
 								</Dialog>
 							</div>

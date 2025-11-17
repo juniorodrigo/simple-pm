@@ -31,9 +31,7 @@ const formSchema = z.object({
 	title: z.string().min(2, {
 		message: "El título debe tener al menos 2 caracteres.",
 	}),
-	description: z.string().min(1, {
-		message: "La descripción es obligatoria.",
-	}),
+	description: z.string().optional().default(" "),
 	status: z.nativeEnum(ActivityStatus),
 	assignedToUser: z
 		.object({
@@ -119,7 +117,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 		defaultValues: activity
 			? {
 					title: activity.title,
-					description: activity.description,
+					description: activity.description || " ",
 					status: activity.status,
 					assignedToUser: activity.assignedToUser,
 					secondaryUserId: activity.secondaryUserId || "",
@@ -132,7 +130,7 @@ export default function CreateActivityModal({ projectId, stages: providedStages,
 			  }
 			: {
 					title: "",
-					description: "",
+					description: " ",
 					status: ActivityStatus.TODO,
 					assignedToUser: {
 						id: "",
