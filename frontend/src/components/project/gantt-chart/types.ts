@@ -38,9 +38,13 @@ export type FilterState = {
 	completedLate: boolean;
 };
 
+export type SortOption = "date" | "text";
+
 export type LegendProps = {
 	showLegend: boolean;
 	setShowLegend: (show: boolean) => void;
 	filters: FilterState;
 	onFilterChange: (group: FilterGroup, value: boolean) => void;
+	sortOption: SortOption;
+	onSortChange: (sort: SortOption) => void;
 };

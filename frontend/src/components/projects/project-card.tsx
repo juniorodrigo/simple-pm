@@ -358,6 +358,9 @@ const ProjectCard = memo(({ project, onDelete, onClick, isDragging, onProjectUpd
 				{/* Título del proyecto */}
 				<CardTitle className="text-lg font-semibold leading-tight line-clamp-2">{project.name}</CardTitle>
 
+				{/* Descripción breve */}
+				{project.description && <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{project.description}</p>}
+
 				{/* Información básica siempre visible */}
 				<div className="flex items-center justify-between mt-3">
 					<div className="flex items-center gap-3">

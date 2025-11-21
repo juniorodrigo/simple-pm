@@ -268,6 +268,11 @@ export default function KanbanBoard({ activities: initialActivities, stages, onA
 			}
 		});
 
+		// Ordenar actividades alfabéticamente por título en cada lane
+		Object.keys(result).forEach((laneId) => {
+			result[laneId].sort((a, b) => a.title.localeCompare(b.title));
+		});
+
 		return result;
 	}, [activities]);
 

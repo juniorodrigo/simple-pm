@@ -1,13 +1,17 @@
-import { AlertTriangleIcon, ClockIcon, CheckIcon } from "lucide-react";
+import { AlertTriangleIcon, ClockIcon, CheckIcon, CalendarIcon, TextIcon } from "lucide-react";
 import { memo } from "react";
-import { FilterGroup, FilterState, LegendProps } from "../types";
+import { FilterGroup, FilterState, LegendProps, SortOption } from "../types";
 import { cn } from "@/lib/utils";
 
-export const Legend = memo(({ showLegend, setShowLegend, filters, onFilterChange }: LegendProps) => {
+export const Legend = memo(({ showLegend, setShowLegend, filters, onFilterChange, sortOption, onSortChange }: LegendProps) => {
 	const handleFilterChange = (group: FilterGroup) => {
 		// Si se selecciona un filtro de otro grupo, deseleccionar los otros grupos
 		const newValue = !filters[group];
 		onFilterChange(group, newValue);
+	};
+
+	const handleSortChange = (sort: SortOption) => {
+		onSortChange(sort);
 	};
 
 	return (
@@ -71,6 +75,32 @@ export const Legend = memo(({ showLegend, setShowLegend, filters, onFilterChange
 					</div>
 					<span className={cn("text-muted-foreground", filters.completedLate && "text-foreground")}>Completado con retraso</span>
 					{filters.completedLate && <CheckIcon className="h-3 w-3" />}
+				</button>
+			</div>
+
+			{/* Separador visual */}
+			<div className="h-4 w-px bg-border"></div>
+
+			{/* Grupo 3: Ordenamiento */}
+			<div className="flex items-center gap-2">
+				<span className="text-muted-foreground">Ordenar por:</span>
+				<button
+					type="button"
+					onClick={() => handleSortChange("date")}
+					className={cn("flex items-center gap-2 px-2 py-1 rounded-md transition-colors", sortOption === "date" ? "bg-primary/10" : "hover:bg-muted/50")}
+				>
+					<CalendarIcon className="h-3 w-3" />
+					<span className={cn("text-muted-foreground", sortOption === "date" && "text-foreground")}>Fecha</span>
+					{sortOption === "date" && <CheckIcon className="h-3 w-3" />}
+				</button>
+				<button
+					type="button"
+					onClick={() => handleSortChange("text")}
+					className={cn("flex items-center gap-2 px-2 py-1 rounded-md transition-colors", sortOption === "text" ? "bg-primary/10" : "hover:bg-muted/50")}
+				>
+					<TextIcon className="h-3 w-3" />
+					<span className={cn("text-muted-foreground", sortOption === "text" && "text-foreground")}>Texto</span>
+					{sortOption === "text" && <CheckIcon className="h-3 w-3" />}
 				</button>
 			</div>
 

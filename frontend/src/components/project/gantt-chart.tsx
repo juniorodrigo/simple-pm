@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useMemo } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getStageColorValue } from "@/lib/colors";
-import { FilterGroup, FilterState } from "./gantt-chart/types";
+import { FilterGroup, FilterState, SortOption } from "./gantt-chart/types";
 import { BaseActivity } from "@/types/activity.type";
 
 // Importaciones locales
@@ -15,6 +15,7 @@ import { Legend, DateHeader, ActivityInfo, GridLines, ActivityBar, EmptyState } 
 export default function GanttChart({ activities, stages, viewMode }: GanttChartProps) {
 	const [showLegend, setShowLegend] = useState(true);
 	const [scrollLeft, setScrollLeft] = useState(0);
+	const [sortOption, setSortOption] = useState<SortOption>("date");
 	const [filters, setFilters] = useState<FilterState>({
 		lateStart: false,
 		inProgressLate: false,
@@ -29,6 +30,10 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 			console.log(`Filtro ${group} ${value ? "activado" : "desactivado"}`);
 			return newFilters;
 		});
+	}, []);
+
+	const handleSortChange = useCallback((sort: SortOption) => {
+		setSortOption(sort);
 	}, []);
 
 	const dateRange = useDateRange(activities, viewMode);
@@ -95,13 +100,21 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 			});
 		}
 
-		// Ordenar cronológicamente por fecha de inicio (más antiguas primero)
-		return activitiesToProcess.sort((a, b) => {
-			const dateA = new Date(a.startDate);
-			const dateB = new Date(b.startDate);
-			return dateA.getTime() - dateB.getTime();
-		});
-	}, [activities, filters]);
+		// Ordenar según la opción seleccionada
+		if (sortOption === "date") {
+			// Ordenar cronológicamente por fecha de inicio (más antiguas primero)
+			activitiesToProcess.sort((a, b) => {
+				const dateA = new Date(a.startDate);
+				const dateB = new Date(b.startDate);
+				return dateA.getTime() - dateB.getTime();
+			});
+		} else if (sortOption === "text") {
+			// Ordenar alfabéticamente por título
+			activitiesToProcess.sort((a, b) => a.title.localeCompare(b.title));
+		}
+
+		return activitiesToProcess;
+	}, [activities, filters, sortOption]);
 
 	const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
 		const container = e.currentTarget;
@@ -129,7 +142,7 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 			<div className="h-full flex flex-col space-y-3 overflow-hidden">
 				{showLegend && (
 					<div className="flex-shrink-0">
-						<Legend showLegend={showLegend} setShowLegend={setShowLegend} filters={filters} onFilterChange={handleFilterChange} />
+						<Legend showLegend={showLegend} setShowLegend={setShowLegend} filters={filters} onFilterChange={handleFilterChange} sortOption={sortOption} onSortChange={handleSortChange} />
 					</div>
 				)}
 

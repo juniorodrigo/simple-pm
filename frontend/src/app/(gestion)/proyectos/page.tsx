@@ -23,7 +23,12 @@ export default function KanbanPage() {
 	const { user, isLoading: authLoading } = useAuth();
 	const isViewer = user?.role === "viewer";
 	const isGerenteGeneral = user?.role === "gerente_general";
-	const [selectedCategory, setSelectedCategory] = useState<string>("all");
+	const [selectedCategory, setSelectedCategory] = useState<string>(() => {
+		if (typeof window !== "undefined") {
+			return localStorage.getItem("selectedCategory") || "all";
+		}
+		return "all";
+	});
 	const [selectedArea, setSelectedArea] = useState<string>("all");
 	const [selectedManager, setSelectedManager] = useState<string>("all");
 	const [projects, setProjects] = useState<Project[]>([]);
@@ -121,6 +126,13 @@ export default function KanbanPage() {
 	}, [toast, user, authLoading, isGerenteGeneral]);
 
 	// Filtrar proyectos por categoría, área, manager y término de búsqueda
+	// Guardar la categoría seleccionada en localStorage
+	useEffect(() => {
+		if (typeof window !== "undefined") {
+			localStorage.setItem("selectedCategory", selectedCategory);
+		}
+	}, [selectedCategory]);
+
 	const filteredProjects = projects.filter((project) => {
 		const matchesCategory = selectedCategory === "all" || project.categoryId === selectedCategory;
 		const matchesArea = selectedArea === "all" || project.areaId === selectedArea;
