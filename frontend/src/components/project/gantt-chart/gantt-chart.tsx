@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { getStageColorValue } from "@/lib/colors";
 
 // Importaciones locales
-import { GanttChartProps, WEEK_WIDTH, DAY_WIDTH, FilterGroup, FilterState } from "./types";
+import { GanttChartProps, WEEK_WIDTH, DAY_WIDTH, FilterGroup, FilterState, SortOption } from "./types";
 import { useDateRange } from "./hooks";
 import { getBarPosition, getExecutedBarPosition, getExecutionStatus, getStageColor, hasLateStart, hasInProgressDelay, hasCompletedLate } from "./utils";
 import { Legend, DateHeader, ActivityInfo, GridLines, ActivityBar, EmptyState } from "./components";
@@ -14,6 +14,7 @@ import { BaseActivity } from "@/types/activity.type";
 export default function GanttChart({ activities, stages, viewMode }: GanttChartProps) {
 	const [showLegend, setShowLegend] = useState(true);
 	const [scrollLeft, setScrollLeft] = useState(0);
+	const [sortOption, setSortOption] = useState<SortOption>("date");
 	const [filters, setFilters] = useState<FilterState>({
 		lateStart: false,
 		inProgressLate: false,
@@ -41,24 +42,42 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 		});
 	}, []);
 
+	const handleSortChange = useCallback((sort: SortOption) => {
+		setSortOption(sort);
+	}, []);
+
 	const filteredActivities = useMemo(() => {
-		if (!filters.lateStart && !filters.inProgressLate && !filters.completedLate) {
-			return activities;
+		let filtered = activities;
+
+		// Aplicar filtros
+		if (filters.lateStart || filters.inProgressLate || filters.completedLate) {
+			filtered = activities.filter((activity: BaseActivity) => {
+				if (filters.lateStart) {
+					return hasLateStart(activity);
+				}
+				if (filters.inProgressLate) {
+					return hasInProgressDelay(activity);
+				}
+				if (filters.completedLate) {
+					return hasCompletedLate(activity);
+				}
+				return true;
+			});
 		}
 
-		return activities.filter((activity: BaseActivity) => {
-			if (filters.lateStart) {
-				return hasLateStart(activity);
+		// Aplicar ordenamiento
+		const sorted = [...filtered].sort((a, b) => {
+			if (sortOption === "date") {
+				const dateA = new Date(a.startDate).getTime();
+				const dateB = new Date(b.startDate).getTime();
+				return dateA - dateB;
+			} else {
+				return a.title.localeCompare(b.title);
 			}
-			if (filters.inProgressLate) {
-				return hasInProgressDelay(activity);
-			}
-			if (filters.completedLate) {
-				return hasCompletedLate(activity);
-			}
-			return true;
 		});
-	}, [activities, filters]);
+
+		return sorted;
+	}, [activities, filters, sortOption]);
 
 	const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
 		const container = e.currentTarget;
@@ -86,10 +105,9 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 			<div className="h-full flex flex-col space-y-3 overflow-hidden">
 				{showLegend && (
 					<div className="flex-shrink-0">
-						<Legend showLegend={showLegend} setShowLegend={setShowLegend} filters={filters} onFilterChange={handleFilterChange} />
+						<Legend showLegend={showLegend} setShowLegend={setShowLegend} filters={filters} onFilterChange={handleFilterChange} sortOption={sortOption} onSortChange={handleSortChange} />
 					</div>
-				)}
-
+				)}{" "}
 				{!showLegend && (
 					<div className="flex-shrink-0">
 						<button onClick={() => setShowLegend(true)} className="px-3 py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md border border-dashed transition-colors">
@@ -97,7 +115,6 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 						</button>
 					</div>
 				)}
-
 				<div className="border rounded-md shadow relative flex-1 flex flex-col min-h-0 overflow-hidden">
 					{/* Header fijo */}
 					<div className="flex sticky top-0 bg-background border-b flex-shrink-0 z-[20]">
@@ -152,7 +169,6 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 						</div>
 					</div>
 				</div>
-
 				<style jsx global>{`
 					.scrollbar-hide::-webkit-scrollbar {
 						display: none;
