@@ -4,8 +4,8 @@ import { Project } from "@/types/new/project.type";
 import { useState, useEffect, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { addDays, differenceInDays, format, startOfDay } from "date-fns";
-import { CalendarIcon, Users2Icon, ClockIcon, AlertTriangleIcon } from "lucide-react";
+import { addDays, addMonths, differenceInDays, format, startOfDay, startOfMonth, endOfMonth, differenceInCalendarDays, startOfQuarter, endOfQuarter, addQuarters } from "date-fns";
+import { CalendarIcon, Users2Icon, ClockIcon, AlertTriangleIcon, Calendar } from "lucide-react";
 import { es } from "date-fns/locale";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getStageColorValue, STATUS_COLORS } from "@/lib/colors";
@@ -18,11 +18,14 @@ interface ProjectsGanttProps {
 	projects: Project[];
 }
 
+type ViewType = "week" | "month" | "quarter";
+
 export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 	const router = useRouter();
 	const [dateRange, setDateRange] = useState<Date[]>([]);
 	const [chartWidth, setChartWidth] = useState(0);
 	const [showLegend, setShowLegend] = useState(true);
+	const [viewType, setViewType] = useState<ViewType>("week");
 	const [filters, setFilters] = useState<FilterState>({
 		lateStart: false,
 		inProgressLate: false,
@@ -36,58 +39,61 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 
 	// Filtrar proyectos basado en los filtros activos
 	const filteredProjects = useMemo(() => {
-		if (!filters.lateStart && !filters.inProgressLate && !filters.completedLate) {
-			return projects;
+		let result = projects;
+
+		if (filters.lateStart || filters.inProgressLate || filters.completedLate) {
+			const now = new Date();
+			now.setHours(0, 0, 0, 0);
+
+			result = projects.filter((project) => {
+				// Convertir fechas a inicio del día para comparación
+				const startDate = new Date(project.startDate);
+				startDate.setHours(0, 0, 0, 0);
+				const endDate = new Date(project.endDate);
+				endDate.setHours(0, 0, 0, 0);
+				const realStartDate = project.realStartDate ? new Date(project.realStartDate) : null;
+				if (realStartDate) realStartDate.setHours(0, 0, 0, 0);
+				const realEndDate = project.realEndDate ? new Date(project.realEndDate) : null;
+				if (realEndDate) realEndDate.setHours(0, 0, 0, 0);
+
+				// Determinar el estado más avanzado del proyecto
+				let projectStatus: "lateStart" | "inProgressLate" | "completedLate" | null = null;
+
+				// 1. Verificar si está completado con retraso (estado más avanzado)
+				if (realEndDate && realEndDate > endDate) {
+					projectStatus = "completedLate";
+				}
+				// 2. Si no está completado con retraso, verificar si está en progreso con retraso
+				else if (realStartDate && !realEndDate && now > endDate) {
+					projectStatus = "inProgressLate";
+				}
+				// 3. Si no está en ninguno de los anteriores, verificar si tiene inicio tardío
+				else if ((!realStartDate && now > startDate) || (realStartDate && realStartDate > startDate)) {
+					projectStatus = "lateStart";
+				}
+
+				// Si el proyecto tiene un estado y el filtro correspondiente está activo, incluirlo
+				if (projectStatus && filters[projectStatus]) {
+					console.log(`Proyecto "${project.name}" clasificado como ${projectStatus}:`, {
+						planificado: {
+							inicio: startDate.toLocaleDateString(),
+							fin: endDate.toLocaleDateString(),
+						},
+						real: {
+							inicio: realStartDate?.toLocaleDateString() || "No iniciado",
+							fin: realEndDate?.toLocaleDateString() || "No finalizado",
+						},
+						actual: now.toLocaleDateString(),
+					});
+					return true;
+				}
+
+				return false;
+			});
 		}
 
-		const now = new Date();
-		now.setHours(0, 0, 0, 0);
-
-		return projects.filter((project) => {
-			// Convertir fechas a inicio del día para comparación
-			const startDate = new Date(project.startDate);
-			startDate.setHours(0, 0, 0, 0);
-			const endDate = new Date(project.endDate);
-			endDate.setHours(0, 0, 0, 0);
-			const realStartDate = project.realStartDate ? new Date(project.realStartDate) : null;
-			if (realStartDate) realStartDate.setHours(0, 0, 0, 0);
-			const realEndDate = project.realEndDate ? new Date(project.realEndDate) : null;
-			if (realEndDate) realEndDate.setHours(0, 0, 0, 0);
-
-			// Determinar el estado más avanzado del proyecto
-			let projectStatus: "lateStart" | "inProgressLate" | "completedLate" | null = null;
-
-			// 1. Verificar si está completado con retraso (estado más avanzado)
-			if (realEndDate && realEndDate > endDate) {
-				projectStatus = "completedLate";
-			}
-			// 2. Si no está completado con retraso, verificar si está en progreso con retraso
-			else if (realStartDate && !realEndDate && now > endDate) {
-				projectStatus = "inProgressLate";
-			}
-			// 3. Si no está en ninguno de los anteriores, verificar si tiene inicio tardío
-			else if ((!realStartDate && now > startDate) || (realStartDate && realStartDate > startDate)) {
-				projectStatus = "lateStart";
-			}
-
-			// Si el proyecto tiene un estado y el filtro correspondiente está activo, incluirlo
-			if (projectStatus && filters[projectStatus]) {
-				console.log(`Proyecto "${project.name}" clasificado como ${projectStatus}:`, {
-					planificado: {
-						inicio: startDate.toLocaleDateString(),
-						fin: endDate.toLocaleDateString(),
-					},
-					real: {
-						inicio: realStartDate?.toLocaleDateString() || "No iniciado",
-						fin: realEndDate?.toLocaleDateString() || "No finalizado",
-					},
-					actual: now.toLocaleDateString(),
-				});
-				return true;
-			}
-
-			return false;
-		});
+		// Ordenar alfabéticamente por nombre
+		return result.sort((a, b) => a.name.localeCompare(b.name));
 	}, [projects, filters]);
 
 	// Log de resumen de filtrado
@@ -138,26 +144,49 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 			}
 		});
 
-		// Add some padding weeks
-		earliestDate = addDays(earliestDate, -7);
-		latestDate = addDays(latestDate, 7);
-
-		// Generate array of weeks
 		const range: Date[] = [];
-		let currentDate = startOfDay(earliestDate);
+		let currentDate: Date;
 
-		while (currentDate <= latestDate) {
-			range.push(currentDate);
-			currentDate = addDays(currentDate, 7);
+		if (viewType === "week") {
+			// Vista por semana
+			earliestDate = addDays(earliestDate, -7);
+			latestDate = addDays(latestDate, 7);
+			currentDate = startOfDay(earliestDate);
+
+			while (currentDate <= latestDate) {
+				range.push(currentDate);
+				currentDate = addDays(currentDate, 7);
+			}
+		} else if (viewType === "month") {
+			// Vista por mes
+			earliestDate = startOfMonth(earliestDate);
+			latestDate = endOfMonth(latestDate);
+			currentDate = startOfMonth(earliestDate);
+
+			while (currentDate <= latestDate) {
+				range.push(currentDate);
+				currentDate = addMonths(currentDate, 1);
+			}
+		} else if (viewType === "quarter") {
+			// Vista por trimestre
+			earliestDate = startOfQuarter(earliestDate);
+			latestDate = endOfQuarter(latestDate);
+			currentDate = startOfQuarter(earliestDate);
+
+			while (currentDate <= latestDate) {
+				range.push(currentDate);
+				currentDate = addQuarters(currentDate, 1);
+			}
 		}
 
 		setDateRange(range);
-	}, [projects]);
+	}, [projects, viewType]);
 
 	// Update chart width based on window size and date range
 	useEffect(() => {
 		const updateWidth = () => {
-			const width = Math.max(dateRange.length * 100, 800);
+			const pixelPerUnit = viewType === "week" ? 100 : viewType === "month" ? 150 : 300; // quarter = 300px
+			const width = Math.max(dateRange.length * pixelPerUnit, 800);
 			setChartWidth(width);
 		};
 
@@ -167,7 +196,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 		return () => {
 			window.removeEventListener("resize", updateWidth);
 		};
-	}, [dateRange]);
+	}, [dateRange, viewType]);
 
 	// Función para calcular posición y ancho de las barras de proyecto
 	const getBarPosition = (project: Project) => {
@@ -178,11 +207,18 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 		const firstDate = dateRange[0];
 
 		// Calcular días desde el inicio del rango
-		const startDays = differenceInDays(startDate, firstDate);
-		const endDays = differenceInDays(endDate, firstDate);
+		const startDays = differenceInCalendarDays(startDate, firstDate);
+		const endDays = differenceInCalendarDays(endDate, firstDate);
 
-		// Cada día ocupa 100px/7 ≈ 14.29px
-		const pixelsPerDay = 100 / 7;
+		// Calcular píxeles por día según el tipo de vista
+		let pixelsPerDay: number;
+		if (viewType === "week") {
+			pixelsPerDay = 100 / 7; // 100px por semana ≈ 14.29px por día
+		} else if (viewType === "month") {
+			pixelsPerDay = 150 / 30; // 150px por mes ≈ 5px por día
+		} else {
+			pixelsPerDay = 300 / 90; // 300px por trimestre ≈ 3.33px por día
+		}
 
 		const left = startDays * pixelsPerDay;
 		const width = Math.max((endDays - startDays + 1) * pixelsPerDay, pixelsPerDay); // Mínimo 1 día
@@ -199,11 +235,18 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 		const firstDate = dateRange[0];
 
 		// Calcular días desde el inicio del rango
-		const startDays = differenceInDays(realStartDate, firstDate);
-		const endDays = differenceInDays(realEndDate, firstDate);
+		const startDays = differenceInCalendarDays(realStartDate, firstDate);
+		const endDays = differenceInCalendarDays(realEndDate, firstDate);
 
-		// Cada día ocupa 100px/7 ≈ 14.29px
-		const pixelsPerDay = 100 / 7;
+		// Calcular píxeles por día según el tipo de vista
+		let pixelsPerDay: number;
+		if (viewType === "week") {
+			pixelsPerDay = 100 / 7; // 100px por semana ≈ 14.29px por día
+		} else if (viewType === "month") {
+			pixelsPerDay = 150 / 30; // 150px por mes ≈ 5px por día
+		} else {
+			pixelsPerDay = 300 / 90; // 300px por trimestre ≈ 3.33px por día
+		}
 
 		const left = startDays * pixelsPerDay;
 		const width = Math.max((endDays - startDays + 1) * pixelsPerDay, pixelsPerDay); // Mínimo 1 día
@@ -289,19 +332,35 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 	return (
 		<TooltipProvider>
 			<div className="space-y-3">
-				{showLegend && (
+				<div className="flex items-center justify-between gap-3">
 					<div className="flex-shrink-0">
-						<ProjectsLegend showLegend={showLegend} setShowLegend={setShowLegend} filters={filters} onFilterChange={handleFilterChange} />
+						{showLegend && <ProjectsLegend showLegend={showLegend} setShowLegend={setShowLegend} filters={filters} onFilterChange={handleFilterChange} />}
+						{!showLegend && (
+							<button onClick={() => setShowLegend(true)} className="px-3 py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md border border-dashed transition-colors">
+								Mostrar leyenda
+							</button>
+						)}
 					</div>
-				)}
 
-				{!showLegend && (
-					<div className="flex-shrink-0">
-						<button onClick={() => setShowLegend(true)} className="px-3 py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md border border-dashed transition-colors">
-							Mostrar leyenda
+					{/* Selector de vista */}
+					<div className="flex items-center gap-2 bg-muted p-1 rounded-md">
+						<button onClick={() => setViewType("week")} className={`px-3 py-1.5 text-xs rounded transition-colors ${viewType === "week" ? "bg-background shadow-sm font-medium" : "hover:bg-background/50"}`}>
+							Semana
+						</button>
+						<button
+							onClick={() => setViewType("month")}
+							className={`px-3 py-1.5 text-xs rounded transition-colors ${viewType === "month" ? "bg-background shadow-sm font-medium" : "hover:bg-background/50"}`}
+						>
+							Mes
+						</button>
+						<button
+							onClick={() => setViewType("quarter")}
+							className={`px-3 py-1.5 text-xs rounded transition-colors ${viewType === "quarter" ? "bg-background shadow-sm font-medium" : "hover:bg-background/50"}`}
+						>
+							Trimestre
 						</button>
 					</div>
-				)}
+				</div>
 
 				{/* Mostrar contador de proyectos filtrados si hay filtros activos */}
 				{(filters.lateStart || filters.inProgressLate || filters.completedLate) && (
@@ -314,59 +373,84 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 					<div style={{ minWidth: `${chartWidth}px` }} className="relative">
 						{/* Header with dates */}
 						<div className="sticky top-0 bg-background z-10 border-b">
-							{/* Fila de meses */}
-							<div className="flex border-b">
-								<div className="w-72 min-w-72 p-2 border-r font-medium sticky left-0 z-15 bg-background shadow-md text-sm">Cronograma</div>
-								<div className="flex-1 flex">
-									{(() => {
-										if (dateRange.length === 0) return null;
+							{/* Fila de meses - solo visible en vista de semana */}
+							{viewType === "week" && (
+								<div className="flex border-b">
+									<div className="w-72 min-w-72 p-2 border-r font-medium sticky left-0 z-15 bg-background shadow-md text-sm">Cronograma</div>
+									<div className="flex-1 flex">
+										{(() => {
+											if (dateRange.length === 0) return null;
 
-										const monthGroups: { month: string; year: number; startIndex: number; count: number }[] = [];
-										let currentMonth = format(dateRange[0], "MMM yyyy", { locale: es });
-										let currentYear = dateRange[0].getFullYear();
-										let startIndex = 0;
-										let count = 1;
+											const monthGroups: { month: string; year: number; startIndex: number; count: number }[] = [];
+											let currentMonth = format(dateRange[0], "MMM yyyy", { locale: es });
+											let currentYear = dateRange[0].getFullYear();
+											let startIndex = 0;
+											let count = 1;
 
-										for (let i = 1; i < dateRange.length; i++) {
-											const monthYear = format(dateRange[i], "MMM yyyy", { locale: es });
-											if (monthYear === currentMonth) {
-												count++;
-											} else {
-												monthGroups.push({ month: currentMonth, year: currentYear, startIndex, count });
-												currentMonth = monthYear;
-												currentYear = dateRange[i].getFullYear();
-												startIndex = i;
-												count = 1;
+											for (let i = 1; i < dateRange.length; i++) {
+												const monthYear = format(dateRange[i], "MMM yyyy", { locale: es });
+												if (monthYear === currentMonth) {
+													count++;
+												} else {
+													monthGroups.push({ month: currentMonth, year: currentYear, startIndex, count });
+													currentMonth = monthYear;
+													currentYear = dateRange[i].getFullYear();
+													startIndex = i;
+													count = 1;
+												}
 											}
-										}
-										monthGroups.push({ month: currentMonth, year: currentYear, startIndex, count });
+											monthGroups.push({ month: currentMonth, year: currentYear, startIndex, count });
 
-										return monthGroups.map((group, index) => (
-											<div key={index} className="flex-shrink-0 text-center text-sm py-2 border-r font-medium bg-secondary/20" style={{ width: `${group.count * 100}px` }}>
-												{group.month}
-											</div>
-										));
-									})()}
+											const pixelPerUnit = 100; // Solo para semana
+											return monthGroups.map((group, index) => (
+												<div key={index} className="flex-shrink-0 text-center text-sm py-2 border-r font-medium bg-secondary/20" style={{ width: `${group.count * pixelPerUnit}px` }}>
+													{group.month}
+												</div>
+											));
+										})()}
+									</div>
 								</div>
-							</div>
+							)}
 
-							{/* Fila de semanas */}
+							{/* Fila de unidades de tiempo (semanas, meses o trimestres) */}
 							<div className="flex">
-								<div className="w-72 min-w-72 p-3 border-r font-medium sticky left-0 z-15 bg-background">Proyectos</div>
+								<div className="w-72 min-w-72 p-3 border-r font-medium sticky left-0 z-15 bg-background">{viewType === "week" ? "Proyectos" : "Cronograma"}</div>
 								<div className="flex-1 flex">
-									{dateRange.map((date, index) => (
-										<div
-											key={index}
-											className={`w-[100px] flex-shrink-0 text-center text-xs py-2 border-r
-		                    ${isWeekend(date) ? "bg-secondary/40" : ""}
+									{dateRange.map((date, index) => {
+										const pixelPerUnit = viewType === "week" ? 100 : viewType === "month" ? 150 : 300;
+										const width = `${pixelPerUnit}px`;
+
+										return (
+											<div
+												key={index}
+												className={`flex-shrink-0 text-center text-xs py-2 border-r
+		                    ${viewType === "week" && isWeekend(date) ? "bg-secondary/40" : ""}
 		                    ${isPast(date) ? "bg-secondary/10" : ""}
-		                    ${isCurrentWeek(date) ? "bg-primary/20 font-bold" : ""}`}
-										>
-											<div className="font-medium">Sem {format(date, "w")}</div>
-											<div>{format(date, "dd", { locale: es })}</div>
-											{isCurrentWeek(date) && <div className="h-1 w-full bg-primary mt-1"></div>}
-										</div>
-									))}
+		                    ${viewType === "week" && isCurrentWeek(date) ? "bg-primary/20 font-bold" : ""}`}
+												style={{ width }}
+											>
+												{viewType === "week" && (
+													<>
+														<div className="font-medium">Sem {format(date, "w")}</div>
+														<div>{format(date, "dd", { locale: es })}</div>
+														{isCurrentWeek(date) && <div className="h-1 w-full bg-primary mt-1"></div>}
+													</>
+												)}
+												{viewType === "month" && (
+													<>
+														<div className="font-medium">{format(date, "MMM", { locale: es })}</div>
+														<div>{format(date, "yyyy", { locale: es })}</div>
+													</>
+												)}
+												{viewType === "quarter" && (
+													<>
+														<div className="font-medium">Q{Math.floor(date.getMonth() / 3) + 1}</div>
+														<div>{format(date, "yyyy", { locale: es })}</div>
+													</>
+												)}
+											</div>
+										);
+									})}
 								</div>
 							</div>
 						</div>
@@ -420,16 +504,19 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 											</div>
 										</div>
 										<div className="flex-1 relative" style={{ height: "120px" }}>
-											{dateRange.map((date, dateIndex) => (
-												<div
-													key={dateIndex}
-													className={`absolute top-0 bottom-0 w-[100px] border-r
-                          ${isWeekend(date) ? "bg-secondary/40" : ""}
+											{dateRange.map((date, dateIndex) => {
+												const pixelPerUnit = viewType === "week" ? 100 : viewType === "month" ? 150 : 300;
+												return (
+													<div
+														key={dateIndex}
+														className={`absolute top-0 bottom-0 border-r
+                          ${viewType === "week" && isWeekend(date) ? "bg-secondary/40" : ""}
                           ${isPast(date) ? "bg-secondary/10" : ""}
-                          ${isCurrentWeek(date) ? "bg-primary/20" : ""}`}
-													style={{ left: dateIndex * 100 }}
-												/>
-											))}
+                          ${viewType === "week" && isCurrentWeek(date) ? "bg-primary/20" : ""}`}
+														style={{ left: dateIndex * pixelPerUnit, width: `${pixelPerUnit}px` }}
+													/>
+												);
+											})}
 
 											{/* Contenedor de barras centrado verticalmente */}
 											<div

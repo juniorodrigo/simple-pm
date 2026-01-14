@@ -1,6 +1,7 @@
 import { memo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { CalendarIcon, Trash2, CheckSquare, ChevronDown, ChevronUp, Clock, Target, Check, Archive, ArchiveRestore } from "lucide-react";
 import { Project } from "@/types/new/project.type";
 import { getStageColorValue } from "@/lib/colors";
@@ -225,7 +226,17 @@ const ProjectCard = memo(({ project, onDelete, onClick, isDragging, onProjectUpd
 								<Archive className="h-3 w-3" />
 								<span>Archivado</span>
 							</div>
-						)}
+						)}{" "}
+						{activitiesCount > 0 ? (
+							<Badge variant="default" className="h-5 px-2 text-xs">
+								<CheckSquare className="h-3 w-3 mr-1" />
+								{activitiesCount} {activitiesCount === 1 ? "actividad" : "actividades"}
+							</Badge>
+						) : (
+							<Badge variant="outline" className="h-5 px-2 text-xs text-muted-foreground">
+								Sin actividades
+							</Badge>
+						)}{" "}
 					</div>
 					<div className="flex items-center gap-1">
 						<Button variant="ghost" size="sm" className="expand-toggle h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={handleToggleExpand}>
