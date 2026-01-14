@@ -80,10 +80,30 @@ const deleteProject = async (req, res) => {
 	}
 };
 
+const bulkAddMember = async (req, res) => {
+	try {
+		const { userId, projectIds, addToAllActivities } = req.body;
+
+		if (!userId || !projectIds || !Array.isArray(projectIds) || projectIds.length === 0) {
+			return res.error('Faltan campos requeridos: userId y projectIds (array)');
+		}
+
+		const { success, data } = await Service.bulkAddMember(userId, projectIds, addToAllActivities);
+
+		if (success) {
+			res.success(data, 'Usuario agregado a los proyectos correctamente');
+		}
+	} catch (error) {
+		console.error(error);
+		res.error(`Error al agregar usuario a proyectos: ${error.message}`);
+	}
+};
+
 export const Controller = {
 	getProjects,
 	createProject,
 	updateProject,
 	deleteProject,
 	getProjectById,
+	bulkAddMember,
 };

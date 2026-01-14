@@ -440,10 +440,104 @@ const deleteProject = async (projectId) => {
 	return { success: true };
 };
 
+const bulkAddMember = async (userId, projectIds, addToAllActivities = false) => {
+	// Verificar si el usuario existe
+	const user = await prisma.user.findUnique({
+		where: { id: userId },
+	});
+
+	if (!user) throw new Error('El usuario especificado no existe');
+
+	// Verificar que todos los proyectos existen
+	const projects = await prisma.project.findMany({
+		where: { id: { in: projectIds.map((id) => parseInt(id)) } },
+		include: {
+			ProjectMember: true,
+		},
+	});
+
+	if (projects.length !== projectIds.length) {
+		throw new Error('Uno o más proyectos especificados no existen');
+	}
+
+	const results = [];
+
+	for (const project of projects) {
+		// Verificar si el usuario ya es miembro del proyecto
+		const existingMember = project.ProjectMember.find((member) => member.userId === userId);
+
+		if (!existingMember) {
+			// Agregar el usuario como miembro del proyecto
+			await prisma.projectMember.create({
+				data: {
+					userId: userId,
+					projectId: project.id,
+					role: 'member',
+				},
+			});
+
+			results.push({
+				projectId: project.id,
+				projectName: project.name,
+				added: true,
+			});
+		} else {
+			results.push({
+				projectId: project.id,
+				projectName: project.name,
+				added: false,
+				message: 'El usuario ya es miembro de este proyecto',
+			});
+		}
+
+		// Si addToAllActivities es true, agregar el usuario a todas las actividades del proyecto
+		if (addToAllActivities) {
+			// Obtener todas las stages del proyecto
+			const stages = await prisma.projectStage.findMany({
+				where: { projectId: project.id },
+			});
+
+			// Obtener todas las actividades de las stages del proyecto
+			const activities = await prisma.projectActivity.findMany({
+				where: {
+					stageId: { in: stages.map((stage) => stage.id) },
+				},
+			});
+
+			// Actualizar cada actividad para asignar al usuario
+			// Como no hay una tabla de "participantes" de actividades, 
+			// asumimos que queremos asignar como assignedToUser o secondaryUser
+			// Para ser recursivo y agregar a todas las actividades, 
+			// podríamos actualizar el campo secondaryUserId si el assignedToUserId ya está ocupado
+			for (const activity of activities) {
+				// Si la actividad no tiene un usuario secundario, asignarlo como secundario
+				if (!activity.secondaryUserId && activity.assignedToUserId !== userId) {
+					await prisma.projectActivity.update({
+						where: { id: activity.id },
+						data: {
+							secondaryUserId: userId,
+						},
+					});
+				}
+			}
+		}
+	}
+
+	return {
+		success: true,
+		data: {
+			userId,
+			results,
+			addedToActivities: addToAllActivities,
+		},
+	};
+};
+
 export const Service = {
 	getProjects,
 	createProject,
 	updateProject,
 	deleteProject,
 	getProjectById,
+	bulkAddMember,
 };

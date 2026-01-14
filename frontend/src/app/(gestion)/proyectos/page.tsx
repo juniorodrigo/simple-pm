@@ -18,6 +18,7 @@ import ProjectsGantt from "@/components/projects/projects-gantt";
 import { useAuth } from "@/contexts/auth-context";
 import { ApiResponse } from "@/types/api-response.type";
 import { SelectService } from "@/services/select.service";
+import BulkUserAssignmentDialog from "@/components/projects/bulk-user-assignment-dialog";
 
 export default function KanbanPage() {
 	const { user, isLoading: authLoading } = useAuth();
@@ -193,6 +194,11 @@ export default function KanbanPage() {
 	// Función para recargar proyectos después de crear uno nuevo
 	const handleProjectCreated = async () => {
 		setIsDialogOpen(false);
+		await reloadProjects();
+	};
+
+	// Función genérica para recargar proyectos
+	const reloadProjects = async () => {
 		setLoading(true);
 		try {
 			const response = await ProjectsService.getProjects(user?.id || null);
@@ -245,6 +251,7 @@ export default function KanbanPage() {
 						</div>
 						{!isViewer && (
 							<div className="flex items-center gap-2">
+								<BulkUserAssignmentDialog onSuccess={reloadProjects} projects={projects} />
 								<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
 									<DialogTrigger asChild>
 										<Button className="shadow-lg">
