@@ -186,7 +186,7 @@ export default function BulkUserAssignmentDialog({ onSuccess, projects }: BulkUs
 			<DialogContent className="max-w-4xl max-h-[90vh]">
 				<DialogHeader>
 					<DialogTitle>Asignación Masiva de Usuario</DialogTitle>
-					<DialogDescription>Selecciona un usuario y los proyectos a los que deseas añadirlo. Se excluyen usuarios con rol "Visualizador".</DialogDescription>
+					<DialogDescription>Selecciona un usuario y los proyectos a los que deseas añadirlo. Se excluyen usuarios con rol &quot;Visualizador&quot;.</DialogDescription>
 				</DialogHeader>
 
 				{dataLoading ? (
