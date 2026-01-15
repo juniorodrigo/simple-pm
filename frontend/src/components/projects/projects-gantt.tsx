@@ -1,11 +1,12 @@
 "use client";
 
 import { Project } from "@/types/new/project.type";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { addDays, addMonths, differenceInDays, format, startOfDay, startOfMonth, endOfMonth, differenceInCalendarDays, startOfQuarter, endOfQuarter, addQuarters } from "date-fns";
-import { CalendarIcon, Users2Icon, ClockIcon, AlertTriangleIcon, Calendar } from "lucide-react";
+import { CalendarIcon, Users2Icon, ClockIcon, AlertTriangleIcon, Calendar, Download } from "lucide-react";
+import { toPng } from "html-to-image";
 import { es } from "date-fns/locale";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getStageColorValue, STATUS_COLORS } from "@/lib/colors";
@@ -18,14 +19,16 @@ interface ProjectsGanttProps {
 	projects: Project[];
 }
 
-type ViewType = "week" | "month" | "quarter";
+type ViewType = "week" | "month" | "quarter" | "semester";
 
 export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 	const router = useRouter();
+	const ganttRef = useRef<HTMLDivElement>(null);
 	const [dateRange, setDateRange] = useState<Date[]>([]);
 	const [chartWidth, setChartWidth] = useState(0);
 	const [showLegend, setShowLegend] = useState(true);
 	const [viewType, setViewType] = useState<ViewType>("week");
+	const [isDownloading, setIsDownloading] = useState(false);
 	const [filters, setFilters] = useState<FilterState>({
 		lateStart: false,
 		inProgressLate: false,
@@ -35,6 +38,31 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 	const handleFilterChange = (group: FilterGroup, value: boolean) => {
 		console.log(`Filtro ${group} ${value ? "activado" : "desactivado"}`);
 		setFilters((prev) => ({ ...prev, [group]: value }));
+	};
+
+	const handleDownloadGantt = async () => {
+		if (!ganttRef.current || isDownloading) return;
+
+		setIsDownloading(true);
+		try {
+			// Capturar el contenedor completo del Gantt
+			const dataUrl = await toPng(ganttRef.current, {
+				cacheBust: true,
+				pixelRatio: 2, // Para mejor calidad
+				width: ganttRef.current.scrollWidth,
+				height: ganttRef.current.scrollHeight,
+			});
+
+			// Crear un enlace de descarga
+			const link = document.createElement("a");
+			link.download = `gantt-${viewType}-${format(new Date(), "yyyy-MM-dd-HHmm", { locale: es })}.png`;
+			link.href = dataUrl;
+			link.click();
+		} catch (error) {
+			console.error("Error al descargar el Gantt:", error);
+		} finally {
+			setIsDownloading(false);
+		}
 	};
 
 	// Filtrar proyectos basado en los filtros activos
@@ -177,6 +205,23 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 				range.push(currentDate);
 				currentDate = addQuarters(currentDate, 1);
 			}
+		} else if (viewType === "semester") {
+			// Vista por semestre (6 meses)
+			const startMonth = earliestDate.getMonth();
+			const semesterStart = startMonth < 6 ? 0 : 6;
+			earliestDate = new Date(earliestDate.getFullYear(), semesterStart, 1);
+
+			const endMonth = latestDate.getMonth();
+			const semesterEnd = endMonth < 6 ? 5 : 11;
+			latestDate = endOfMonth(new Date(latestDate.getFullYear(), semesterEnd, 1));
+
+			currentDate = new Date(earliestDate);
+
+			while (currentDate <= latestDate) {
+				range.push(currentDate);
+				// Avanzar 6 meses para el siguiente semestre
+				currentDate = addMonths(currentDate, 6);
+			}
 		}
 
 		setDateRange(range);
@@ -185,7 +230,11 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 	// Update chart width based on window size and date range
 	useEffect(() => {
 		const updateWidth = () => {
-			const pixelPerUnit = viewType === "week" ? 100 : viewType === "month" ? 150 : 300; // quarter = 300px
+			let pixelPerUnit: number;
+			if (viewType === "week") pixelPerUnit = 100;
+			else if (viewType === "month") pixelPerUnit = 150;
+			else if (viewType === "quarter") pixelPerUnit = 300;
+			else pixelPerUnit = 450; // semester
 			const width = Math.max(dateRange.length * pixelPerUnit, 800);
 			setChartWidth(width);
 		};
@@ -216,8 +265,10 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 			pixelsPerDay = 100 / 7; // 100px por semana ≈ 14.29px por día
 		} else if (viewType === "month") {
 			pixelsPerDay = 150 / 30; // 150px por mes ≈ 5px por día
-		} else {
+		} else if (viewType === "quarter") {
 			pixelsPerDay = 300 / 90; // 300px por trimestre ≈ 3.33px por día
+		} else {
+			pixelsPerDay = 450 / 180; // 450px por semestre ≈ 2.5px por día
 		}
 
 		const left = startDays * pixelsPerDay;
@@ -244,8 +295,10 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 			pixelsPerDay = 100 / 7; // 100px por semana ≈ 14.29px por día
 		} else if (viewType === "month") {
 			pixelsPerDay = 150 / 30; // 150px por mes ≈ 5px por día
-		} else {
+		} else if (viewType === "quarter") {
 			pixelsPerDay = 300 / 90; // 300px por trimestre ≈ 3.33px por día
+		} else {
+			pixelsPerDay = 450 / 180; // 450px por semestre ≈ 2.5px por día
 		}
 
 		const left = startDays * pixelsPerDay;
@@ -342,23 +395,45 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 						)}
 					</div>
 
-					{/* Selector de vista */}
-					<div className="flex items-center gap-2 bg-muted p-1 rounded-md">
-						<button onClick={() => setViewType("week")} className={`px-3 py-1.5 text-xs rounded transition-colors ${viewType === "week" ? "bg-background shadow-sm font-medium" : "hover:bg-background/50"}`}>
-							Semana
-						</button>
+					<div className="flex items-center gap-2">
+						{/* Botón de descarga */}
 						<button
-							onClick={() => setViewType("month")}
-							className={`px-3 py-1.5 text-xs rounded transition-colors ${viewType === "month" ? "bg-background shadow-sm font-medium" : "hover:bg-background/50"}`}
+							onClick={handleDownloadGantt}
+							disabled={isDownloading}
+							className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-md border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+							title="Descargar Gantt como imagen"
 						>
-							Mes
+							<Download className="h-4 w-4" />
+							{isDownloading ? "Descargando..." : "Descargar"}
 						</button>
-						<button
-							onClick={() => setViewType("quarter")}
-							className={`px-3 py-1.5 text-xs rounded transition-colors ${viewType === "quarter" ? "bg-background shadow-sm font-medium" : "hover:bg-background/50"}`}
-						>
-							Trimestre
-						</button>
+
+						{/* Selector de vista */}
+						<div className="flex items-center gap-2 bg-muted p-1 rounded-md">
+							<button
+								onClick={() => setViewType("week")}
+								className={`px-3 py-1.5 text-xs rounded transition-colors ${viewType === "week" ? "bg-background shadow-sm font-medium" : "hover:bg-background/50"}`}
+							>
+								Semana
+							</button>
+							<button
+								onClick={() => setViewType("month")}
+								className={`px-3 py-1.5 text-xs rounded transition-colors ${viewType === "month" ? "bg-background shadow-sm font-medium" : "hover:bg-background/50"}`}
+							>
+								Mes
+							</button>
+							<button
+								onClick={() => setViewType("quarter")}
+								className={`px-3 py-1.5 text-xs rounded transition-colors ${viewType === "quarter" ? "bg-background shadow-sm font-medium" : "hover:bg-background/50"}`}
+							>
+								Trimestre
+							</button>
+							<button
+								onClick={() => setViewType("semester")}
+								className={`px-3 py-1.5 text-xs rounded transition-colors ${viewType === "semester" ? "bg-background shadow-sm font-medium" : "hover:bg-background/50"}`}
+							>
+								Semestre
+							</button>
+						</div>
 					</div>
 				</div>
 
@@ -369,11 +444,11 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 					</div>
 				)}
 
-				<div className="overflow-x-auto border rounded-md shadow">
-					<div style={{ minWidth: `${chartWidth}px` }} className="relative">
-						{/* Header with dates */}
+				<div className="overflow-x-auto overflow-y-auto border rounded-md shadow max-h-[calc(100vh-300px)]">
+					<div ref={ganttRef} style={{ minWidth: `${chartWidth}px` }} className="relative">
+						{/* Header with dates - Siempre 2 filas */}
 						<div className="sticky top-0 bg-background z-10 border-b">
-							{/* Fila de meses - solo visible en vista de semana */}
+							{/* Primera fila: Agrupación por meses (semana), meses (mensual), trimestres o semestres */}
 							{viewType === "week" && (
 								<div className="flex border-b">
 									<div className="w-72 min-w-72 p-2 border-r font-medium sticky left-0 z-15 bg-background shadow-md text-sm">Cronograma</div>
@@ -401,9 +476,8 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 											}
 											monthGroups.push({ month: currentMonth, year: currentYear, startIndex, count });
 
-											const pixelPerUnit = 100; // Solo para semana
 											return monthGroups.map((group, index) => (
-												<div key={index} className="flex-shrink-0 text-center text-sm py-2 border-r font-medium bg-secondary/20" style={{ width: `${group.count * pixelPerUnit}px` }}>
+												<div key={index} className="flex-shrink-0 text-center text-sm py-2 border-r font-medium bg-secondary/20" style={{ width: `${group.count * 100}px` }}>
 													{group.month}
 												</div>
 											));
@@ -412,12 +486,86 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 								</div>
 							)}
 
-							{/* Fila de unidades de tiempo (semanas, meses o trimestres) */}
+							{viewType === "month" && (
+								<div className="flex border-b">
+									<div className="w-72 min-w-72 p-2 border-r font-medium sticky left-0 z-15 bg-background shadow-md text-sm">Cronograma</div>
+									<div className="flex-1 flex">
+										{dateRange.map((date, index) => {
+											const weeksInMonth = Math.ceil(endOfMonth(date).getDate() / 7);
+											return (
+												<div key={index} className="flex-shrink-0 border-r" style={{ width: "150px" }}>
+													<div className="text-center text-sm py-2 font-medium bg-secondary/10">{format(date, "MMM yyyy", { locale: es })}</div>
+													<div className="flex">
+														{Array.from({ length: weeksInMonth }).map((_, weekIndex) => (
+															<div key={weekIndex} className="flex-1 text-center text-xs py-1 border-r last:border-r-0">
+																{weekIndex + 1}
+															</div>
+														))}
+													</div>
+												</div>
+											);
+										})}
+									</div>
+								</div>
+							)}
+
+							{viewType === "quarter" && (
+								<div className="flex border-b">
+									<div className="w-72 min-w-72 p-2 border-r font-medium sticky left-0 z-15 bg-background shadow-md text-sm">Cronograma</div>
+									<div className="flex-1 flex">
+										{dateRange.map((quarterStart, index) => {
+											const months = [quarterStart, addMonths(quarterStart, 1), addMonths(quarterStart, 2)];
+											return (
+												<div key={index} className="flex-shrink-0 border-r" style={{ width: "300px" }}>
+													<div className="text-center text-sm py-2 font-medium bg-secondary/10">
+														Q{Math.floor(quarterStart.getMonth() / 3) + 1} {format(quarterStart, "yyyy", { locale: es })}
+													</div>
+													<div className="flex">
+														{months.map((month, monthIndex) => (
+															<div key={monthIndex} className="flex-1 text-center text-xs py-1 border-r last:border-r-0">
+																{format(month, "MMM", { locale: es })}
+															</div>
+														))}
+													</div>
+												</div>
+											);
+										})}
+									</div>
+								</div>
+							)}
+
+							{viewType === "semester" && (
+								<div className="flex border-b">
+									<div className="w-72 min-w-72 p-2 border-r font-medium sticky left-0 z-15 bg-background shadow-md text-sm">Cronograma</div>
+									<div className="flex-1 flex">
+										{dateRange.map((semesterStart, index) => {
+											const months = Array.from({ length: 6 }, (_, i) => addMonths(semesterStart, i));
+											const semesterNumber = semesterStart.getMonth() < 6 ? 1 : 2;
+											return (
+												<div key={index} className="flex-shrink-0 border-r" style={{ width: "450px" }}>
+													<div className="text-center text-sm py-2 font-medium bg-secondary/10">
+														S{semesterNumber} {format(semesterStart, "yyyy", { locale: es })}
+													</div>
+													<div className="flex">
+														{months.map((month, monthIndex) => (
+															<div key={monthIndex} className="flex-1 text-center text-xs py-1 border-r last:border-r-0">
+																{format(month, "MMM", { locale: es })}
+															</div>
+														))}
+													</div>
+												</div>
+											);
+										})}
+									</div>
+								</div>
+							)}
+
+							{/* Segunda fila: Proyectos */}
 							<div className="flex">
-								<div className="w-72 min-w-72 p-3 border-r font-medium sticky left-0 z-15 bg-background">{viewType === "week" ? "Proyectos" : "Cronograma"}</div>
+								<div className="w-72 min-w-72 p-3 border-r font-medium sticky left-0 z-15 bg-background">Proyectos</div>
 								<div className="flex-1 flex">
 									{dateRange.map((date, index) => {
-										const pixelPerUnit = viewType === "week" ? 100 : viewType === "month" ? 150 : 300;
+										const pixelPerUnit = viewType === "week" ? 100 : viewType === "month" ? 150 : viewType === "quarter" ? 300 : 450;
 										const width = `${pixelPerUnit}px`;
 
 										return (
@@ -434,18 +582,6 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 														<div className="font-medium">Sem {format(date, "w")}</div>
 														<div>{format(date, "dd", { locale: es })}</div>
 														{isCurrentWeek(date) && <div className="h-1 w-full bg-primary mt-1"></div>}
-													</>
-												)}
-												{viewType === "month" && (
-													<>
-														<div className="font-medium">{format(date, "MMM", { locale: es })}</div>
-														<div>{format(date, "yyyy", { locale: es })}</div>
-													</>
-												)}
-												{viewType === "quarter" && (
-													<>
-														<div className="font-medium">Q{Math.floor(date.getMonth() / 3) + 1}</div>
-														<div>{format(date, "yyyy", { locale: es })}</div>
 													</>
 												)}
 											</div>
@@ -505,7 +641,11 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 										</div>
 										<div className="flex-1 relative" style={{ height: "120px" }}>
 											{dateRange.map((date, dateIndex) => {
-												const pixelPerUnit = viewType === "week" ? 100 : viewType === "month" ? 150 : 300;
+												let pixelPerUnit: number;
+												if (viewType === "week") pixelPerUnit = 100;
+												else if (viewType === "month") pixelPerUnit = 150;
+												else if (viewType === "quarter") pixelPerUnit = 300;
+												else pixelPerUnit = 450;
 												return (
 													<div
 														key={dateIndex}
