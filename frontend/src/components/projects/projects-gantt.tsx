@@ -29,6 +29,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 	const [showLegend, setShowLegend] = useState(true);
 	const [viewType, setViewType] = useState<ViewType>("week");
 	const [isDownloading, setIsDownloading] = useState(false);
+	const [compactMode, setCompactMode] = useState(false);
 	const [filters, setFilters] = useState<FilterState>({
 		lateStart: false,
 		inProgressLate: false,
@@ -387,7 +388,9 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 			<div className="space-y-3">
 				<div className="flex items-center justify-between gap-3">
 					<div className="flex-shrink-0">
-						{showLegend && <ProjectsLegend showLegend={showLegend} setShowLegend={setShowLegend} filters={filters} onFilterChange={handleFilterChange} />}
+						{showLegend && (
+							<ProjectsLegend showLegend={showLegend} setShowLegend={setShowLegend} filters={filters} onFilterChange={handleFilterChange} compactMode={compactMode} onCompactModeChange={setCompactMode} />
+						)}
 						{!showLegend && (
 							<button onClick={() => setShowLegend(true)} className="px-3 py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md border border-dashed transition-colors">
 								Mostrar leyenda
@@ -603,43 +606,49 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 								const showExecutionDelay = shouldShowExecutionDelayIcon(project);
 								const showLateCompletion = isLateCompletion(project);
 
+								const rowHeight = compactMode ? 72 : 120;
+
 								return (
 									<div key={project.id} className="flex border-b hover:bg-secondary/20">
-										<div className="w-72 min-w-72 p-3 border-r border-l-4 sticky left-0 z-5 bg-background shadow-md" style={{ borderLeftColor: categoryColor }}>
+										<div className={`w-72 min-w-72 border-r border-l-4 sticky left-0 z-5 bg-background shadow-md ${compactMode ? "px-3 py-2" : "p-3"}`} style={{ borderLeftColor: categoryColor }}>
 											<div className="font-medium line-clamp-1">{project.name}</div>
-											<div className="flex items-center space-x-2 mt-2">
-												{project.status && (
-													<Badge variant="outline" className={`text-xs px-1.5 py-0 font-medium shadow-sm ${STATUS_COLORS[project.status as keyof typeof STATUS_COLORS]}`}>
-														{ProjectStatusLabels[project.status as keyof typeof ProjectStatusLabels] || project.status || ""}
-													</Badge>
-												)}
-												<div className="flex-grow"></div>
-												<Avatar className="h-6 w-6">
-													<AvatarImage src="/placeholder-user.jpg" alt={project.managerUserName} />
-													<AvatarFallback>{getInitials(project.manager?.name + "" + project.manager?.lastname)}</AvatarFallback>
-												</Avatar>
-											</div>
+											{!compactMode && (
+												<>
+													<div className="flex items-center space-x-2 mt-2">
+														{project.status && (
+															<Badge variant="outline" className={`text-xs px-1.5 py-0 font-medium shadow-sm ${STATUS_COLORS[project.status as keyof typeof STATUS_COLORS]}`}>
+																{ProjectStatusLabels[project.status as keyof typeof ProjectStatusLabels] || project.status || ""}
+															</Badge>
+														)}
+														<div className="flex-grow"></div>
+														<Avatar className="h-6 w-6">
+															<AvatarImage src="/placeholder-user.jpg" alt={project.managerUserName} />
+															<AvatarFallback>{getInitials(project.manager?.name + "" + project.manager?.lastname)}</AvatarFallback>
+														</Avatar>
+													</div>
 
-											{/* Fechas planificadas */}
-											<div className="text-xs flex items-center gap-1 mt-2">
-												<ClockIcon className="h-3 w-3" />
-												<div className="text-muted-foreground">
-													Plan: {format(new Date(project.startDate), "dd MMM", { locale: es })} - {format(new Date(project.endDate), "dd MMM", { locale: es })}
-												</div>
-											</div>
+													{/* Fechas planificadas */}
+													<div className="text-xs flex items-center gap-1 mt-2">
+														<ClockIcon className="h-3 w-3" />
+														<div className="text-muted-foreground">
+															Plan: {format(new Date(project.startDate), "dd MMM", { locale: es })} - {format(new Date(project.endDate), "dd MMM", { locale: es })}
+														</div>
+													</div>
 
-											{/* Fechas reales */}
-											<div className="text-xs flex items-center gap-1 mt-1">
-												<ClockIcon className="h-3 w-3" />
-												{(project.realStartDate && (
-													<span className="text-green-600">
-														Real: {format(new Date(project.realStartDate), "dd MMM", { locale: es })}
-														{(project.realEndDate && ` - ${format(new Date(project.realEndDate), "dd MMM", { locale: es })}`) || " - hoy"}
-													</span>
-												)) || <span className="text-muted-foreground">No se ha ejecutado</span>}
-											</div>
+													{/* Fechas reales */}
+													<div className="text-xs flex items-center gap-1 mt-1">
+														<ClockIcon className="h-3 w-3" />
+														{(project.realStartDate && (
+															<span className="text-green-600">
+																Real: {format(new Date(project.realStartDate), "dd MMM", { locale: es })}
+																{(project.realEndDate && ` - ${format(new Date(project.realEndDate), "dd MMM", { locale: es })}`) || " - hoy"}
+															</span>
+														)) || <span className="text-muted-foreground">No se ha ejecutado</span>}
+													</div>
+												</>
+											)}
 										</div>
-										<div className="flex-1 relative" style={{ height: "120px" }}>
+										<div className="flex-1 relative" style={{ height: `${rowHeight}px` }}>
 											{dateRange.map((date, dateIndex) => {
 												let pixelPerUnit: number;
 												if (viewType === "week") pixelPerUnit = 100;
@@ -664,7 +673,7 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 												style={{
 													left: `${barPosition.left}px`,
 													width: `${barPosition.width}px`,
-													height: "120px",
+													height: `${rowHeight}px`,
 													top: 0,
 												}}
 											>

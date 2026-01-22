@@ -184,7 +184,7 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 								const barPosition = getBarPosition(activity, dateRange, viewMode);
 								const stageColor = getStageColorValue(getStageColor(activity.stageId, stages));
 								const stageOriginalColor = getStageColor(activity.stageId, stages);
-							const rowHeight = compactMode ? "h-[72px]" : "h-20";
+								const rowHeight = compactMode ? "h-[72px]" : "h-20";
 
 								return (
 									<div key={activity.id} className="flex border-b hover:bg-secondary/20 items-center relative">
