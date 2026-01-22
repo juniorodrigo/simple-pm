@@ -47,4 +47,6 @@ export type LegendProps = {
 	onFilterChange: (group: FilterGroup, value: boolean) => void;
 	sortOption: SortOption;
 	onSortChange: (sort: SortOption) => void;
+	compactMode: boolean;
+	onCompactModeChange: (compact: boolean) => void;
 };

@@ -16,6 +16,7 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 	const [showLegend, setShowLegend] = useState(true);
 	const [scrollLeft, setScrollLeft] = useState(0);
 	const [sortOption, setSortOption] = useState<SortOption>("date");
+	const [compactMode, setCompactMode] = useState(false);
 	const [filters, setFilters] = useState<FilterState>({
 		lateStart: false,
 		inProgressLate: false,
@@ -142,7 +143,16 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 			<div className="h-full flex flex-col space-y-3 overflow-hidden">
 				{showLegend && (
 					<div className="flex-shrink-0">
-						<Legend showLegend={showLegend} setShowLegend={setShowLegend} filters={filters} onFilterChange={handleFilterChange} sortOption={sortOption} onSortChange={handleSortChange} />
+						<Legend
+							showLegend={showLegend}
+							setShowLegend={setShowLegend}
+							filters={filters}
+							onFilterChange={handleFilterChange}
+							sortOption={sortOption}
+							onSortChange={handleSortChange}
+							compactMode={compactMode}
+							onCompactModeChange={setCompactMode}
+						/>
 					</div>
 				)}
 
@@ -174,6 +184,7 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 								const barPosition = getBarPosition(activity, dateRange, viewMode);
 								const stageColor = getStageColorValue(getStageColor(activity.stageId, stages));
 								const stageOriginalColor = getStageColor(activity.stageId, stages);
+							const rowHeight = compactMode ? "h-[72px]" : "h-20";
 
 								return (
 									<div key={activity.id} className="flex border-b hover:bg-secondary/20 items-center relative">
@@ -184,12 +195,12 @@ export default function GanttChart({ activities, stages, viewMode }: GanttChartP
 
 										{/* Activity info sticky */}
 										<div className="sticky left-0 z-[19] bg-background">
-											<ActivityInfo activity={activity} executionStatus={executionStatus} stages={stages} />
+											<ActivityInfo activity={activity} executionStatus={executionStatus} stages={stages} compactMode={compactMode} />
 										</div>
 
 										{/* Activity bar con z-index apropiado */}
 										<div className="flex-1 relative">
-											<div className="relative z-[10] h-20 flex items-center justify-center">
+											<div className={`relative z-[10] ${rowHeight} flex items-center justify-center`}>
 												<div className="flex items-center w-full h-full">
 													<ActivityBar
 														activity={activity}
