@@ -46,11 +46,14 @@ export default function ProjectsGantt({ projects }: ProjectsGanttProps) {
 
 		setIsDownloading(true);
 		try {
+			// Calcular el ancho real del contenido (288px de columna izquierda + chartWidth)
+			const realWidth = 288 + chartWidth; // 288px = w-72 (18rem = 288px)
+
 			// Capturar el contenedor completo del Gantt
 			const dataUrl = await toPng(ganttRef.current, {
 				cacheBust: true,
 				pixelRatio: 2, // Para mejor calidad
-				width: ganttRef.current.scrollWidth,
+				width: realWidth,
 				height: ganttRef.current.scrollHeight,
 			});
 
